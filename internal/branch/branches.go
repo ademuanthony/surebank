@@ -34,6 +34,12 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 		queries = append(queries, And("archived_at is null"))
 	}
 
+	if len(req.Order) > 0 {
+		for _, s := range req.Order {
+			queries = append(queries, OrderBy(s))
+		}
+	}
+
 	if req.Limit != nil {
 		queries = append(queries, Limit(int(*req.Limit)))
 	}

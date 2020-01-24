@@ -235,7 +235,6 @@ type ProductFindRequest struct {
 func (repo Repository) FindProduct(ctx context.Context, req ProductFindRequest) (Products, error) {
 	var queries []QueryMod
 
-
 	if req.Where != "" {
 		queries = append(queries, Where(req.Where, req.Args...))
 	}

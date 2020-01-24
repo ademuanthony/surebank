@@ -2,9 +2,8 @@ package shop
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"github.com/volatiletech/null"
-	"merryworld/surebank/internal/platform/web"
 	"time"
 
 	"github.com/pborman/uuid"
@@ -12,7 +11,9 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"github.com/volatiletech/null"
 	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/postgres/models"
 )
@@ -20,6 +21,7 @@ import (
 // Stock
 type Stock struct {
 	ID               string     `json:"id"`
+	BranchID		 string		`json:"branch_id"`
 	BatchNumber      string     `json:"batch_number"`
 	ProductID        string     `json:"product_id"`
 	ProductName      string     `json:"product_name"`
@@ -39,6 +41,7 @@ type Stock struct {
 func (s Stock) model() models.Stock {
 	m := models.Stock{
 		ID:               s.ID,
+		BranchID: 		  s.BranchID,
 		BatchNumber:      s.BatchNumber,
 		ProductID:        s.ProductID,
 		UnitCostPrice:    s.UnitCostPrice,
@@ -99,10 +102,12 @@ func stockFromModel(stock *models.Stock) *Stock {
 		s.ArchivedAt = &stock.ArchivedAt.Time
 	}
 
-	if stock.R.Product != nil {
-		s.ProductName = stock.R.Product.Name
+	if stock.R != nil {
+		if stock.R.Product != nil {
+			s.ProductName = stock.R.Product.Name
+		}
 	}
-
+	
 	return s
 }
 
@@ -112,6 +117,7 @@ type StockResponse struct {
 	BatchNumber     string            `json:"batch_number"`
 	ProductID       string            `json:"product_id"`
 	ProductName     string            `json:"product_name"`
+	Quantity		int 			  `json:"quantity"`
 	UnitCostPrice   float64           `json:"unit_cost_price"`
 	Balance         int               `json:"quantity"`
 	ManufactureDate *web.TimeResponse `json:"manufacture_date"`
@@ -133,6 +139,7 @@ func (s *Stock) Response(ctx context.Context) *StockResponse {
 		BatchNumber:   s.BatchNumber,
 		ProductID:     s.ProductID,
 		ProductName:   s.ProductName,
+		Quantity:	   s.Quantity,
 		UnitCostPrice: s.UnitCostPrice,
 		Balance:       s.Quantity - s.DeductedQuantity,
 		CreatedAt:     web.NewTimeResponse(ctx, s.CreatedAt),
@@ -166,17 +173,18 @@ func (m *Stocks) Response(ctx context.Context) []*StockResponse {
 		}
 	}
 
-	return l
+	return l 
 }
 
 // StockCreateRequest contains information needed to create a new Stock.
 type StockCreateRequest struct {
+	BranchID         string     `json:"branch_id" validate:"required"`
 	BatchNumber      string     `json:"batch_number" validate:"required"`
-	ProductID        string     `json:"product_id" validate:"required,unique"`
+	ProductID        string     `json:"product_id" validate:"required"`
 	UnitCostPrice    float64    `json:"unit_cost_price" validate:"required"`
 	Quantity         int        `json:"quantity" validate:"required"`
-	ManufactureDate  *time.Time `json:"manufacture_date"`
-	ExpiryDate       *time.Time `json:"expiry_date"`
+	ManufactureDate  *time.Time `json:"manufacture_date,omitempty" schema:"omitempty"`
+	ExpiryDate       *time.Time `json:"expiry_date,omitempty" schema:"omitempty"`
 }
 
 // StockReadRequest defines the information needed to read a Stock.
@@ -190,11 +198,13 @@ type StockReadRequest struct {
 // changed.
 type StockUpdateRequest struct {
 	ID              string     `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	BranchID        *string     `json:"branch_id"`
+	ProductID 		*string    `json:"product_id"`
 	BatchNumber     *string    `json:"batch_number"`
 	UnitCostPrice   *float64   `json:"unit_cost_price"`
 	Quantity        *int       `json:"quantity"`
-	ManufactureDate *time.Time `json:"manufacture_date"`
-	ExpiryDate      *time.Time `json:"expiry_date"`
+	ManufactureDate *time.Time `json:"manufacture_date" schema:"omitempty"`
+	ExpiryDate      *time.Time `json:"expiry_date" schema:"omitempty"`
 }
 
 // StockArchiveRequest defines the information needed to archive a Stock. This will archive (soft-delete) the
@@ -244,11 +254,13 @@ type StockInfo struct {
 
 func (repo Repository) FindStock(ctx context.Context, req StockFindRequest) (Stocks, error) {
 	var queries []QueryMod
+	
+	if req.Where != "" {
+		queries = append(queries, Where(req.Where, req.Args...))
+	}
+
 	if !req.IncludeArchived {
-		if len(req.Where) > 0 {
-			req.Where += " AND"
-		}
-		req.Where += fmt.Sprintf(" %s = null ", models.ProductColumns.ArchivedAt)
+		queries = append(queries, And("archived_at is null"))
 	}
 
 	if req.Where != "" {
@@ -321,17 +333,26 @@ func (repo *Repository) CreateStock(ctx context.Context, claims auth.Claims, req
 
 	s := Stock{
 		ID:               uuid.NewRandom().String(),
+		BranchID:		  req.BranchID,
 		BatchNumber:      req.BatchNumber,
 		ProductID:        req.ProductID,
 		ProductName:      req.ProductID,
 		UnitCostPrice:    req.UnitCostPrice,
 		Quantity:         req.Quantity,
-		ManufactureDate:  req.ManufactureDate,
-		ExpiryDate:       req.ExpiryDate,
 		CreatedAt:        now,
 		UpdatedAt:        now,
 		CreatedByID:      claims.Subject,
 		UpdatedByID:      claims.Subject,
+	}
+
+	if req.ManufactureDate != nil && !req.ManufactureDate.IsZero() {
+		manufactureDate := req.ManufactureDate.UTC()
+		s.ManufactureDate = &manufactureDate
+	}
+
+	if req.ExpiryDate != nil && !req.ExpiryDate.IsZero() {
+		expiryDate := req.ExpiryDate.UTC()
+		s.ManufactureDate = &expiryDate
 	}
 
 	stockModel := s.model()
@@ -450,27 +471,30 @@ func (repo *Repository) StockReport(ctx context.Context, _ auth.Claims, req Stoc
 
 	var report []StockInfo
 
-	var query = []QueryMod {
-		Select("product.id as product_id", "product.name as product_name",
-			"(SUM(stock.debited_quantity)*-1) + SUM(stock.quantity) AS quantity"),
-		From("stock"),
-		InnerJoin("product on stock.product_id = product.id"),
-		GroupBy("product_id"),
-		Having("quantity > 0"),
-	}
-	if len(req.Where) > 0 {
-		query = append(query, Where(req.Where, req.Args))
+	selectQuery := `SELECT product.id as product_id, product.name as product_name,
+	(SUM(stock.deducted_quantity)*-1) + SUM(stock.quantity) AS quantity
+	FROM stock INNER JOIN product ON stock.product_id = product.id
+	GROUP BY product.id`
+	// var query = []QueryMod {
+	// 	SQL(selectQuery),
+	// }
+	// if len(req.Where) > 0 {
+	// 	query = append(query, Where(req.Where, req.Args))
+	// }
+
+	// if req.Limit != nil {
+	// 	query = append(query, Limit(int(*req.Limit)))
+	// }
+
+	// if req.Offset != nil {
+	// 	query = append(query, Limit(int(*req.Offset)))
+	// }
+
+	err := models.NewQuery(SQL(selectQuery)).Bind(ctx, repo.DbConn, &report)
+	if err == sql.ErrNoRows {
+		return nil, nil
 	}
 
-	if req.Limit != nil {
-		query = append(query, Limit(int(*req.Limit)))
-	}
-
-	if req.Offset != nil {
-		query = append(query, Limit(int(*req.Offset)))
-	}
-
-	err := models.NewQuery(query...).Bind(ctx, repo.DbConn, &report)
-	return report, err
+	return report, errors.WithMessage(err, selectQuery)
 }
 

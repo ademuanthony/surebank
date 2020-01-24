@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"merryworld/surebank/internal/branch"
-	"merryworld/surebank/internal/shop"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
+	"merryworld/surebank/internal/branch"
+	"merryworld/surebank/internal/shop"
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/account/account_preference"
 	"merryworld/surebank/internal/checklist"
@@ -26,7 +26,6 @@ import (
 	"merryworld/surebank/internal/user_account/invite"
 	"merryworld/surebank/internal/user_auth"
 	"merryworld/surebank/internal/webroute"
-
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/ikeikeikeike/go-sitemap-generator/v2/stm"
 	"github.com/jmoiron/sqlx"
@@ -196,6 +195,22 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("POST", "/shop/products/create", prod.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/shop/products/create", prod.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/shop/products", prod.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+
+	// Stocks
+	stock := Stocks{
+		ShopRepo: appCtx.ShopRepo,
+		BranchRepo: appCtx.BranchRepo,
+		Redis:    appCtx.Redis,
+		Renderer: appCtx.Renderer,
+	}
+	app.Handle("POST", "/shop/inventory/:stock_id/update", stock.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/inventory/:stock_id/update", stock.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/shop/inventory/:stock_id", stock.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/shop/inventory/:stock_id", stock.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/shop/inventory/create", stock.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/inventory/create", stock.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/inventory/report", stock.Report, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/shop/inventory", stock.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
 	// Register user management pages.
 	us := Users{

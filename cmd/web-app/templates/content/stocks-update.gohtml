@@ -1,0 +1,115 @@
+{{define "title"}}Update Stock - {{ .stock.ProductName }}{{end}}
+{{define "style"}}
+
+{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ .urlProductsIndex}}">Inventory</a></li>
+            <li class="breadcrumb-item"><a href="{{ .urlProductsView }}">{{ .stock.ProductName }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Update</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Update Stock Entry</h1>
+    </div>
+
+    <form class="user" method="post" novalidate>
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-12">
+
+                        <h4 class="card-title">Stock Details</h4>
+                    </div>
+                </div>
+
+               <div class="row">
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+                            <label for="selectBranch">Branch</label>
+                            <div class="form-control-select-wrapper">
+                                <select id="selectBranch" name="BranchID" placeholder="Branch" required
+                                        class="form-control form-control-select-box {{ ValidationFieldClass $.validationErrors "BranchID" }}">
+                                        <option></option>
+                                    {{ range $i := $.branches }}
+                                        <option value="{{ $i.ID }}" {{ if CmpString $i.ID $.form.BranchID }}selected="selected"{{ end }}>{{ $i.Name }}</option>
+                                    {{ end }}
+                                </select>
+                                {{template "invalid-feedback" dict "fieldName" "BranchID" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="selectProduct">Product</label>
+                            <div class="form-control-select-wrapper">
+                                <select id="selectProduct" name="ProductID" placeholder="Product" required
+                                        class="form-control form-control-select-box {{ ValidationFieldClass $.validationErrors "ProductID" }}">
+                                        <option></option>
+                                    {{ range $i := $.products }}
+                                        <option data-barcode="{{ $i.Barcode }}" value="{{ $i.ID }}" {{ if CmpString $i.ID $.form.ProductID }}selected="selected"{{ end }}>{{ $i.Name }}</option>
+                                    {{ end }}
+                                </select>
+                                {{template "invalid-feedback" dict "fieldName" "ProductID" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputBatchNumber">Batch Number</label>
+                            <input type="text" id="inputBatchNumber"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "BatchNumber" }}"
+                                   placeholder="enter name" name="BatchNumber" value="{{ .form.BatchNumber }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "BatchNumber" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputQuantity">Quantity</label>
+                            <input type="text" id="inputQuantity"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Quantity" }}"
+                                   placeholder="enter SKU" name="Quantity" value="{{ .form.Quantity }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "Quantity" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div> 
+
+                        <div class="form-group">
+                            <label for="inputPrice">Unit Cost Price</label>
+                            <input type="text" id="inputPrice"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Price" }}"
+                                   placeholder="enter name" name="UnitCostPrice" value="{{ .form.UnitCostPrice }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "UnitCostPrice" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputManufactureDate">Manutacture Date</label>
+                            <input type="datetime-local" id="inputManufactureDate"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "ManufactureDate" }}"
+                                   placeholder="Manufacture Date" name="ManufactureDate" value="{{ .form.UnitCostPrice }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "ManufactureDate" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputExpiryDate">Expiry Date</label>
+                            <input type="datetime-local" id="inputExpiryDate"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "ExpiryDate" }}"
+                                   placeholder="Expiry Date" name="ExpiryDate" value="{{ .form.ExpiryDate }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "ExpiryDate" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <input id="btnSubmit" type="submit" name="action" value="Save" class="btn btn-primary"/>
+            </div>
+        </div>
+    </form>
+{{end}}
+{{define "js"}}
+
+{{end}}

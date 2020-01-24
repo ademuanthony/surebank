@@ -87,7 +87,7 @@ func (h *Branches) Index(ctx context.Context, w http.ResponseWriter, r *http.Req
 		res, err := h.Repo.Find(ctx, claims, branch.FindRequest{
 			Order: strings.Split(sorting, ","),
 		})
-		if err != nil {
+		if err != nil { 
 			return resp, err
 		}
 
