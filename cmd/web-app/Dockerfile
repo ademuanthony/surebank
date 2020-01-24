@@ -11,7 +11,7 @@ RUN apk --update --no-cache add \
             git
 
 # Change dir to project base.
-WORKDIR $GOPATH/src/gitlab.com/geeks-accelerator/oss/saas-starter-kit
+WORKDIR $GOPATH/src/gitlab.com/merryworld/surebank
 
 # Build and (re)start go apps after saving/creating/deleting source files.
 RUN GO111MODULE=off go get github.com/pilu/fresh

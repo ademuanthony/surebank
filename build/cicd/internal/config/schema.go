@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/schema"
+	"merryworld/surebank/internal/schema"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"gitlab.com/geeks-accelerator/oss/devops/pkg/devdeploy"

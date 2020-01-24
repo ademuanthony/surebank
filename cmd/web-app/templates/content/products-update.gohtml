@@ -1,0 +1,104 @@
+{{define "title"}}Update Product - {{ .product.Name }}{{end}}
+{{define "style"}}
+
+{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ .urlProductsIndex}}">Products</a></li>
+            <li class="breadcrumb-item"><a href="{{ .urlProductsView }}">{{ .product.Name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Update</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Update Product</h1>
+    </div>
+
+    <form class="user" method="post" novalidate>
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-12">
+
+                        <h4 class="card-title">Product Details</h4>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputName">Name</label>
+                            <input type="text" id="inputName"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Name" }}"
+                                   placeholder="enter name" name="Name" value="{{ .form.Name }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "Name" "validationDefaults" $.userValidationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputSku">SKU</label>
+                            <input type="text" id="inputSku"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Sku" }}"
+                                   placeholder="enter SKU" name="Sku" value="{{ .form.Sku }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "Sku" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputBarcode">Barcode</label>
+                            <input type="text" id="inputBarcode"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Barcode" }}"
+                                   placeholder="enter Barcode" name="Barcode" value="{{ .form.Barcode }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "Barcode" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputPrice">Price</label>
+                            <input type="text" id="inputPrice"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Price" }}"
+                                   placeholder="enter name" name="Price" value="{{ .form.Price }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "Price" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="selectProductBranch">Brand</label>
+                            <div class="form-control-select-wrapper">
+                                <select id="selectProductBranch" name="BrandID" placeholder="Brand" required
+                                        class="form-control form-control-select-box {{ ValidationFieldClass $.validationErrors "Brand" }}">
+                                    {{ range $i := $.brands }}
+                                        <option value="{{ $i.ID }}" {{ if CmpString $i.ID $.form.BrandID }}selected="selected"{{ end }}>{{ $i.Name }}</option>
+                                    {{ end }}
+                                </select>
+                                {{template "invalid-feedback" dict "fieldName" "BrandID" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="selectProductBranch">Category</label>
+                            <div class="form-control-select-wrapper">
+                                <select id="selectProductBranch" name="CategoryID" placeholder="Category" required
+                                        class="form-control form-control-select-box {{ ValidationFieldClass $.validationErrors "Brand" }}">
+                                    {{ range $i := $.categories }}
+                                        <option value="{{ $i.ID }}" {{ if CmpString $i.ID $.form.CategoryID }}selected="selected"{{ end }}>{{ $i.Name }}</option>
+                                    {{ end }}
+                                </select>
+                                {{template "invalid-feedback" dict "fieldName" "CategoryID" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <input id="btnSubmit" type="submit" name="action" value="Save" class="btn btn-primary"/>
+            </div>
+        </div>
+    </form>
+{{end}}
+{{define "js"}}
+
+{{end}}

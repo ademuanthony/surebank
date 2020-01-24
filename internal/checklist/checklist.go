@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/web/webcontext"
 	"github.com/huandu/go-sqlbuilder"
 	"github.com/jmoiron/sqlx"
 	"github.com/pborman/uuid"

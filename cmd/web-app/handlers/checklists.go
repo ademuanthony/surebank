@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strings"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/checklist"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/datatable"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/weberror"
+	"merryworld/surebank/internal/checklist"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/datatable"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
 
 	"github.com/gorilla/schema"
 	"github.com/pkg/errors"

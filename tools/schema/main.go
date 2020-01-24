@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
-	"geeks-accelerator/oss/saas-starter-kit/internal/schema"
+	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/schema"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"github.com/urfave/cli"

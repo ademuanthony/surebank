@@ -3,8 +3,8 @@ package user_account
 import (
 	"context"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/web/webcontext"
 	"github.com/huandu/go-sqlbuilder"
 	"github.com/pkg/errors"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"

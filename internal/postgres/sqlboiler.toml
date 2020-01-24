@@ -1,0 +1,23 @@
+[psql]
+    dbname = "shared"
+    host = "localhost"
+    port = "5433"
+    user = "postgres"
+    pass = "postgres"
+    sslmode = "disable"
+    whitelist=[
+            "branch",
+            "users",
+            "customer",
+            "account",
+            "deposit",
+            "withdrawal",
+            "brand",
+            "category",
+            "product",
+            "product_category",
+            "stock",
+            "sale",
+            "sale_item",
+            "payment",
+            ]

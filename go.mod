@@ -1,12 +1,15 @@
-module geeks-accelerator/oss/saas-starter-kit
+module merryworld/surebank
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.4.0 // indirect
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/aws/aws-sdk-go v1.27.2
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dimfeld/httptreemux v5.0.1+incompatible
 	github.com/dustin/go-humanize v1.0.0
+	github.com/friendsofgo/errors v0.9.2
 	github.com/geeks-accelerator/files v0.0.0-20190704085106-630677cd5c14
 	github.com/geeks-accelerator/sqlxmigrate v0.0.0-20190823021348-d047c980bb66
 	github.com/geeks-accelerator/swag v1.6.3
@@ -16,6 +19,7 @@ require (
 	github.com/go-playground/pkg v0.0.0-20190522230805-792a755e6910
 	github.com/go-playground/universal-translator v0.16.0
 	github.com/go-redis/redis v6.15.6+incompatible
+	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/google/go-cmp v0.4.0
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/securecookie v1.1.1
@@ -40,13 +44,18 @@ require (
 	github.com/sudo-suhas/symcrypto v1.0.0
 	github.com/tdewolff/minify v2.3.6+incompatible
 	github.com/tdewolff/parse v2.3.4+incompatible // indirect
+	github.com/tdewolff/test v1.0.6 // indirect
 	github.com/tinylib/msgp v1.1.0 // indirect
 	github.com/urfave/cli v1.22.2
+	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
+	github.com/volatiletech/null v8.0.0+incompatible
+	github.com/volatiletech/sqlboiler v3.6.1+incompatible
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
 	gitlab.com/geeks-accelerator/oss/devops v1.0.59
 	golang.org/x/crypto v0.0.0-20200109152110-61a87790db17
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
 	golang.org/x/sys v0.0.0-20200113162924-86b910548bc1 // indirect
+	golang.org/x/text v0.3.2
 	golang.org/x/tools v0.0.0-20200113223816-544dc8ea2d5f // indirect
 	gopkg.in/DataDog/dd-trace-go.v1 v1.16.1
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect

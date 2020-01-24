@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/mid"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
+	"merryworld/surebank/internal/mid"
+	"merryworld/surebank/internal/platform/web"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds"

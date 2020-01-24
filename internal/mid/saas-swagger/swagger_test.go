@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	_ "geeks-accelerator/oss/saas-starter-kit/internal/mid/saas-swagger/example/docs"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
+	_ "merryworld/surebank/internal/mid/saas-swagger/example/docs"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/webcontext"
 	"github.com/stretchr/testify/assert"
 )
 

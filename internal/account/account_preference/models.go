@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"database/sql/driver"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
+	"merryworld/surebank/internal/platform/web"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"

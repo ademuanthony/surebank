@@ -1,0 +1,53 @@
+{{define "title"}}Update Brand - {{ .brand.Name }}{{end}}
+{{define "style"}}
+
+{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ .urlBrandsIndex}}">Brands</a></li>
+            <li class="breadcrumb-item"><a href="{{ .urlBrandsView }}">{{ .form.Name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Update</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Update Brand</h1>
+    </div>
+
+    <form class="user" method="post" novalidate>
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-12">
+
+                        <h4 class="card-title">Brand Details</h4>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputName">Name</label>
+                            <input type="text" id="inputName"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Name" }}"
+                                   placeholder="enter name" name="Name" value="{{ .form.Name }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "Name" "validationDefaults" $.userValidationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <input id="btnSubmit" type="submit" name="action" value="Save" class="btn btn-primary"/>
+            </div>
+        </div>
+    </form>
+{{end}}
+{{define "js"}}
+
+{{end}}

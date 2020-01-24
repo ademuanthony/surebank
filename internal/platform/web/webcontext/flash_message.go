@@ -38,6 +38,7 @@ func (r FlashMsg) Response(ctx context.Context) FlashMsgResponse {
 		items = append(items, template.HTML(i))
 	}
 
+
 	return FlashMsgResponse{
 		Type:    r.Type,
 		Title:   template.HTML(r.Title),

@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
+	"merryworld/surebank/internal/platform/auth"
 	"github.com/dustin/go-humanize"
 	"strings"
 	"time"

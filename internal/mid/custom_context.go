@@ -2,7 +2,7 @@ package mid
 
 import (
 	"context"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
+	"merryworld/surebank/internal/platform/web"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"net/http"
 )

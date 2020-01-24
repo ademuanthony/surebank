@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/notify"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/notify"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/webcontext"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -38,6 +38,7 @@ func NewRepository(db *sqlx.DB, resetUrl func(string) string, notify notify.Emai
 // User represents someone with access to our system.
 type User struct {
 	ID            string          `json:"id" validate:"required,uuid" example:"d69bdef7-173f-4d29-b52c-3edc60baf6a2"`
+	BranchID	  string 		  `json:"branch_id" validate:"required,uuid" example:"d69bdef7-23r4-4d29-b52c-3edc60baf6a2"`
 	FirstName     string          `json:"first_name" validate:"required" example:"Gabi"`
 	LastName      string          `json:"last_name" validate:"required" example:"May"`
 	Email         string          `json:"email" validate:"required,email,unique" example:"gabi@geeksinthewoods.com"`
@@ -123,6 +124,7 @@ func (m *Users) Response(ctx context.Context) []*UserResponse {
 
 // UserCreateRequest contains information needed to create a new User.
 type UserCreateRequest struct {
+	BranchID		string `json:"branch_id" validate:"required" example:"717cbfd4-b228-48f6-92bc-cc054a4e13f6"`
 	FirstName       string  `json:"first_name" validate:"required" example:"Gabi"`
 	LastName        string  `json:"last_name" validate:"required" example:"May"`
 	Email           string  `json:"email" validate:"required,email,unique" example:"gabi@geeksinthewoods.com"`

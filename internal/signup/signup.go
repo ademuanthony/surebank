@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account"
+	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/user"
+	"merryworld/surebank/internal/user_account"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
@@ -42,6 +42,7 @@ func (repo *Repository) Signup(ctx context.Context, claims auth.Claims, req Sign
 
 	// UserCreateRequest contains information needed to create a new User.
 	userReq := user.UserCreateRequest{
+		BranchID: 		 "717cbfd4-b228-48f6-92bc-cc054a4e13f6", // hard-coded HQ branch id inserted during migration
 		FirstName:       req.User.FirstName,
 		LastName:        req.User.LastName,
 		Email:           req.User.Email,

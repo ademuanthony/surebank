@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"geeks-accelerator/oss/saas-starter-kit/tools/text-translator/internal/jsontranslator"
+	"merryworld/surebank/tools/text-translator/internal/jsontranslator"
 	"io/ioutil"
 	"log"
 	"os"

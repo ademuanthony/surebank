@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/tests"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/weberror"
-	"geeks-accelerator/oss/saas-starter-kit/internal/signup"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_auth"
+	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/tests"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/signup"
+	"merryworld/surebank/internal/user_auth"
 	"github.com/pborman/uuid"
 )
 

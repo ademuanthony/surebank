@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"merryworld/surebank/internal/branch"
+	"merryworld/surebank/internal/shop"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -20,26 +22,26 @@ import (
 	"syscall"
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/cmd/web-app/handlers"
-	"geeks-accelerator/oss/saas-starter-kit/internal/account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/account/account_preference"
-	"geeks-accelerator/oss/saas-starter-kit/internal/checklist"
-	"geeks-accelerator/oss/saas-starter-kit/internal/geonames"
-	"geeks-accelerator/oss/saas-starter-kit/internal/mid"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/flag"
-	img_resize "geeks-accelerator/oss/saas-starter-kit/internal/platform/img-resize"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/notify"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	template_renderer "geeks-accelerator/oss/saas-starter-kit/internal/platform/web/tmplrender"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/weberror"
-	"geeks-accelerator/oss/saas-starter-kit/internal/signup"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account/invite"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/webroute"
+	"merryworld/surebank/cmd/web-app/handlers"
+	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/checklist"
+	"merryworld/surebank/internal/geonames"
+	"merryworld/surebank/internal/mid"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/flag"
+	img_resize "merryworld/surebank/internal/platform/img-resize"
+	"merryworld/surebank/internal/platform/notify"
+	"merryworld/surebank/internal/platform/web"
+	template_renderer "merryworld/surebank/internal/platform/web/tmplrender"
+	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/signup"
+	"merryworld/surebank/internal/user"
+	"merryworld/surebank/internal/user_account"
+	"merryworld/surebank/internal/user_account/invite"
+	"merryworld/surebank/internal/user_auth"
+	"merryworld/surebank/internal/webroute"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -455,6 +457,8 @@ func main() {
 	signupRepo := signup.NewRepository(masterDb, usrRepo, usrAccRepo, accRepo)
 	inviteRepo := invite.NewRepository(masterDb, usrRepo, usrAccRepo, accRepo, webRoute.UserInviteAccept, notifyEmail, cfg.Project.SharedSecretKey)
 	chklstRepo := checklist.NewRepository(masterDb)
+	shopRepo := shop.NewRepository(masterDb)
+	branchRepo := branch.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -476,6 +480,8 @@ func main() {
 		ChecklistRepo:   chklstRepo,
 		Authenticator:   authenticator,
 		AwsSession:      awsSession,
+		ShopRepo:        shopRepo,
+		BranchRepo:		 branchRepo,
 	}
 
 	// =========================================================================

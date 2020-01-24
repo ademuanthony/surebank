@@ -57,7 +57,7 @@ For additional details regarding this tool, refer to
 ### Deployment Environments 
 
 All configuration for the deployment environments is defined in code that is located in the 
-[internal/config](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/build/cicd/internal/config) 
+[internal/config](https://gitlab.com/merryworld/surebank/tree/master/build/cicd/internal/config) 
 package. This includes configuration for the following deployment resources:
 
 * [AWS ECR Repository](https://godoc.org/gitlab.com/geeks-accelerator/oss/devops/pkg/devdeploy#AwsEcrRepository) 
@@ -119,9 +119,9 @@ environments:
 Services are generally applications that will need to be long running or continuously available. The configured services  
 are:
 
-* [web-app](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/cmd/web-app) - Publicly accessible 
+* [web-app](https://gitlab.com/merryworld/surebank/tree/master/cmd/web-app) - Publicly accessible 
 website and web application. 
-* [web-api](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/cmd/web-api) - Publicly accessible web 
+* [web-api](https://gitlab.com/merryworld/surebank/tree/master/cmd/web-api) - Publicly accessible web 
 API and documentation. 
 
 
@@ -139,7 +139,7 @@ A service is built using the defined service Dockerfile. The resulting image is 
     developers to store, manage, and deploy Docker container images. Amazon ECR is integrated with Amazon Elastic 
     Container Service (ECS) simplifying the development to production workflow. 
  
-A service is configured for deployment in [services.go](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/oss/devops/blob/master/build/cicd/internal/config/service.go).
+A service is configured for deployment in [services.go](https://gitlab.com/merryworld/surebank/oss/devops/blob/master/build/cicd/internal/config/service.go).
 Services are deployed to [AWS Fargate](https://aws.amazon.com/fargate/) based on the defined task definition. 
     
     AWS Fargate is a compute engine for Amazon ECS that allows you to run containers without having to manage servers or 
@@ -159,7 +159,7 @@ image is tagged with the go.mod hash and pushed to the projects
 
 Functions are applications that can be executed in short period of time. The configured function is:
 
-*[Datadog Log Collection](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/deployments/ddlogscollector) - 
+*[Datadog Log Collection](https://gitlab.com/merryworld/surebank/tree/master/deployments/ddlogscollector) - 
 Python script used to ship logs from AWS Cloudwatch to Datadog. 
 
 
@@ -173,7 +173,7 @@ A function is built using the defined Dockerfile. The `Dockerfile` for a functio
 The build command then uses `docker cp` to extract all files from the resulting container image that are located in 
 `/var/task`. These files are zipped and uploaded to the private AWS S3 bucket for deployment. 
 
-A function is configured for deployment in [functions.go](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/oss/devops/blob/master/build/cicd/internal/config/function.go).
+A function is configured for deployment in [functions.go](https://gitlab.com/merryworld/surebank/oss/devops/blob/master/build/cicd/internal/config/function.go).
 Functions are deployed to [AWS Lambda](https://aws.amazon.com/lambda/).
 
     AWS Lambda lets you run code without provisioning or managing servers. You pay only for the compute time you consume 
@@ -186,16 +186,16 @@ Functions are deployed to [AWS Lambda](https://aws.amazon.com/lambda/).
 _cicd_ includes a minimalistic database migration script that implements 
 [github.com/geeks-accelerator/sqlxmigrate](https://godoc.org/github.com/geeks-accelerator/sqlxmigrate). It provides 
 schema versioning and migration rollback. The schema for the entire project is defined globally and is located at 
-[internal/schema](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/issue8/datadog-lambda-func/internal/schema) 
+[internal/schema](https://gitlab.com/merryworld/surebank/tree/issue8/datadog-lambda-func/internal/schema) 
 
 The example schema package provides two separate methods for handling schema migration:
-* [Migrations](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/blob/issue8/datadog-lambda-func/internal/schema/migrations.go) -
+* [Migrations](https://gitlab.com/merryworld/surebank/blob/issue8/datadog-lambda-func/internal/schema/migrations.go) -
 List of direct SQL statements for each migration with defined version ID. A database table is created to persist 
 executed migrations. Upon run of each schema migration run, the migration logic checks the migration database table to 
 check if it’s already been executed. Thus, schema migrations are only ever executed once. Migrations are defined as a 
 function to enable complex migrations so results from query manipulated before being piped to the next query. 
 
-* [Init Schema](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/blob/issue8/datadog-lambda-func/internal/schema/init_schema.go) - 
+* [Init Schema](https://gitlab.com/merryworld/surebank/blob/issue8/datadog-lambda-func/internal/schema/init_schema.go) - 
 If you have a lot of migrations, it can be a pain to run all them. For example, when you are deploying a new instance of 
 the app into a clean database. To prevent this, use the initSchema function that will run as-if no migration was run 
 before (in a new clean database). 
@@ -208,9 +208,9 @@ Ideally migrations should be idempotent to avoid possible data loss since data c
 migration runs.
 
 Another bonus with the globally defined schema is that it enables your testing package the ability to dynamically [spin 
-up database containers](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/blob/issue8/datadog-lambda-func/internal/platform/tests/main.go#L127) 
+up database containers](https://gitlab.com/merryworld/surebank/blob/issue8/datadog-lambda-func/internal/platform/tests/main.go#L127) 
 on-demand and automatically include all the migrations. This allows the testing package to 
-[programmatically execute schema migrations](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/blob/issue8/datadog-lambda-func/internal/platform/tests/main.go#L172) 
+[programmatically execute schema migrations](https://gitlab.com/merryworld/surebank/blob/issue8/datadog-lambda-func/internal/platform/tests/main.go#L172) 
 before running any unit tests. 
 
 
@@ -221,22 +221,22 @@ One of the philosophies behind the SaaS Startup Kit is that building and deployi
 allowing you focus on what's most important, writing the business logic. Below outline the steps needed to get a 
 full build pipeline that includes both continious integration and continious deployment. 
 
-1. Configure your AWS infrastructure in [config.go](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/build/cicd/internal/config/config.go) 
+1. Configure your AWS infrastructure in [config.go](https://gitlab.com/merryworld/surebank/tree/master/build/cicd/internal/config/config.go) 
  
-2. Define your services in [service.go](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/build/cicd/internal/config/service.go) 
+2. Define your services in [service.go](https://gitlab.com/merryworld/surebank/tree/master/build/cicd/internal/config/service.go) 
 that will be deployed to AWS Fargate. This includes settings for your [AWS ECS Cluster](https://godoc.org/gitlab.com/geeks-accelerator/oss/devops/pkg/devdeploy#AwsEcsCluster), 
 the associated [AWS ECS Service](https://godoc.org/gitlab.com/geeks-accelerator/oss/devops/pkg/devdeploy#AwsEcsService) 
 and [AWS ECS Task Definition](https://godoc.org/gitlab.com/geeks-accelerator/oss/devops/pkg/devdeploy#AwsEcsTaskDefinition). 
 
-3. Define your functions in [function.go](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/build/cicd/internal/config/function.go) 
+3. Define your functions in [function.go](https://gitlab.com/merryworld/surebank/tree/master/build/cicd/internal/config/function.go) 
 that will be deployed to AWS Lambda. This includes settings for the runtime, amount of memory, and timeout.
  
-4. Ensure your [schema](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/internal/schema) is ready 
+4. Ensure your [schema](https://gitlab.com/merryworld/surebank/tree/master/internal/schema) is ready 
 for deployment. You should already be using the 
-[schema tool](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/tools/schema) for maintaining 
+[schema tool](https://gitlab.com/merryworld/surebank/tree/master/tools/schema) for maintaining 
 database schemas for local development, so no additional effort should be required for this step. 
 
-5. Update the [.gitlab-ci.yml](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/blob/master/.gitlab-ci.yml) in 
+5. Update the [.gitlab-ci.yml](https://gitlab.com/merryworld/surebank/blob/master/.gitlab-ci.yml) in 
 the project root to include the services and functions you have configured here. `.gitlab-ci.yml` will be used by GitLab 
 to determine which services and functions should be built and deployed. 
 
@@ -256,7 +256,7 @@ the install instructions for Go](http://golang.org/doc/install.html).
 
 To install _cicd_, simply run:
 ```
-$ go get -v geeks-accelerator/oss/saas-starter-kit/build/cicd
+$ go get -v merryworld/surebank/build/cicd
 ```
 
 Make sure your `PATH` includes the `$GOPATH/bin` directory so your commands can

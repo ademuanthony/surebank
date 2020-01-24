@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"strings"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/weberror"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account/invite"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/user_account"
+	"merryworld/surebank/internal/user_account/invite"
 
 	"github.com/pkg/errors"
 	"gopkg.in/go-playground/validator.v9"

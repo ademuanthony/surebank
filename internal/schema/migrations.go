@@ -6,11 +6,12 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"fmt"
+	"github.com/huandu/go-sqlbuilder"
 	"log"
 	"strings"
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/geonames"
+	"merryworld/surebank/internal/geonames"
 	"github.com/geeks-accelerator/sqlxmigrate"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -674,6 +675,477 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
+
+		// SHOP DS SB
+		// Create new table brand
+		{
+			ID:       "20200101-01",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS brand (
+						id char(36) NOT NULL,
+						name VARCHAR(256) NOT NULL,
+						logo VARCHAR(128) NOT NULL,
+						PRIMARY KEY(id),
+						CONSTRAINT UNIQUE_brand_name UNIQUE (name)
+				);`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q2 := "DROP TABLE IF EXISTS brand"
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+				return nil
+			},
+		},
+		// Create new table category
+		{
+			ID:       "20200101-02",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS category (
+						id char(36) NOT NULL,
+						name VARCHAR(256) NOT NULL,
+						PRIMARY KEY(id),
+						CONSTRAINT UNIQUE_category_name UNIQUE (name)
+				);`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q2 := "DROP TABLE IF EXISTS category"
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+				return nil
+			},
+		},
+		// Create new table product
+		{
+			ID:       "20200101-03",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS product (
+						id char(36) NOT NULL,
+						brand_id CHAR(36) REFERENCES brand(id),
+						name VARCHAR(256) NOT NULL,
+						description VARCHAR(512) NOT NULL,
+						sku VARCHAR(128) NOT NULL,
+						barcode VARCHAR(128) NOT NULL,
+						price FLOAT8 NOT NULL,
+						reorder_level INT NOT NULL,
+						image VARCHAR(128),
+						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  	updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  	archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  	created_by_id char(36) NOT NULL REFERENCES users(id),
+					  	updated_by_id char(36) NOT NULL REFERENCES users(id),
+					  	archived_by_id char(36) REFERENCES users(id),
+						PRIMARY KEY(id),
+						CONSTRAINT UNIQUE_product_name UNIQUE (name)
+				);`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q2 := "DROP TABLE IF EXISTS product"
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+				return nil
+			},
+		},
+		// Create new table product_category
+		{
+			ID:       "20200101-04",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS product_category (
+						id CHAR(36) NOT NULL,
+						product_id char(36) NOT NULL REFERENCES product(id),
+						category_id char(36) NOT NULL REFERENCES category(id),
+						PRIMARY KEY(id)
+				);`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q2 := "DROP TABLE IF EXISTS product_category"
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+				return nil
+			},
+		},
+		// Create new table stock
+		{
+			ID:       "20200101-05",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS stock (
+						id char(36) NOT NULL,
+						batch_number VARCHAR(128) NOT NULL,
+						product_id CHAR(36) NOT NULL REFERENCES product(id),
+						unit_cost_price FLOAT8 NOT NULL,
+						quantity INT NOT NULL,
+						deducted_quantity INT NOT NULL,
+						manufacture_date TIMESTAMP,
+						expiry_date TIMESTAMP,
+						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  	updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  	archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  	created_by_id char(36) NOT NULL REFERENCES users(id),
+					  	updated_by_id char(36) NOT NULL REFERENCES users(id),
+					  	archived_by_id char(36) REFERENCES users(id),
+						PRIMARY KEY(id)
+				)`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q2 := "DROP TABLE IF EXISTS stock"
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+				return nil
+			},
+		},
+		// Create new table sale
+		{
+			ID:       "20200101-06",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS sale (
+						id char(36) NOT NULL,
+						receipt_number VARCHAR(128),
+						amount FLOAT NOT NULL,
+						amount_tender FLOAT NOT NULL,
+						balance FLOAT NOT NULL,
+						customer_name VARCHAR(256),
+						phone_number VARCHAR(28),
+						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  	updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  	archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  	created_by_id char(36) NOT NULL REFERENCES users(id),
+					  	updated_by_id char(36) REFERENCES users(id),
+					  	archived_by_id char(36) REFERENCES users(id),
+						PRIMARY KEY(id)
+				);`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q2 := "DROP TABLE IF EXISTS sale"
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+				return nil
+			},
+		},
+		// Create new table sale_item
+		{
+			ID:       "20200101-07",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS sale_item (
+						id char(36) NOT NULL,
+						sale_id CHAR(36) NOT NULL REFERENCES sale(id),
+						product_id CHAR(36) NOT NULL REFERENCES product(id),
+						unit_price FLOAT8 NOT NULL,
+						unit_cost_price FLOAT8 NOT NULL,
+						stock_ids VARCHAR(512) NOT NULL,
+						PRIMARY KEY(id)
+				);`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q2 := "DROP TABLE IF EXISTS sale_item"
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+				return nil
+			},
+		},
+
+		// Surebank
+		// Create table customers.
+		{
+			ID: "20200122-01",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS customer (
+					  id char(36) NOT NULL,
+					  email varchar(200) NOT NULL,
+					  name varchar(200) NOT NULL DEFAULT '',
+					  phone_number varchar(200) NOT NULL,
+					  address varchar(256) NOT NULL,
+					  sales_rep_id char(36) NOT NULL REFERENCES users(id),
+					  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  PRIMARY KEY (id),
+					  CONSTRAINT customer_phone_number UNIQUE  (phone_number)
+					) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS customer`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
+		// Create table account.
+		{
+			ID: "20200122-02",
+			Migrate: func(tx *sql.Tx) error {
+				if err := createTypeIfNotExists(tx, "account_type", "enum('DS','SB')"); err != nil {
+					return err
+				}
+
+				q1 := `CREATE TABLE IF NOT EXISTS account (
+					  id char(36) NOT NULL,
+					  number varchar(200) NOT NULL,
+					  customer_id char(36) NOT NULL DEFAULT '' REFERENCES customer(id),
+					  account_type account_type not null,
+					  target FLOAT NOT NULL DEFAULT 0,
+					  target_info varchar(200) NOT NULL DEFAULT '',
+					  sales_rep_id char(36) NOT NULL REFERENCES users(id),
+					  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  PRIMARY KEY (id),
+					  CONSTRAINT account_number UNIQUE  (number)
+					) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS account`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
+		// Create table deposit
+		{
+			ID: "20200122-03",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS deposit (
+					  id char(36) NOT NULL,
+					  account_id char(36) NOT NULL DEFAULT '' REFERENCES account(id),
+					  amount FLOAT NOT NULL DEFAULT 0,
+					  narration varchar(200) NOT NULL DEFAULT '',
+					  sales_rep_id char(36) NOT NULL REFERENCES users(id),
+					  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  PRIMARY KEY (id)
+					) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS deposit`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
+		// Create table withdrawal
+		{
+			ID: "20200122-04",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS withdrawal (
+					  id char(36) NOT NULL,
+					  account_id char(36) NOT NULL DEFAULT '' REFERENCES account(id),
+					  amount FLOAT NOT NULL DEFAULT 0,
+					  narration varchar(200) NOT NULL DEFAULT '',
+					  sales_rep_id char(36) NOT NULL REFERENCES users(id),
+					  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  PRIMARY KEY (id)
+					) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS withdrawal`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
+		// Create new table payment
+		{
+			ID:       "20200122-05",
+			Migrate: func(tx *sql.Tx) error {
+				if err := createTypeIfNotExists(tx, "payment_method", "enum('Cash','Card','Transfer','Wallet')"); err != nil {
+					return err
+				}
+
+				q1 := `CREATE TABLE IF NOT EXISTS payment (
+						id char(36) NOT NULL,
+						sale_id CHAR(36) NOT NULL REFERENCES sale(id),
+						amount FLOAT8 NOT NULL,
+						payment_method payment_method NOT NULL,
+						sales_rep_id char(36) NOT NULL REFERENCES users(id),
+						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+						updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+						archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+						PRIMARY KEY(id)
+				);`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q2 := "DROP TABLE IF EXISTS payment"
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+
+				if err := dropTypeIfExists(tx, "payment_method"); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		// Create new branch
+		{
+			ID: "20200122-06",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS branch (
+					  id char(36) NOT NULL,
+					  name varchar(200) NOT NULL DEFAULT '',
+					  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+					  archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  PRIMARY KEY (id),
+					  CONSTRAINT branch_name UNIQUE  (name)
+					) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				q2 := `ALTER TABLE users 
+					  ADD branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id);`
+				if _, err := tx.Exec(q2); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+
+				q3 := `ALTER TABLE customer 
+					  ADD branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id);`
+				if _, err := tx.Exec(q3); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+
+				q4 := `ALTER TABLE account 
+					  ADD branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id);`
+				if _, err := tx.Exec(q4); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+
+				q5 := `ALTER TABLE stock 
+					  ADD branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id);`
+				if _, err := tx.Exec(q5); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+
+				q6 := `ALTER TABLE sale 
+					  ADD branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id);`
+				if _, err := tx.Exec(q6); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS branch`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
+		// Insert HQ brand
+		{
+			ID: "20200122-07",
+			Migrate: func(tx *sql.Tx) error {
+
+				now := time.Now().UTC().Truncate(time.Millisecond)
+				// Build the insert SQL statement.
+				query := sqlbuilder.NewInsertBuilder()
+				query.InsertInto("branch")
+				query.Cols("id", "name", "created_at")
+				query.Values("717cbfd4-b228-48f6-92bc-cc054a4e13f6", "HQ", now)
+
+				// Execute the query with the provided context.
+				sql, args := query.Build()
+				sql = db.Rebind(sql)
+
+				if _, err := db.ExecContext(ctx, sql, args...); err != nil {
+					return err
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DELETE FROM branch WHERE name = 'HQ'`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
+		// Add category ID to the product table
+		{
+			ID:       "20200123-01",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE product ADD category_id char(36) NOT NULL REFERENCES category(id);`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+
 				return nil
 			},
 		},

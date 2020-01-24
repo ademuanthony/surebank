@@ -14,6 +14,8 @@ services:
       - "5433"
     ports:
       - "5433:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
     networks:
       main:
         aliases:
@@ -68,7 +70,7 @@ services:
       args:
         name: 'web-app'
     volumes:
-      - ./:/go/src/gitlab.com/geeks-accelerator/oss/saas-starter-kit
+      - ./:/go/src/gitlab.com/merryworld/surebank
     ports:
       - 3000:3000 # WEB APP
       - 4000:4000 # DEBUG API
@@ -110,7 +112,7 @@ services:
       args:
         name: 'web-api'
     volumes:
-      - ./:/go/src/gitlab.com/geeks-accelerator/oss/saas-starter-kit
+      - ./:/go/src/gitlab.com/merryworld/surebank
     ports:
       - 3001:3001 # WEB API
       - 4001:4001 # DEBUG API

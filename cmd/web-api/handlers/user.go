@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/weberror"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_auth"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/user"
+	"merryworld/surebank/internal/user_auth"
 
 	"github.com/gorilla/schema"
 	"github.com/pkg/errors"

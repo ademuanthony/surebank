@@ -3,10 +3,10 @@ package user_auth
 import (
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/account/account_preference"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account"
+	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/user"
+	"merryworld/surebank/internal/user_account"
 	"github.com/jmoiron/sqlx"
 )
 

@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"testing"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/mid"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/tests"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/weberror"
+	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/mid"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/tests"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/weberror"
 
 	"github.com/pborman/uuid"
 )

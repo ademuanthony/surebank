@@ -22,11 +22,11 @@ _schema_ is a command line tool for local development that executes database mig
 ## Overview
 
 The command line tool that executes the database migrations defined in 
-[internal/schema](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/internal/schema). This tool 
+[internal/schema](https://gitlab.com/merryworld/surebank/tree/master/internal/schema). This tool 
 should be used to test and deploy schema migrations against your local development database (hosted by docker). 
 
 For additional details regarding this tool, refer to 
-[build/cicd](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/build/cicd#schema-migrations)
+[build/cicd](https://gitlab.com/merryworld/surebank/tree/master/build/cicd#schema-migrations)
 
 
 
@@ -57,9 +57,9 @@ $ go run main.go [global options] command [command options] [arguments...]
 ### Commands
 
 * `migrate` - Executes the database migrations defined in 
-[internal/schema](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/internal/schema) for local 
+[internal/schema](https://gitlab.com/merryworld/surebank/tree/master/internal/schema) for local 
 development. Default values are set for all command options that target the Postgres database running via 
-[docker compose](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/blob/master/docker-compose.yaml#L11). 
+[docker compose](https://gitlab.com/merryworld/surebank/blob/master/docker-compose.yaml#L11). 
 Environment variables can be set as an alternative to passing in the command line options. 
    
     ```bash

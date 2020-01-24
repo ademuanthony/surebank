@@ -4,26 +4,28 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"merryworld/surebank/internal/branch"
+	"merryworld/surebank/internal/shop"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/account/account_preference"
-	"geeks-accelerator/oss/saas-starter-kit/internal/checklist"
-	"geeks-accelerator/oss/saas-starter-kit/internal/geonames"
-	"geeks-accelerator/oss/saas-starter-kit/internal/mid"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/weberror"
-	"geeks-accelerator/oss/saas-starter-kit/internal/signup"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account/invite"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/webroute"
+	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/checklist"
+	"merryworld/surebank/internal/geonames"
+	"merryworld/surebank/internal/mid"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/signup"
+	"merryworld/surebank/internal/user"
+	"merryworld/surebank/internal/user_account"
+	"merryworld/surebank/internal/user_account/invite"
+	"merryworld/surebank/internal/user_auth"
+	"merryworld/surebank/internal/webroute"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/ikeikeikeike/go-sitemap-generator/v2/stm"
@@ -52,6 +54,8 @@ type AppContext struct {
 	InviteRepo        *invite.Repository
 	ChecklistRepo     *checklist.Repository
 	GeoRepo           *geonames.Repository
+	ShopRepo 		  *shop.Repository
+	BranchRepo 		  *branch.Repository
 	Authenticator     *auth.Authenticator
 	StaticDir         string
 	TemplateDir       string
@@ -135,6 +139,64 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/checklists/create", p.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/checklists", p.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
+	// Brands
+	branches := Branches{
+		Repo:     appCtx.BranchRepo,
+		Redis:    appCtx.Redis,
+		Renderer: appCtx.Renderer,
+	}
+	app.Handle("POST", "/branches/:branch_id/update", branches.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/branches/:branch_id/update", branches.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/branches/:branch_id", branches.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/branches/:branch_id", branches.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/branches/create", branches.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/branches/create", branches.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/branches", branches.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+
+
+	// Register shop management pages
+	// Brands
+	brands := Brands{
+		ShopRepo: appCtx.ShopRepo,
+		Redis:    appCtx.Redis,
+		Renderer: appCtx.Renderer,
+	}
+	app.Handle("POST", "/shop/brands/:brand_id/update", brands.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/brands/:brand_id/update", brands.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/shop/brands/:brand_id", brands.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/shop/brands/:brand_id", brands.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/shop/brands/create", brands.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/brands/create", brands.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/brands", brands.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+
+	// Category
+	cat := Categories{
+		ShopRepo: appCtx.ShopRepo,
+		Redis:    appCtx.Redis,
+		Renderer: appCtx.Renderer,
+	}
+	app.Handle("POST", "/shop/categories/:category_id/update", cat.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/categories/:category_id/update", cat.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/shop/categories/:category_id", cat.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/shop/categories/:category_id", cat.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/shop/categories/create", cat.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/categories/create", cat.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/categories", cat.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+
+	// Products
+	prod := Products{
+		ShopRepo: appCtx.ShopRepo,
+		Redis:    appCtx.Redis,
+		Renderer: appCtx.Renderer,
+	}
+	app.Handle("POST", "/shop/products/:product_id/update", prod.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/products/:product_id/update", prod.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/shop/products/:product_id", prod.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/shop/products/:product_id", prod.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/shop/products/create", prod.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/products/create", prod.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/shop/products", prod.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+
 	// Register user management pages.
 	us := Users{
 		UserRepo:        appCtx.UserRepo,
@@ -142,6 +204,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		AuthRepo:        appCtx.AuthRepo,
 		InviteRepo:      appCtx.InviteRepo,
 		GeoRepo:         appCtx.GeoRepo,
+		BranchRepo: 	 appCtx.BranchRepo,
 		Redis:           appCtx.Redis,
 		Renderer:        appCtx.Renderer,
 	}

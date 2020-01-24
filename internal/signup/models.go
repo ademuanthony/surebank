@@ -3,9 +3,9 @@ package signup
 import (
 	"context"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account"
+	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/user"
+	"merryworld/surebank/internal/user_account"
 	"github.com/jmoiron/sqlx"
 )
 

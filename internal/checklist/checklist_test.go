@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/tests"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/tests"
 	"github.com/google/go-cmp/cmp"
 	"github.com/huandu/go-sqlbuilder"
 )

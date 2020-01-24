@@ -14,7 +14,7 @@ third-party partners of your SaaS to programmatically integrate. To help show th
 the pages in the web app and similar endpoints in the web API, we have created this diagram below. Since it is 
 very detailed, you can click on the image to see the larger version. 
 
-[![Diagram of pages in web app and endpoints in web API](resources/images/saas-starter-kit-pages-and-endpoints-800x600.png)](https://gitlab.com/geeks-accelerator/oss/saas-starter-kit/tree/master/resources/images/saas-starter-kit-pages-and-endpoints-800x600.png)
+[![Diagram of pages in web app and endpoints in web API](resources/images/saas-starter-kit-pages-and-endpoints-800x600.png)](https://gitlab.com/merryworld/surebank/tree/master/resources/images/saas-starter-kit-pages-and-endpoints-800x600.png)
 
 This web-api service is not directly used by the web-app service to prevent locking the functionally required for 
 internally development of the web-app service to the same functionality exposed to clients via this web-api service. 

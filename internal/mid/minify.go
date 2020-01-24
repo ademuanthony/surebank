@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
+	"merryworld/surebank/internal/platform/web"
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/css"
 	"github.com/tdewolff/minify/html"

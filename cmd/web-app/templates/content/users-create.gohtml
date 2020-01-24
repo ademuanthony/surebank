@@ -58,6 +58,21 @@
                                    id="inputPasswordConfirm" placeholder="" name="PasswordConfirm" value="{{ .form.PasswordConfirm }}" required>
                             {{template "invalid-feedback" dict "fieldName" "UserCreateRequest.PasswordConfirm" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
                         </div>
+
+                        <div class="form-group">
+                            <label for="selectUserBranch">Branch</label>
+                            <div class="form-control-select-wrapper">
+                                    <select id="selectUserBranch" name="Branch" placeholder="Branch" required
+                                            class="form-control form-control-select-box {{ ValidationFieldClass $.validationErrors "Branch" }}">
+                                        <option value="">Branch</option>
+                                        {{ range $i := $.branches }}
+                                            <option value="{{ $i.ID }}" {{ if eq $.form.BranchID $i.ID }}selected="selected"{{ end }}>{{ $i.Name }}</option>
+                                        {{ end }}
+                                    </select>
+                                    {{template "invalid-feedback" dict "fieldName" "BranchID" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                                </div>
+                        </div>
+
                         <div class="form-group">
                             <label for="inputRoles">Roles</label>
                             <span class="help-block "><small>- Select at least one role.</small></span>

@@ -3,21 +3,22 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"merryworld/surebank/internal/branch"
 	"net/http"
 	"strings"
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/geonames"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/datatable"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/weberror"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_account/invite"
-	"geeks-accelerator/oss/saas-starter-kit/internal/user_auth"
+	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/geonames"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/datatable"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/user"
+	"merryworld/surebank/internal/user_account"
+	"merryworld/surebank/internal/user_account/invite"
+	"merryworld/surebank/internal/user_auth"
 
 	"github.com/dustin/go-humanize/english"
 	"github.com/gorilla/schema"
@@ -34,6 +35,7 @@ type Users struct {
 	AuthRepo        *user_auth.Repository
 	InviteRepo      *invite.Repository
 	GeoRepo         *geonames.Repository
+	BranchRepo 		*branch.Repository
 	MasterDB        *sqlx.DB
 	Redis           *redis.Client
 	Renderer        web.Renderer
@@ -286,6 +288,13 @@ func (h *Users) Create(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	}
 
 	data["timezones"], err = h.GeoRepo.ListTimezones(ctx)
+	if err != nil {
+		return err
+	}
+
+	data["branches"], err = h.BranchRepo.Find(ctx, claims, branch.FindRequest{
+		Order:           []string{"name"},
+	})
 	if err != nil {
 		return err
 	}

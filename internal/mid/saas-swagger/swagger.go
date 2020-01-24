@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/weberror"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/weberror"
 	"github.com/geeks-accelerator/files"
 	"github.com/geeks-accelerator/swag"
 	"github.com/pborman/uuid"

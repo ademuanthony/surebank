@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"time"
 
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/auth"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/notify"
-	"geeks-accelerator/oss/saas-starter-kit/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/notify"
+	"merryworld/surebank/internal/platform/web/webcontext"
 	"github.com/huandu/go-sqlbuilder"
 	"github.com/jmoiron/sqlx"
 	"github.com/pborman/uuid"
@@ -328,6 +328,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req User
 
 	u := User{
 		ID:           uuid.NewRandom().String(),
+		BranchID:	  req.BranchID,
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		Email:        req.Email,
@@ -341,8 +342,8 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req User
 	// Build the insert SQL statement.
 	query := sqlbuilder.NewInsertBuilder()
 	query.InsertInto(userTableName)
-	query.Cols("id", "first_name", "last_name", "email", "password_hash", "password_salt", "timezone", "created_at", "updated_at")
-	query.Values(u.ID, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.PasswordSalt, u.Timezone, u.CreatedAt, u.UpdatedAt)
+	query.Cols("id", "branch_id", "first_name", "last_name", "email", "password_hash", "password_salt", "timezone", "created_at", "updated_at")
+	query.Values(u.ID, u.BranchID, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.PasswordSalt, u.Timezone, u.CreatedAt, u.UpdatedAt)
 
 	// Execute the query with the provided context.
 	sql, args := query.Build()
