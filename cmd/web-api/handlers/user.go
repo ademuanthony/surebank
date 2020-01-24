@@ -500,7 +500,7 @@ func (h *Users) Token(ctx context.Context, w http.ResponseWriter, r *http.Reques
 			decoder.IgnoreUnknownKeys(true)
 
 			var req user_auth.OAuth2PasswordRequest
-			if err := decoder.Decode(&req, r.PostForm); err != nil {
+			if err := web.Decode(ctx, r, &req); err != nil {
 				if _, ok := errors.Cause(err).(*weberror.Error); !ok {
 					err = weberror.NewError(ctx, err, http.StatusBadRequest)
 				}

@@ -31,9 +31,9 @@ type Customer struct {
 	Address     string    `boil:"address" json:"address" toml:"address" yaml:"address"`
 	SalesRepID  string    `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
 	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt   null.Time `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
 	ArchivedAt  null.Time `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
 	BranchID    string    `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
+	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *customerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L customerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -47,9 +47,9 @@ var CustomerColumns = struct {
 	Address     string
 	SalesRepID  string
 	CreatedAt   string
-	UpdatedAt   string
 	ArchivedAt  string
 	BranchID    string
+	UpdatedAt   string
 }{
 	ID:          "id",
 	Email:       "email",
@@ -58,9 +58,9 @@ var CustomerColumns = struct {
 	Address:     "address",
 	SalesRepID:  "sales_rep_id",
 	CreatedAt:   "created_at",
-	UpdatedAt:   "updated_at",
 	ArchivedAt:  "archived_at",
 	BranchID:    "branch_id",
+	UpdatedAt:   "updated_at",
 }
 
 // Generated where
@@ -73,9 +73,9 @@ var CustomerWhere = struct {
 	Address     whereHelperstring
 	SalesRepID  whereHelperstring
 	CreatedAt   whereHelpertime_Time
-	UpdatedAt   whereHelpernull_Time
 	ArchivedAt  whereHelpernull_Time
 	BranchID    whereHelperstring
+	UpdatedAt   whereHelpertime_Time
 }{
 	ID:          whereHelperstring{field: "\"customer\".\"id\""},
 	Email:       whereHelperstring{field: "\"customer\".\"email\""},
@@ -84,9 +84,9 @@ var CustomerWhere = struct {
 	Address:     whereHelperstring{field: "\"customer\".\"address\""},
 	SalesRepID:  whereHelperstring{field: "\"customer\".\"sales_rep_id\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"customer\".\"created_at\""},
-	UpdatedAt:   whereHelpernull_Time{field: "\"customer\".\"updated_at\""},
 	ArchivedAt:  whereHelpernull_Time{field: "\"customer\".\"archived_at\""},
 	BranchID:    whereHelperstring{field: "\"customer\".\"branch_id\""},
+	UpdatedAt:   whereHelpertime_Time{field: "\"customer\".\"updated_at\""},
 }
 
 // CustomerRels is where relationship names are stored.
@@ -116,8 +116,8 @@ func (*customerR) NewStruct() *customerR {
 type customerL struct{}
 
 var (
-	customerAllColumns            = []string{"id", "email", "name", "phone_number", "address", "sales_rep_id", "created_at", "updated_at", "archived_at", "branch_id"}
-	customerColumnsWithoutDefault = []string{"id", "email", "phone_number", "address", "sales_rep_id", "created_at", "updated_at", "archived_at"}
+	customerAllColumns            = []string{"id", "email", "name", "phone_number", "address", "sales_rep_id", "created_at", "archived_at", "branch_id", "updated_at"}
+	customerColumnsWithoutDefault = []string{"id", "email", "phone_number", "address", "sales_rep_id", "created_at", "archived_at", "updated_at"}
 	customerColumnsWithDefault    = []string{"name", "branch_id"}
 	customerPrimaryKeyColumns     = []string{"id"}
 )

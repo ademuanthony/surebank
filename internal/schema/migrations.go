@@ -1149,6 +1149,28 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		// Customer UpdatedAt NOT NULL
+		{
+			ID:       "20200125-01",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE customer DROP COLUMN updated_at;`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				q2 := `ALTER TABLE customer ADD updated_at TIMESTAMP WITH TIME ZONE NOT NULL;`
+
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
 	}
 }
 

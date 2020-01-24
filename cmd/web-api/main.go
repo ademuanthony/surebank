@@ -7,6 +7,7 @@ import (
 	"expvar"
 	"fmt"
 	"log"
+	"merryworld/surebank/internal/customer"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -451,6 +452,7 @@ func main() {
 	signupRepo := signup.NewRepository(masterDb, usrRepo, usrAccRepo, accRepo)
 	inviteRepo := invite.NewRepository(masterDb, usrRepo, usrAccRepo, accRepo, webRoute.UserInviteAccept, notifyEmail, cfg.Project.SharedSecretKey)
 	chklstRepo := checklist.NewRepository(masterDb)
+	customerRepo := customer.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -465,6 +467,7 @@ func main() {
 		SignupRepo:      signupRepo,
 		InviteRepo:      inviteRepo,
 		ChecklistRepo:   chklstRepo,
+		CustomerRepo:    customerRepo,
 		Authenticator:   authenticator,
 	}
 

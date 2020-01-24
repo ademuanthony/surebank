@@ -28,6 +28,7 @@ require (
 	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
 	github.com/ikeikeikeike/go-sitemap-generator/v2 v2.0.2
 	github.com/jmoiron/sqlx v1.2.0
+	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.3.0
 	github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e // indirect
@@ -40,6 +41,7 @@ require (
 	github.com/pkg/errors v0.9.0
 	github.com/sethgrid/pester v0.0.0-20190127155807-68a33a018ad0
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
+	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.4.0
 	github.com/sudo-suhas/symcrypto v1.0.0
 	github.com/tdewolff/minify v2.3.6+incompatible

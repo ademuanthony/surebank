@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"log"
+	"merryworld/surebank/internal/customer"
 	"net/http"
 	"os"
 
@@ -37,6 +38,7 @@ type AppContext struct {
 	SignupRepo        *signup.Repository
 	InviteRepo        *invite.Repository
 	ChecklistRepo     *checklist.Repository
+	CustomerRepo 	  *customer.Repository
 	Authenticator     *auth.Authenticator
 	PreAppMiddleware  []web.Middleware
 	PostAppMiddleware []web.Middleware
@@ -129,6 +131,17 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("PATCH", "/v1/checklists", p.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("PATCH", "/v1/checklists/archive", p.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("DELETE", "/v1/checklists/:id", p.Delete, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+
+	// Register customer.
+	cus := Customers{
+		Repository: appCtx.CustomerRepo,
+	}
+	app.Handle("GET", "/v1/customers", cus.Find, mid.AuthenticateHeader(appCtx.Authenticator))
+	app.Handle("POST", "/v1/customers", cus.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/v1/customers/:id", cus.Read, mid.AuthenticateHeader(appCtx.Authenticator))
+	app.Handle("PATCH", "/v1/customers", cus.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("PATCH", "/v1/customers/archive", cus.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("DELETE", "/v1/customers/:id", cus.Delete, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 
 	// Register swagger documentation.
 	// TODO: Add authentication. Current authenticator requires an Authorization header
