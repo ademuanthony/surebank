@@ -30,7 +30,7 @@ type Branch struct {
 	ArchivedAt *time.Time    `json:"archived_at,omitempty" truss:"api-hide"`
 }
 
-func fromModel(rec *models.Branch) *Branch {
+func FromModel(rec *models.Branch) *Branch {
 	b := &Branch{
 		ID:         rec.ID,
 		Name:       rec.Name,

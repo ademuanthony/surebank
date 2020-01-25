@@ -55,7 +55,7 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	var result Customers
 	for _, rec := range customerSlice {
-		result = append(result, fromModel(rec))
+		result = append(result, FromModel(rec))
 	}
 
 	return result, nil
@@ -68,7 +68,7 @@ func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id str
 		return nil, err
 	}
 
-	return fromModel(branchModel), nil
+	return FromModel(branchModel), nil
 }
 
 // Create inserts a new customer into the database.
@@ -76,11 +76,6 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.Create")
 	defer span.Finish()
 	if claims.Audience == "" {
-		return nil, errors.WithStack(ErrForbidden)
-	}
-
-	// Admin users can update customer they have access to.
-	if !claims.HasRole(auth.RoleAdmin) {
 		return nil, errors.WithStack(ErrForbidden)
 	}
 

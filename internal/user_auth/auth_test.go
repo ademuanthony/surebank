@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"merryworld/surebank/internal/account"
-	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/tenant"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/tests"
 	"merryworld/surebank/internal/user"
@@ -81,7 +81,7 @@ func TestAuthenticate(t *testing.T) {
 			// Add 30 minutes to now to simulate time passing.
 			now = now.Add(time.Minute * 30)
 
-			acc2, err := account.MockAccount(ctx, test.MasterDB, now)
+			acc2, err := tenant.MockAccount(ctx, test.MasterDB, now)
 			if err != nil {
 				t.Log("\t\tGot :", err)
 				t.Fatalf("\t%s\tCreate second account failed.", tests.Failed)
@@ -331,7 +331,7 @@ func TestSwitchAccount(t *testing.T) {
 
 			// Create the second account.
 			now = now.Add(time.Minute)
-			acc2, err := account.MockAccount(ctx, test.MasterDB, now)
+			acc2, err := tenant.MockAccount(ctx, test.MasterDB, now)
 			if err != nil {
 				t.Log("\t\tGot :", err)
 				t.Fatalf("\t%s\tCreate second account failed.", tests.Failed)
@@ -350,7 +350,7 @@ func TestSwitchAccount(t *testing.T) {
 
 			// Create the third account.
 			now = now.Add(time.Minute)
-			acc3, err := account.MockAccount(ctx, test.MasterDB, now)
+			acc3, err := tenant.MockAccount(ctx, test.MasterDB, now)
 			if err != nil {
 				t.Log("\t\tGot :", err)
 				t.Fatalf("\t%s\tCreate third account failed.", tests.Failed)
@@ -392,7 +392,7 @@ func TestSwitchAccount(t *testing.T) {
 
 		// Create the second account and don't associate it with the root user.
 		now = now.Add(time.Minute)
-		acc2, err := account.MockAccount(ctx, test.MasterDB, now)
+		acc2, err := tenant.MockAccount(ctx, test.MasterDB, now)
 		if err != nil {
 			t.Log("\t\tGot :", err)
 			t.Fatalf("\t%s\tCreate second account failed.", tests.Failed)
@@ -417,7 +417,7 @@ func TestSwitchAccount(t *testing.T) {
 
 		// Create the second account.
 		now = now.Add(time.Minute)
-		acc2, err := account.MockAccount(ctx, test.MasterDB, now)
+		acc2, err := tenant.MockAccount(ctx, test.MasterDB, now)
 		if err != nil {
 			t.Log("\t\tGot :", err)
 			t.Fatalf("\t%s\tCreate second account failed.", tests.Failed)
@@ -436,7 +436,7 @@ func TestSwitchAccount(t *testing.T) {
 
 		// Create the third account.
 		now = now.Add(time.Minute)
-		acc3, err := account.MockAccount(ctx, test.MasterDB, now)
+		acc3, err := tenant.MockAccount(ctx, test.MasterDB, now)
 		if err != nil {
 			t.Log("\t\tGot :", err)
 			t.Fatalf("\t%s\tCreate third account failed.", tests.Failed)

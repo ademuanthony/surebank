@@ -7,6 +7,7 @@ import (
 	"expvar"
 	"fmt"
 	"log"
+	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"net"
 	"net/http"
@@ -21,8 +22,6 @@ import (
 
 	"merryworld/surebank/cmd/web-api/docs"
 	"merryworld/surebank/cmd/web-api/handlers"
-	"merryworld/surebank/internal/account"
-	"merryworld/surebank/internal/account/account_preference"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/mid"
 	"merryworld/surebank/internal/platform/auth"
@@ -30,6 +29,8 @@ import (
 	"merryworld/surebank/internal/platform/notify"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/signup"
+	"merryworld/surebank/internal/tenant"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"
 	"merryworld/surebank/internal/user_account/invite"
@@ -446,13 +447,14 @@ func main() {
 
 	usrRepo := user.NewRepository(masterDb, webRoute.UserResetPassword, notifyEmail, cfg.Project.SharedSecretKey)
 	usrAccRepo := user_account.NewRepository(masterDb)
-	accRepo := account.NewRepository(masterDb)
+	accRepo := tenant.NewRepository(masterDb)
 	accPrefRepo := account_preference.NewRepository(masterDb)
 	authRepo := user_auth.NewRepository(masterDb, authenticator, usrRepo, usrAccRepo, accPrefRepo)
 	signupRepo := signup.NewRepository(masterDb, usrRepo, usrAccRepo, accRepo)
 	inviteRepo := invite.NewRepository(masterDb, usrRepo, usrAccRepo, accRepo, webRoute.UserInviteAccept, notifyEmail, cfg.Project.SharedSecretKey)
 	chklstRepo := checklist.NewRepository(masterDb)
 	customerRepo := customer.NewRepository(masterDb)
+	accountRepo := account.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -461,13 +463,14 @@ func main() {
 		Redis:           redisClient,
 		UserRepo:        usrRepo,
 		UserAccountRepo: usrAccRepo,
-		AccountRepo:     accRepo,
+		RenantRepo:      accRepo,
 		AccountPrefRepo: accPrefRepo,
 		AuthRepo:        authRepo,
 		SignupRepo:      signupRepo,
 		InviteRepo:      inviteRepo,
 		ChecklistRepo:   chklstRepo,
 		CustomerRepo:    customerRepo,
+		AccountRepo:     accountRepo,
 		Authenticator:   authenticator,
 	}
 

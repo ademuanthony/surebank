@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/user"

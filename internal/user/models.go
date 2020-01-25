@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"merryworld/surebank/internal/postgres/models"
 	"strconv"
 	"strings"
 	"time"
@@ -49,6 +50,27 @@ type User struct {
 	CreatedAt     time.Time       `json:"created_at"`
 	UpdatedAt     time.Time       `json:"updated_at"`
 	ArchivedAt    *pq.NullTime    `json:"archived_at,omitempty"`
+}
+
+func FromModel(usr *models.User) *User {
+	u := &User{
+		ID:            usr.ID,
+		BranchID:      usr.BranchID,
+		FirstName:     usr.FirstName,
+		LastName:      usr.LastName,
+		Email:         usr.Email,
+		CreatedAt:     usr.CreatedAt,
+	}
+
+	if usr.Timezone.Valid {
+		u.Timezone = &usr.Timezone.String
+	}
+
+	if usr.UpdatedAt.Valid {
+		u.UpdatedAt = usr.UpdatedAt.Time
+	}
+
+	return u
 }
 
 // UserResponse represents someone with access to our system that is returned for display.

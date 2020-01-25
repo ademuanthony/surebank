@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/mid"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/tests"
@@ -83,7 +83,7 @@ func TestAccountCRUDAdmin(t *testing.T) {
 		}
 		t.Logf("\t%s\tReceived valid status code of %d.", tests.Success, w.Code)
 
-		var actual account.AccountResponse
+		var actual tenant.AccountResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &actual); err != nil {
 			t.Logf("\t\tGot error : %+v", err)
 			t.Fatalf("\t%s\tDecode response body failed.", tests.Failed)
@@ -114,7 +114,7 @@ func TestAccountCRUDAdmin(t *testing.T) {
 			"signup_user_id": &tr.Account.SignupUserID.String,
 		}
 
-		var expected account.AccountResponse
+		var expected tenant.AccountResponse
 		if err := decodeMapToStruct(expectedMap, &expected); err != nil {
 			t.Logf("\t\tGot error : %+v\nActual results to format expected : \n", err)
 			printResultMap(ctx, w.Body.Bytes()) // used to help format expectedMap
@@ -219,7 +219,7 @@ func TestAccountCRUDAdmin(t *testing.T) {
 			fmt.Sprintf("Update %d w/role %s", expectedStatus, tr.Role),
 			http.MethodPatch,
 			"/v1/accounts",
-			account.AccountUpdateRequest{
+			tenant.AccountUpdateRequest{
 				ID:   tr.Account.ID,
 				Name: &newName,
 			},
@@ -307,7 +307,7 @@ func TestAccountCRUDUser(t *testing.T) {
 		}
 		t.Logf("\t%s\tReceived valid status code of %d.", tests.Success, w.Code)
 
-		var actual account.AccountResponse
+		var actual tenant.AccountResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &actual); err != nil {
 			t.Logf("\t\tGot error : %+v", err)
 			t.Fatalf("\t%s\tDecode response body failed.", tests.Failed)
@@ -338,7 +338,7 @@ func TestAccountCRUDUser(t *testing.T) {
 			"signup_user_id": &tr.Account.SignupUserID.String,
 		}
 
-		var expected account.AccountResponse
+		var expected tenant.AccountResponse
 		if err := decodeMapToStruct(expectedMap, &expected); err != nil {
 			t.Logf("\t\tGot error : %+v\nActual results to format expected : \n", err)
 			printResultMap(ctx, w.Body.Bytes()) // used to help format expectedMap
@@ -443,7 +443,7 @@ func TestAccountCRUDUser(t *testing.T) {
 			fmt.Sprintf("Update %d w/role %s", expectedStatus, tr.Role),
 			http.MethodPatch,
 			"/v1/accounts",
-			account.AccountUpdateRequest{
+			tenant.AccountUpdateRequest{
 				ID:   tr.Account.ID,
 				Name: &newName,
 			},
@@ -488,12 +488,12 @@ func TestAccountUpdate(t *testing.T) {
 	{
 		expectedStatus := http.StatusBadRequest
 
-		invalidStatus := account.AccountStatus("invalid status")
+		invalidStatus := tenant.AccountStatus("invalid status")
 		rt := requestTest{
 			fmt.Sprintf("Update %d w/role %s using invalid data", expectedStatus, tr.Role),
 			http.MethodPatch,
 			"/v1/accounts",
-			account.AccountUpdateRequest{
+			tenant.AccountUpdateRequest{
 				ID:     tr.Account.ID,
 				Status: &invalidStatus,
 			},

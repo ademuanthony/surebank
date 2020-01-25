@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/platform/notify"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/user"
@@ -21,14 +21,14 @@ type Repository struct {
 	DbConn      *sqlx.DB
 	User        *user.Repository
 	UserAccount *user_account.Repository
-	Account     *account.Repository
+	Account     *tenant.Repository
 	ResetUrl    func(string) string
 	Notify      notify.Email
 	secretKey   string
 }
 
 // NewRepository creates a new Repository that defines dependencies for User Invite.
-func NewRepository(db *sqlx.DB, user *user.Repository, userAccount *user_account.Repository, account *account.Repository,
+func NewRepository(db *sqlx.DB, user *user.Repository, userAccount *user_account.Repository, account *tenant.Repository,
 	resetUrl func(string) string, notify notify.Email, secretKey string) *Repository {
 	return &Repository{
 		DbConn:      db,

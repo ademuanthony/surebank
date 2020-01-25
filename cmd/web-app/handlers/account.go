@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"merryworld/surebank/internal/account"
-	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/tenant"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/geonames"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
@@ -20,7 +20,7 @@ import (
 
 // Account represents the Account API method handler set.
 type Account struct {
-	AccountRepo     *account.Repository
+	AccountRepo     *tenant.Repository
 	AccountPrefRepo *account_preference.Repository
 	AuthRepo        *user_auth.Repository
 	GeoRepo         *geonames.Repository
@@ -57,7 +57,7 @@ func (h *Account) View(ctx context.Context, w http.ResponseWriter, r *http.Reque
 }
 
 type AccountUpdateRequest struct {
-	account.AccountUpdateRequest
+	tenant.AccountUpdateRequest
 	PreferenceDatetimeFormat string
 	PreferenceDateFormat     string
 	PreferenceTimeFormat     string
@@ -274,7 +274,7 @@ func (h *Account) Update(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 	data["exampleDisplayTime"] = web.NewTimeResponse(ctx, time.Now().UTC())
 
-	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(account.AccountUpdateRequest{})); ok {
+	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(tenant.AccountUpdateRequest{})); ok {
 		data["validationDefaults"] = verr.(*weberror.Error)
 	}
 

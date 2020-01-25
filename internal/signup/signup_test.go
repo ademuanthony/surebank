@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"merryworld/surebank/internal/account"
-	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/tenant"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/tests"
 	"merryworld/surebank/internal/user"
@@ -33,7 +33,7 @@ func testMain(m *testing.M) int {
 
 	userRepo := user.MockRepository(test.MasterDB)
 	userAccRepo := user_account.NewRepository(test.MasterDB)
-	accRepo := account.NewRepository(test.MasterDB)
+	accRepo := tenant.NewRepository(test.MasterDB)
 
 	repo = NewRepository(test.MasterDB, userRepo, userAccRepo, accRepo)
 

@@ -6,17 +6,18 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"fmt"
-	"github.com/huandu/go-sqlbuilder"
 	"log"
 	"strings"
 	"time"
 
-	"merryworld/surebank/internal/geonames"
 	"github.com/geeks-accelerator/sqlxmigrate"
+	"github.com/huandu/go-sqlbuilder"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sethgrid/pester"
+
+	"merryworld/surebank/internal/geonames"
 )
 
 // migrationList returns a list of migrations to be executed. If the id of the
@@ -1112,8 +1113,8 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				// Build the insert SQL statement.
 				query := sqlbuilder.NewInsertBuilder()
 				query.InsertInto("branch")
-				query.Cols("id", "name", "created_at")
-				query.Values("717cbfd4-b228-48f6-92bc-cc054a4e13f6", "HQ", now)
+				query.Cols("id", "name", "created_at", "updated_at")
+				query.Values("717cbfd4-b228-48f6-92bc-cc054a4e13f6", "HQ", now, now)
 
 				// Execute the query with the provided context.
 				sql, args := query.Build()
@@ -1171,6 +1172,29 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		// Account UpdatedAt NOT NULL
+		{
+			ID:       "20200125-02",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE account DROP COLUMN updated_at;`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				q2 := `ALTER TABLE account ADD updated_at TIMESTAMP WITH TIME ZONE NOT NULL;`
+
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
+
 	}
 }
 

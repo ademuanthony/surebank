@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/mid"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/tests"
@@ -546,7 +546,7 @@ func TestUserAccountCRUDUser(t *testing.T) {
 		expected := weberror.ErrorResponse{
 			StatusCode: expectedStatus,
 			Error:      http.StatusText(expectedStatus),
-			Details:    account.ErrForbidden.Error(),
+			Details:    tenant.ErrForbidden.Error(),
 			StackTrace: actual.StackTrace,
 		}
 

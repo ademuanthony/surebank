@@ -3,7 +3,7 @@ package user_auth
 import (
 	"time"
 
-	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"

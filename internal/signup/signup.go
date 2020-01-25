@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/user"
@@ -26,7 +26,7 @@ func (repo *Repository) Signup(ctx context.Context, claims auth.Claims, req Sign
 	ctx = webcontext.ContextAddUniqueValue(ctx, req.User, "Email", uniqEmail)
 
 	// Validate the account name is unique in the database.
-	uniqName, err := account.UniqueName(ctx, repo.DbConn, req.Account.Name, "")
+	uniqName, err := tenant.UniqueName(ctx, repo.DbConn, req.Account.Name, "")
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +57,8 @@ func (repo *Repository) Signup(ctx context.Context, claims auth.Claims, req Sign
 		return nil, err
 	}
 
-	accountStatus := account.AccountStatus_Active
-	accountReq := account.AccountCreateRequest{
+	accountStatus := tenant.AccountStatus_Active
+	accountReq := tenant.AccountCreateRequest{
 		Name:          req.Account.Name,
 		Address1:      req.Account.Address1,
 		Address2:      req.Account.Address2,

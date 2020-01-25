@@ -10,6 +10,165 @@
     },
     "paths": {
         "/accounts": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Find returns the existing accounts in the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "account"
+                ],
+                "summary": "List accounts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter string, example: number = 'SB10000001'",
+                        "name": "where",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order columns separated by comma, example: created_at desc",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit, example: 10",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset, example: 20",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Included Archived, example: false",
+                        "name": "include-archived",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Included Customer info, example: false",
+                        "name": "include-customer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Included Branch info, example: false",
+                        "name": "include-branch",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Included Sale rep info, example: false",
+                        "name": "include-sales-rep",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/account.Response"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Create inserts a new account into the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "account"
+                ],
+                "summary": "Create new account.",
+                "parameters": [
+                    {
+                        "description": "Account details",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/account.CreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/account.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "patch": {
                 "security": [
                     {
@@ -35,7 +194,60 @@
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/account.AccountUpdateRequest"
+                            "$ref": "#/definitions/tenant.AccountUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/accounts/archive": {
+            "patch": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Archive soft-deletes the specified customer from the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "account"
+                ],
+                "summary": "Archive account by ID",
+                "parameters": [
+                    {
+                        "description": "Update fields",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/account.ArchiveRequest"
                         }
                     }
                 ],
@@ -93,7 +305,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/account.AccountResponse"
+                            "$ref": "#/definitions/tenant.AccountResponse"
                         }
                     },
                     "400": {
@@ -104,6 +316,653 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/checklists": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Find returns the existing checklists in the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "checklist"
+                ],
+                "summary": "List checklists",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter string, example: name = 'Moon Launch'",
+                        "name": "where",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order columns separated by comma, example: created_at desc",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit, example: 10",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset, example: 20",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Included Archived, example: false",
+                        "name": "include-archived",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/checklist.ChecklistResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Create inserts a new checklist into the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "checklist"
+                ],
+                "summary": "Create new checklist.",
+                "parameters": [
+                    {
+                        "description": "Checklist details",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/checklist.ChecklistCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/checklist.ChecklistResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Update updates the specified checklist in the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "checklist"
+                ],
+                "summary": "Update checklist by ID",
+                "parameters": [
+                    {
+                        "description": "Update fields",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/checklist.ChecklistUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/checklists/archive": {
+            "patch": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Archive soft-deletes the specified customer from the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer"
+                ],
+                "summary": "Archive customer by ID",
+                "parameters": [
+                    {
+                        "description": "Update fields",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/customer.ArchiveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/checklists/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Read returns the specified checklist from the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "checklist"
+                ],
+                "summary": "Get checklist by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Checklist ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/checklist.ChecklistResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Delete removes the specified checklist from the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "checklist"
+                ],
+                "summary": "Delete checklist by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Checklist ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/customers": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Find returns the existing customers in the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer"
+                ],
+                "summary": "List customers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter string, example: name = 'Oluwafe Dami'",
+                        "name": "where",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order columns separated by comma, example: created_at desc",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit, example: 10",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset, example: 20",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Included Archived, example: false",
+                        "name": "include-archived",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/customer.Response"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Create inserts a new customer into the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer"
+                ],
+                "summary": "Create new customer.",
+                "parameters": [
+                    {
+                        "description": "Customer details",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/customer.CreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/account.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Update updates the specified customer in the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer"
+                ],
+                "summary": "Update customer by ID",
+                "parameters": [
+                    {
+                        "description": "Update fields",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/customer.UpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/customers/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Read returns the specified customer from the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer"
+                ],
+                "summary": "Get customer by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/customer.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Delete removes the specified customer from the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer"
+                ],
+                "summary": "Delete customer by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/weberror.ErrorResponse"
                         }
@@ -172,356 +1031,6 @@
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/projects": {
-            "get": {
-                "security": [
-                    {
-                        "OAuth2Password": []
-                    }
-                ],
-                "description": "Find returns the existing projects in the system.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project"
-                ],
-                "summary": "List projects",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter string, example: name = 'Moon Launch'",
-                        "name": "where",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Order columns separated by comma, example: created_at desc",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Limit, example: 10",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Offset, example: 20",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Included Archived, example: false",
-                        "name": "include-archived",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/project.ProjectResponse"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "OAuth2Password": []
-                    }
-                ],
-                "description": "Create inserts a new project into the system.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project"
-                ],
-                "summary": "Create new project.",
-                "parameters": [
-                    {
-                        "description": "Project details",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/project.ProjectCreateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/project.ProjectResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "security": [
-                    {
-                        "OAuth2Password": []
-                    }
-                ],
-                "description": "Update updates the specified project in the system.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project"
-                ],
-                "summary": "Update project by ID",
-                "parameters": [
-                    {
-                        "description": "Update fields",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/project.ProjectUpdateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {},
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/projects/archive": {
-            "patch": {
-                "security": [
-                    {
-                        "OAuth2Password": []
-                    }
-                ],
-                "description": "Archive soft-deletes the specified project from the system.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project"
-                ],
-                "summary": "Archive project by ID",
-                "parameters": [
-                    {
-                        "description": "Update fields",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/project.ProjectArchiveRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {},
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/projects/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "OAuth2Password": []
-                    }
-                ],
-                "description": "Read returns the specified project from the system.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project"
-                ],
-                "summary": "Get project by ID.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Project ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/project.ProjectResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "OAuth2Password": []
-                    }
-                ],
-                "description": "Delete removes the specified project from the system.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project"
-                ],
-                "summary": "Delete project by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Project ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {},
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/weberror.ErrorResponse"
                         }
@@ -1375,124 +1884,7 @@
         }
     },
     "definitions": {
-        "account.AccountResponse": {
-            "type": "object",
-            "properties": {
-                "address1": {
-                    "type": "string",
-                    "example": "221 Tatitlek Ave"
-                },
-                "address2": {
-                    "type": "string",
-                    "example": "Box #1832"
-                },
-                "archived_at": {
-                    "type": "object",
-                    "$ref": "#/definitions/web.TimeResponse"
-                },
-                "billing_user_id": {
-                    "type": "string",
-                    "example": "d69bdef7-173f-4d29-b52c-3edc60baf6a2"
-                },
-                "city": {
-                    "type": "string",
-                    "example": "Valdez"
-                },
-                "country": {
-                    "type": "string",
-                    "example": "USA"
-                },
-                "created_at": {
-                    "type": "object",
-                    "$ref": "#/definitions/web.TimeResponse"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "c4653bf9-5978-48b7-89c5-95704aebb7e2"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Company Name"
-                },
-                "region": {
-                    "type": "string",
-                    "example": "AK"
-                },
-                "signup_user_id": {
-                    "type": "string",
-                    "example": "d69bdef7-173f-4d29-b52c-3edc60baf6a2"
-                },
-                "status": {
-                    "type": "object",
-                    "$ref": "#/definitions/web.EnumResponse"
-                },
-                "timezone": {
-                    "type": "string",
-                    "example": "America/Anchorage"
-                },
-                "updated_at": {
-                    "type": "object",
-                    "$ref": "#/definitions/web.TimeResponse"
-                },
-                "zipcode": {
-                    "type": "string",
-                    "example": "99686"
-                }
-            }
-        },
-        "account.AccountUpdateRequest": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "address1": {
-                    "type": "string",
-                    "example": "221 Tatitlek Ave"
-                },
-                "address2": {
-                    "type": "string",
-                    "example": "Box #1832"
-                },
-                "billing_user_id": {
-                    "type": "string",
-                    "example": "d69bdef7-173f-4d29-b52c-3edc60baf6a2"
-                },
-                "city": {
-                    "type": "string",
-                    "example": "Valdez"
-                },
-                "country": {
-                    "type": "string",
-                    "example": "USA"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "c4653bf9-5978-48b7-89c5-95704aebb7e2"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Company Name"
-                },
-                "region": {
-                    "type": "string",
-                    "example": "AK"
-                },
-                "signup_user_id": {
-                    "type": "string",
-                    "example": "d69bdef7-173f-4d29-b52c-3edc60baf6a2"
-                },
-                "timezone": {
-                    "type": "string",
-                    "example": "America/Anchorage"
-                },
-                "zipcode": {
-                    "type": "string",
-                    "example": "99686"
-                }
-            }
-        },
-        "project.ProjectArchiveRequest": {
+        "account.ArchiveRequest": {
             "type": "object",
             "required": [
                 "id"
@@ -1504,7 +1896,117 @@
                 }
             }
         },
-        "project.ProjectCreateRequest": {
+        "account.CreateRequest": {
+            "type": "object",
+            "required": [
+                "customer_id",
+                "type"
+            ],
+            "properties": {
+                "branch_id": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
+                },
+                "target": {
+                    "type": "number"
+                },
+                "target_info": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "account.Response": {
+            "type": "object",
+            "properties": {
+                "archived_at": {
+                    "type": "object",
+                    "$ref": "#/definitions/web.TimeResponse"
+                },
+                "branch": {
+                    "type": "string"
+                },
+                "branch_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "object",
+                    "$ref": "#/definitions/web.TimeResponse"
+                },
+                "customer": {
+                    "type": "object",
+                    "$ref": "#/definitions/customer.Response"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "Rocket Launch"
+                },
+                "sales_rep": {
+                    "type": "object",
+                    "$ref": "#/definitions/user.UserResponse"
+                },
+                "sales_rep_id": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "number"
+                },
+                "target_info": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "object",
+                    "$ref": "#/definitions/web.TimeResponse"
+                }
+            }
+        },
+        "account.UpdateRequest": {
+            "type": "object",
+            "required": [
+                "id",
+                "type"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
+                },
+                "target": {
+                    "type": "number"
+                },
+                "target_info": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "checklist.ChecklistArchiveRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
+                }
+            }
+        },
+        "checklist.ChecklistCreateRequest": {
             "type": "object",
             "required": [
                 "account_id",
@@ -1521,7 +2023,7 @@
                 }
             }
         },
-        "project.ProjectResponse": {
+        "checklist.ChecklistResponse": {
             "type": "object",
             "required": [
                 "account_id",
@@ -1559,7 +2061,7 @@
                 }
             }
         },
-        "project.ProjectUpdateRequest": {
+        "checklist.ChecklistUpdateRequest": {
             "type": "object",
             "required": [
                 "id"
@@ -1572,6 +2074,150 @@
                 "name": {
                     "type": "string",
                     "example": "Rocket Launch to Moon"
+                }
+            }
+        },
+        "customer.ArchiveRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
+                }
+            }
+        },
+        "customer.CreateRequest": {
+            "type": "object",
+            "required": [
+                "branch_id",
+                "email",
+                "name",
+                "phone_number",
+                "sales_rep_id",
+                "type"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "No 3 Ab Rd, Agege, Lagos"
+                },
+                "branch_id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "a@b.c"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Oluwafe Dami"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "0809000000"
+                },
+                "sales_rep_id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
+                },
+                "target": {
+                    "type": "number"
+                },
+                "target_info": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "customer.Response": {
+            "type": "object",
+            "required": [
+                "id",
+                "name"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "archived_at": {
+                    "type": "object",
+                    "$ref": "#/definitions/web.TimeResponse"
+                },
+                "branch": {
+                    "type": "string"
+                },
+                "branch_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "object",
+                    "$ref": "#/definitions/web.TimeResponse"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Rocket Launch"
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "sales_rep": {
+                    "type": "string"
+                },
+                "sales_rep_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "object",
+                    "$ref": "#/definitions/web.TimeResponse"
+                }
+            }
+        },
+        "customer.UpdateRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "No 3 Ab Rd, Agege, Lagos"
+                },
+                "branch_id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "a@b.c"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Oluwafe Dami"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "0809000000"
+                },
+                "sales_rep_id": {
+                    "type": "string",
+                    "example": "985f1746-1d9f-459f-a2d9-fc53ece5ae86"
                 }
             }
         },
@@ -1638,7 +2284,7 @@
             "properties": {
                 "account": {
                     "type": "object",
-                    "$ref": "#/definitions/account.AccountResponse"
+                    "$ref": "#/definitions/tenant.AccountResponse"
                 },
                 "user": {
                     "type": "object",
@@ -1678,6 +2324,123 @@
                 }
             }
         },
+        "tenant.AccountResponse": {
+            "type": "object",
+            "properties": {
+                "address1": {
+                    "type": "string",
+                    "example": "221 Tatitlek Ave"
+                },
+                "address2": {
+                    "type": "string",
+                    "example": "Box #1832"
+                },
+                "archived_at": {
+                    "type": "object",
+                    "$ref": "#/definitions/web.TimeResponse"
+                },
+                "billing_user_id": {
+                    "type": "string",
+                    "example": "d69bdef7-173f-4d29-b52c-3edc60baf6a2"
+                },
+                "city": {
+                    "type": "string",
+                    "example": "Valdez"
+                },
+                "country": {
+                    "type": "string",
+                    "example": "USA"
+                },
+                "created_at": {
+                    "type": "object",
+                    "$ref": "#/definitions/web.TimeResponse"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "c4653bf9-5978-48b7-89c5-95704aebb7e2"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Company Name"
+                },
+                "region": {
+                    "type": "string",
+                    "example": "AK"
+                },
+                "signup_user_id": {
+                    "type": "string",
+                    "example": "d69bdef7-173f-4d29-b52c-3edc60baf6a2"
+                },
+                "status": {
+                    "type": "object",
+                    "$ref": "#/definitions/web.EnumResponse"
+                },
+                "timezone": {
+                    "type": "string",
+                    "example": "America/Anchorage"
+                },
+                "updated_at": {
+                    "type": "object",
+                    "$ref": "#/definitions/web.TimeResponse"
+                },
+                "zipcode": {
+                    "type": "string",
+                    "example": "99686"
+                }
+            }
+        },
+        "tenant.AccountUpdateRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "address1": {
+                    "type": "string",
+                    "example": "221 Tatitlek Ave"
+                },
+                "address2": {
+                    "type": "string",
+                    "example": "Box #1832"
+                },
+                "billing_user_id": {
+                    "type": "string",
+                    "example": "d69bdef7-173f-4d29-b52c-3edc60baf6a2"
+                },
+                "city": {
+                    "type": "string",
+                    "example": "Valdez"
+                },
+                "country": {
+                    "type": "string",
+                    "example": "USA"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "c4653bf9-5978-48b7-89c5-95704aebb7e2"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Company Name"
+                },
+                "region": {
+                    "type": "string",
+                    "example": "AK"
+                },
+                "signup_user_id": {
+                    "type": "string",
+                    "example": "d69bdef7-173f-4d29-b52c-3edc60baf6a2"
+                },
+                "timezone": {
+                    "type": "string",
+                    "example": "America/Anchorage"
+                },
+                "zipcode": {
+                    "type": "string",
+                    "example": "99686"
+                }
+            }
+        },
         "user.UserArchiveRequest": {
             "type": "object",
             "required": [
@@ -1696,6 +2459,7 @@
         "user.UserCreateRequest": {
             "type": "object",
             "required": [
+                "branch_id",
                 "email",
                 "first_name",
                 "last_name",
@@ -1703,6 +2467,10 @@
                 "password_confirm"
             ],
             "properties": {
+                "branch_id": {
+                    "type": "string",
+                    "example": "717cbfd4-b228-48f6-92bc-cc054a4e13f6"
+                },
                 "email": {
                     "type": "string",
                     "example": "gabi@geeksinthewoods.com"

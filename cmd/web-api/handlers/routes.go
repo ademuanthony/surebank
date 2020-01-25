@@ -2,12 +2,11 @@ package handlers
 
 import (
 	"log"
+	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"net/http"
 	"os"
 
-	"merryworld/surebank/internal/account"
-	"merryworld/surebank/internal/account/account_preference"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/mid"
 	saasSwagger "merryworld/surebank/internal/mid/saas-swagger"
@@ -16,6 +15,8 @@ import (
 	"merryworld/surebank/internal/platform/web/webcontext"
 	_ "merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/signup"
+	"merryworld/surebank/internal/tenant"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"
 	"merryworld/surebank/internal/user_account/invite"
@@ -32,13 +33,14 @@ type AppContext struct {
 	Redis             *redis.Client
 	UserRepo          *user.Repository
 	UserAccountRepo   *user_account.Repository
-	AccountRepo       *account.Repository
+	RenantRepo        *tenant.Repository
 	AccountPrefRepo   *account_preference.Repository
 	AuthRepo          *user_auth.Repository
 	SignupRepo        *signup.Repository
 	InviteRepo        *invite.Repository
 	ChecklistRepo     *checklist.Repository
-	CustomerRepo 	  *customer.Repository
+	CustomerRepo      *customer.Repository
+	AccountRepo 	  *account.Repository
 	Authenticator     *auth.Authenticator
 	PreAppMiddleware  []web.Middleware
 	PostAppMiddleware []web.Middleware
@@ -109,11 +111,11 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("DELETE", "/v1/user_accounts", ua.Delete, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 
 	// Register account endpoints.
-	a := Accounts{
-		Repository: appCtx.AccountRepo,
+	a := Tenants{
+		Repository: appCtx.RenantRepo,
 	}
-	app.Handle("GET", "/v1/accounts/:id", a.Read, mid.AuthenticateHeader(appCtx.Authenticator))
-	app.Handle("PATCH", "/v1/accounts", a.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/v1/tenants/:id", a.Read, mid.AuthenticateHeader(appCtx.Authenticator))
+	app.Handle("PATCH", "/v1/tenants", a.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 
 	// Register signup endpoints.
 	s := Signup{
@@ -142,6 +144,16 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("PATCH", "/v1/customers", cus.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("PATCH", "/v1/customers/archive", cus.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("DELETE", "/v1/customers/:id", cus.Delete, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+
+	// Register customer.
+	acc := Accounts{
+		Repository: appCtx.AccountRepo,
+	}
+	app.Handle("GET", "/v1/accounts", acc.Find, mid.AuthenticateHeader(appCtx.Authenticator))
+	app.Handle("POST", "/v1/accounts", acc.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/v1/accounts/:id", acc.Read, mid.AuthenticateHeader(appCtx.Authenticator))
+	app.Handle("PATCH", "/v1/accounts", acc.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("PATCH", "/v1/accounts/archive", acc.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 
 	// Register swagger documentation.
 	// TODO: Add authentication. Current authenticator requires an Authorization header

@@ -11,8 +11,8 @@ import (
 
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/shop"
-	"merryworld/surebank/internal/account"
-	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/tenant"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/geonames"
 	"merryworld/surebank/internal/mid"
@@ -46,7 +46,7 @@ type AppContext struct {
 	Redis             *redis.Client
 	UserRepo          *user.Repository
 	UserAccountRepo   *user_account.Repository
-	AccountRepo       *account.Repository
+	AccountRepo       *tenant.Repository
 	AccountPrefRepo   *account_preference.Repository
 	AuthRepo          *user_auth.Repository
 	SignupRepo        *signup.Repository

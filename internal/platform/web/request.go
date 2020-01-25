@@ -94,6 +94,20 @@ func ExtractWhereArgs(where string) (string, []interface{}, error) {
 	return where, vals, nil
 }
 
+func SqlBoilderWhere(where string) string {
+	if len(where) == 0 {
+		return ""
+	}
+	split := strings.Split(where, " ")
+	for i, s := range split {
+		if strings.HasPrefix(s, ":redacted") {
+			split[i] = "?"
+		}
+	}
+
+	return strings.Join(split, " ")
+}
+
 func RequestIsJson(r *http.Request) bool {
 	if r == nil {
 		return false

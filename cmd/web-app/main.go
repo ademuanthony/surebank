@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"merryworld/surebank/cmd/web-app/handlers"
-	"merryworld/surebank/internal/account"
-	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/tenant"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/geonames"
 	"merryworld/surebank/internal/mid"
@@ -450,7 +450,7 @@ func main() {
 
 	usrRepo := user.NewRepository(masterDb, webRoute.UserResetPassword, notifyEmail, cfg.Project.SharedSecretKey)
 	usrAccRepo := user_account.NewRepository(masterDb)
-	accRepo := account.NewRepository(masterDb)
+	accRepo := tenant.NewRepository(masterDb)
 	geoRepo := geonames.NewRepository(masterDb)
 	accPrefRepo := account_preference.NewRepository(masterDb)
 	authRepo := user_auth.NewRepository(masterDb, authenticator, usrRepo, usrAccRepo, accPrefRepo)
@@ -762,12 +762,12 @@ func main() {
 			return u
 		},
 		// ContextAccount returns the account for current context user with auth is using and caches the result.
-		"ContextAccount": func(ctx context.Context) *account.AccountResponse {
+		"ContextAccount": func(ctx context.Context) *tenant.AccountResponse {
 			sess := webcontext.ContextSession(ctx)
 
 			cacheKey := "ContextAccount" + sess.ID
 
-			a := &account.AccountResponse{}
+			a := &tenant.AccountResponse{}
 			if err := redisClient.Get(cacheKey).Scan(a); err != nil && err != redis.Nil {
 				log.Printf("main : ContextAccount : Redis Get failed - %+v ", err.Error())
 				return nil

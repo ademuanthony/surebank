@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/tests"
 	"merryworld/surebank/internal/platform/web"
@@ -19,7 +19,7 @@ import (
 )
 
 type mockSignup struct {
-	account *account.Account
+	account *tenant.Account
 	user    mockUser
 	token   user_auth.Token
 	claims  auth.Claims

@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/user"
@@ -50,22 +50,22 @@ func mapRowsToUserAccount(rows *sql.Rows) (*UserAccount, error) {
 
 // CanReadAccount determines if claims has the authority to access the specified user account by user ID.
 func (repo *Repository) CanReadAccount(ctx context.Context, claims auth.Claims, accountID string) error {
-	err := account.CanReadAccount(ctx, claims, repo.DbConn, accountID)
+	err := tenant.CanReadAccount(ctx, claims, repo.DbConn, accountID)
 	return mapAccountError(err)
 }
 
 // CanModifyAccount determines if claims has the authority to modify the specified user ID.
 func (repo *Repository) CanModifyAccount(ctx context.Context, claims auth.Claims, accountID string) error {
-	err := account.CanModifyAccount(ctx, claims, repo.DbConn, accountID)
+	err := tenant.CanModifyAccount(ctx, claims, repo.DbConn, accountID)
 	return mapAccountError(err)
 }
 
 // mapAccountError maps account errors to local defined errors.
 func mapAccountError(err error) error {
 	switch errors.Cause(err) {
-	case account.ErrNotFound:
+	case tenant.ErrNotFound:
 		err = ErrNotFound
-	case account.ErrForbidden:
+	case tenant.ErrForbidden:
 		err = ErrForbidden
 	}
 	return err
@@ -494,7 +494,7 @@ func (repo *Repository) Delete(ctx context.Context, claims auth.Claims, req User
 type MockUserAccountResponse struct {
 	*UserAccount
 	User    *user.MockUserResponse
-	Account *account.Account
+	Account *tenant.Account
 }
 
 // MockUserAccount returns a fake UserAccount for testing.
@@ -504,7 +504,7 @@ func MockUserAccount(ctx context.Context, dbConn *sqlx.DB, now time.Time, roles 
 		return nil, err
 	}
 
-	acc, err := account.MockAccount(ctx, dbConn, now)
+	acc, err := tenant.MockAccount(ctx, dbConn, now)
 	if err != nil {
 		return nil, err
 	}

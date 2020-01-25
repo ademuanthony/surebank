@@ -37,8 +37,8 @@ type Customer struct {
 	ArchivedAt  *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
 }
 
-func fromModel(rec *models.Customer) *Customer {
-	b := &Customer{
+func FromModel(rec *models.Customer) *Customer {
+	c := &Customer{
 		ID:          rec.ID,
 		Name:        rec.Name,
 		Email:       rec.Email,
@@ -52,19 +52,19 @@ func fromModel(rec *models.Customer) *Customer {
 
 	if rec.R != nil {
 		if rec.R.Branch != nil {
-			b.Branch = rec.R.Branch.Name
+			c.Branch = rec.R.Branch.Name
 		}
 
 		if rec.R.SalesRep != nil {
-			b.SalesRep = rec.R.SalesRep.FirstName + " " + rec.R.SalesRep.LastName
+			c.SalesRep = rec.R.SalesRep.FirstName + " " + rec.R.SalesRep.LastName
 		}
 	}
 
 	if rec.ArchivedAt.Valid {
-		b.ArchivedAt = &rec.ArchivedAt.Time
+		c.ArchivedAt = &rec.ArchivedAt.Time
 	}
 
-	return b
+	return c
 }
 
 // Response represents a workflow that is returned for display.
@@ -135,6 +135,10 @@ type CreateRequest struct {
 	Address     string `json:"address" example:"No 3 Ab Rd, Agege, Lagos"`
 	SalesRepID  string `json:"sales_rep_id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
 	BranchID    string `json:"branch_id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+
+	Type       string  `json:"type" validate:"required"`
+	Target     float64 `json:"target"`
+	TargetInfo string  `json:"target_info"`
 }
 
 // ReadRequest defines the information needed to read a checklist.

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/geonames"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/datatable"
@@ -30,7 +30,7 @@ import (
 // Users represents the Users API method handler set.
 type Users struct {
 	UserRepo        *user.Repository
-	AccountRepo     *account.Repository
+	AccountRepo     *tenant.Repository
 	UserAccountRepo *user_account.Repository
 	AuthRepo        *user_auth.Repository
 	InviteRepo      *invite.Repository

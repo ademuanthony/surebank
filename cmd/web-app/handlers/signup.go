@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/geonames"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
@@ -58,7 +58,7 @@ func (h *Signup) Step1(ctx context.Context, w http.ResponseWriter, r *http.Reque
 			_, err = h.SignupRepo.Signup(ctx, claims, *req, ctxValues.Now)
 			if err != nil {
 				switch errors.Cause(err) {
-				case account.ErrForbidden:
+				case tenant.ErrForbidden:
 					return false, web.RespondError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
 				default:
 					if verr, ok := weberror.NewValidationError(ctx, err); ok {

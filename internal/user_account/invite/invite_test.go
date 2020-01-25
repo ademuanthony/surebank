@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/notify"
 	"merryworld/surebank/internal/platform/tests"
@@ -34,7 +34,7 @@ func testMain(m *testing.M) int {
 
 	userRepo := user.MockRepository(test.MasterDB)
 	userAccRepo := user_account.NewRepository(test.MasterDB)
-	accRepo := account.NewRepository(test.MasterDB)
+	accRepo := tenant.NewRepository(test.MasterDB)
 
 	// Mock the methods needed to make an invite.
 	resetUrl := func(string) string {
@@ -71,7 +71,7 @@ func TestSendUserInvites(t *testing.T) {
 			t.Fatalf("\t%s\tCreate user failed.", tests.Failed)
 		}
 
-		a, err := repo.Account.Create(ctx, auth.Claims{}, account.AccountCreateRequest{
+		a, err := repo.Account.Create(ctx, auth.Claims{}, tenant.AccountCreateRequest{
 			Name:     uuid.NewRandom().String(),
 			Address1: "101 E Main",
 			City:     "Valdez",

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"net/http"
 	"strconv"
@@ -20,12 +21,12 @@ import (
 // Customers represents the Customer API method handler set.
 type Customers struct {
 	Repository *customer.Repository
+	AccountRepo *account.Repository
 
 	// ADD OTHER STATE LIKE THE LOGGER IF NEEDED.
 }
 
 // Find godoc
-// TODO: Need to implement unittests on customers/find endpoint. There are none.
 // @Summary List customers
 // @Description Find returns the existing customers in the system.
 // @Tags customer
@@ -156,7 +157,7 @@ func (h *Customers) Read(ctx context.Context, w http.ResponseWriter, r *http.Req
 // @Produce  json
 // @Security OAuth2Password
 // @Param data body customer.CreateRequest true "Customer details"
-// @Success 201 {object} customer.Response
+// @Success 201 {object} account.Response
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 404 {object} weberror.ErrorResponse
@@ -196,7 +197,31 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 		}
 	}
 
-	return web.RespondJson(ctx, w, res.Response(ctx), http.StatusCreated)
+	accReq := account.CreateRequest{
+		CustomerID: res.ID,
+		Type:       req.Type,
+		Target:     req.Target,
+		TargetInfo: req.TargetInfo,
+		BranchID:   req.BranchID,
+	}
+	accRes, err := h.AccountRepo.Create(ctx, claims, accReq, v.Now)
+	if err != nil {
+		cause := errors.Cause(err)
+		switch cause {
+		case checklist.ErrForbidden:
+			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
+		default:
+			_, ok := cause.(validator.ValidationErrors)
+			if ok {
+				return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
+			}
+			return errors.Wrapf(err, "Customer: %+v", &req)
+		}
+	}
+
+	result := accRes.Response(ctx)
+	result.Customer = res.Response(ctx)
+	return web.RespondJson(ctx, w, result, http.StatusCreated)
 }
 
 // Read godoc

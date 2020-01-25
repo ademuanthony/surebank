@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"merryworld/surebank/cmd/web-api/handlers"
-	"merryworld/surebank/internal/account"
-	"merryworld/surebank/internal/account/account_preference"
+	"merryworld/surebank/internal/tenant"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/notify"
@@ -49,9 +49,9 @@ type roleTest struct {
 	Token            user_auth.Token
 	Claims           auth.Claims
 	User             mockUser
-	Account          *account.Account
+	Account          *tenant.Account
 	ForbiddenUser    mockUser
-	ForbiddenAccount *account.Account
+	ForbiddenAccount *tenant.Account
 }
 
 type requestTest struct {
@@ -102,7 +102,7 @@ func testMain(m *testing.M) int {
 
 	usrRepo := user.MockRepository(test.MasterDB)
 	usrAccRepo := user_account.NewRepository(test.MasterDB)
-	accRepo := account.NewRepository(test.MasterDB)
+	accRepo := tenant.NewRepository(test.MasterDB)
 	accPrefRepo := account_preference.NewRepository(test.MasterDB)
 	authRepo := user_auth.NewRepository(test.MasterDB, authenticator, usrRepo, usrAccRepo, accPrefRepo)
 	signupRepo := signup.NewRepository(test.MasterDB, usrRepo, usrAccRepo, accRepo)
@@ -116,7 +116,7 @@ func testMain(m *testing.M) int {
 		Redis:           nil,
 		UserRepo:        usrRepo,
 		UserAccountRepo: usrAccRepo,
-		AccountRepo:     accRepo,
+		RenantRepo:      accRepo,
 		AccountPrefRepo: accPrefRepo,
 		AuthRepo:        authRepo,
 		SignupRepo:      signupRepo,

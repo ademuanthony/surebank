@@ -55,7 +55,7 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	var result Branches
 	for _, rec := range branchSlice {
-		result = append(result, fromModel(rec))
+		result = append(result, FromModel(rec))
 	}
 
 	return result, nil
@@ -68,7 +68,7 @@ func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id str
 		return nil, err
 	}
 
-	return fromModel(branchModel), nil
+	return FromModel(branchModel), nil
 }
 
 // Create inserts a new checklist into the database.

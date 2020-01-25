@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/geonames"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
@@ -29,7 +29,7 @@ type UserRepos struct {
 	UserRepo        *user.Repository
 	AuthRepo        *user_auth.Repository
 	UserAccountRepo *user_account.Repository
-	AccountRepo     *account.Repository
+	AccountRepo     *tenant.Repository
 	GeoRepo         *geonames.Repository
 	MasterDB        *sqlx.DB
 	Renderer        web.Renderer
@@ -795,7 +795,7 @@ func (h *UserRepos) SwitchAccount(ctx context.Context, w http.ResponseWriter, r 
 		return nil
 	}
 
-	accounts, err := h.AccountRepo.Find(ctx, claims, account.AccountFindRequest{
+	accounts, err := h.AccountRepo.Find(ctx, claims, tenant.AccountFindRequest{
 		Order: []string{"name"},
 	})
 	if err != nil {

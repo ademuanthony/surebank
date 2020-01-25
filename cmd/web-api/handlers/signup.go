@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
@@ -53,7 +53,7 @@ func (h *Signup) Signup(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	res, err := h.Repository.Signup(ctx, claims, req, v.Now)
 	if err != nil {
 		switch errors.Cause(err) {
-		case account.ErrForbidden:
+		case tenant.ErrForbidden:
 			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
 		default:
 			_, ok := err.(validator.ValidationErrors)

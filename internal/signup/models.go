@@ -3,7 +3,7 @@ package signup
 import (
 	"context"
 
-	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"
 	"github.com/jmoiron/sqlx"
@@ -14,11 +14,11 @@ type Repository struct {
 	DbConn      *sqlx.DB
 	User        *user.Repository
 	UserAccount *user_account.Repository
-	Account     *account.Repository
+	Account     *tenant.Repository
 }
 
 // NewRepository creates a new Repository that defines dependencies for Signup.
-func NewRepository(db *sqlx.DB, user *user.Repository, userAccount *user_account.Repository, account *account.Repository) *Repository {
+func NewRepository(db *sqlx.DB, user *user.Repository, userAccount *user_account.Repository, account *tenant.Repository) *Repository {
 	return &Repository{
 		DbConn:      db,
 		User:        user,
@@ -56,14 +56,14 @@ type SignupUser struct {
 
 // SignupResult response signup with created account and user.
 type SignupResult struct {
-	Account *account.Account `json:"account"`
-	User    *user.User       `json:"user"`
+	Account *tenant.Account `json:"account"`
+	User    *user.User      `json:"user"`
 }
 
 // SignupResponse represents the user and account created for signup that is returned for display.
 type SignupResponse struct {
-	Account *account.AccountResponse `json:"account"`
-	User    *user.UserResponse       `json:"user"`
+	Account *tenant.AccountResponse `json:"account"`
+	User    *user.UserResponse      `json:"user"`
 }
 
 // Response transforms SignupResult to SignupResponse that is used for display.
