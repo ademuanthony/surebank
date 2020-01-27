@@ -194,7 +194,7 @@
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/account.UpdateRequest"
+                            "$ref": "#/definitions/tenant.AccountUpdateRequest"
                         }
                     }
                 ],
@@ -291,7 +291,7 @@
                 "tags": [
                     "account"
                 ],
-                "summary": "Get account by ID.",
+                "summary": "Get account by ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -305,7 +305,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/account.Response"
+                            "$ref": "#/definitions/tenant.AccountResponse"
                         }
                     },
                     "400": {
@@ -841,9 +841,9 @@
                     "application/json"
                 ],
                 "tags": [
-                    "deposit"
+                    "transaction"
                 ],
-                "summary": "Create new deposit.",
+                "summary": "Create new Deposit.",
                 "parameters": [
                     {
                         "description": "Deposit details",

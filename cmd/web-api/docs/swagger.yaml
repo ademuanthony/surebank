@@ -771,7 +771,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/account.UpdateRequest'
+          $ref: '#/definitions/tenant.AccountUpdateRequest'
           type: object
       produces:
       - application/json
@@ -851,7 +851,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/account.Response'
+            $ref: '#/definitions/tenant.AccountResponse'
         "400":
           description: Bad Request
           schema:
@@ -866,7 +866,7 @@ paths:
             $ref: '#/definitions/weberror.ErrorResponse'
       security:
       - OAuth2Password: []
-      summary: Get account by ID.
+      summary: Get account by ID
       tags:
       - account
   /accounts/archive:
@@ -1298,9 +1298,9 @@ paths:
             $ref: '#/definitions/weberror.ErrorResponse'
       security:
       - OAuth2Password: []
-      summary: Create new deposit.
+      summary: Create new Deposit.
       tags:
-      - deposit
+      - transaction
   /transactions/{id}:
     get:
       consumes:
