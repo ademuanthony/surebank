@@ -159,7 +159,7 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 
 	// Register deposit.
 	dep := Deposits{
-		Repository: appCtx.AccountRepo,
+		Repository: appCtx.DepositRepo,
 	}
 	app.Handle("GET", "/v1/deposits", dep.Find, mid.AuthenticateHeader(appCtx.Authenticator))
 	app.Handle("POST", "/v1/deposits", dep.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))

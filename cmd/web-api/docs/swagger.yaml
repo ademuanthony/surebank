@@ -237,6 +237,69 @@ definitions:
     required:
     - id
     type: object
+  deposit.ArchiveRequest:
+    properties:
+      id:
+        example: 985f1746-1d9f-459f-a2d9-fc53ece5ae86
+        type: string
+    required:
+    - id
+    type: object
+  deposit.CreateRequest:
+    properties:
+      account_number:
+        type: string
+      amount:
+        type: number
+      narration:
+        type: string
+    required:
+    - account_number
+    - amount
+    type: object
+  deposit.Response:
+    properties:
+      account_id:
+        example: 985f1746-1d9f-459f-a2d9-fc53ece5ae86
+        type: string
+      account_number:
+        example: SB10003001
+        type: string
+      amount:
+        type: number
+      archived_at:
+        $ref: '#/definitions/web.TimeResponse'
+        type: object
+      created_at:
+        $ref: '#/definitions/web.TimeResponse'
+        type: object
+      customer_id:
+        type: string
+      id:
+        example: 985f1746-1d9f-459f-a2d9-fc53ece5ae86
+        type: string
+      narration:
+        type: string
+      sales_rep:
+        type: string
+      sales_rep_id:
+        type: string
+      updated_at:
+        $ref: '#/definitions/web.TimeResponse'
+        type: object
+    type: object
+  deposit.UpdateRequest:
+    properties:
+      amount:
+        type: number
+      id:
+        example: 985f1746-1d9f-459f-a2d9-fc53ece5ae86
+        type: string
+      narration:
+        type: string
+    required:
+    - id
+    type: object
   signup.SignupAccount:
     properties:
       address1:
@@ -883,7 +946,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Archive soft-deletes the specified customer from the system.
+      description: Archive soft-deletes the specified account from the system.
       parameters:
       - description: Update fields
         in: body
@@ -1329,6 +1392,201 @@ paths:
       summary: Get customer by ID.
       tags:
       - customer
+  /deposit:
+    post:
+      consumes:
+      - application/json
+      description: Create inserts a new deposit into the system.
+      parameters:
+      - description: Account details
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/deposit.CreateRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/deposit.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+      security:
+      - OAuth2Password: []
+      summary: Create new deposit.
+      tags:
+      - deposit
+  /deposits:
+    get:
+      consumes:
+      - application/json
+      description: Find returns the existing deposits in the system.
+      parameters:
+      - description: 'Filter string, example: account_id = ''1232-123dasf-324fdas-324423'''
+        in: query
+        name: where
+        type: string
+      - description: 'Order columns separated by comma, example: created_at desc'
+        in: query
+        name: order
+        type: string
+      - description: 'Limit, example: 10'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Offset, example: 20'
+        in: query
+        name: offset
+        type: integer
+      - description: 'Included Archived, example: false'
+        in: query
+        name: include-archived
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/deposit.Response'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+      security:
+      - OAuth2Password: []
+      summary: List deposits
+      tags:
+      - deposit
+    patch:
+      consumes:
+      - application/json
+      description: Update updates the specified deposit in the system.
+      parameters:
+      - description: Update fields
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/deposit.UpdateRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+      security:
+      - OAuth2Password: []
+      summary: Update deposit by ID
+      tags:
+      - deposit
+  /deposits/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Read returns the specified deposit from the system.
+      parameters:
+      - description: Deposit ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/deposit.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+      security:
+      - OAuth2Password: []
+      summary: Get deposit by ID.
+      tags:
+      - deposit
+  /deposits/archive:
+    patch:
+      consumes:
+      - application/json
+      description: Archive soft-deletes the specified deposit from the system.
+      parameters:
+      - description: Update fields
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/deposit.ArchiveRequest'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/weberror.ErrorResponse'
+      security:
+      - OAuth2Password: []
+      summary: Archive deposit by ID
+      tags:
+      - deposit
   /oauth/token:
     post:
       consumes:

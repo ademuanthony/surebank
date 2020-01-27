@@ -2,17 +2,17 @@ package handlers
 
 import (
 	"context"
+	"net/http"
 
-	"merryworld/surebank/internal/tenant"
+	"github.com/pkg/errors"
+	"gopkg.in/go-playground/validator.v9"
+
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/signup"
-	"net/http"
-
-	"github.com/pkg/errors"
-	"gopkg.in/go-playground/validator.v9"
+	"merryworld/surebank/internal/tenant"
 )
 
 // Signup represents the Signup API method handler set.
