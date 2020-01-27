@@ -1194,6 +1194,50 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		// Deposit UpdatedAt NOT NULL
+		{
+			ID:       "20200127-01",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE deposit DROP COLUMN updated_at;`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				q2 := `ALTER TABLE deposit ADD updated_at TIMESTAMP WITH TIME ZONE NOT NULL;`
+
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
+		// Withdrawal UpdatedAt NOT NULL
+		{
+			ID:       "20200127-02",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE withdrawal DROP COLUMN updated_at;`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				q2 := `ALTER TABLE withdrawal ADD updated_at TIMESTAMP WITH TIME ZONE NOT NULL;`
+
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
 
 	}
 }

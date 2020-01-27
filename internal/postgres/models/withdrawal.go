@@ -30,8 +30,8 @@ type Withdrawal struct {
 	Narration  string    `boil:"narration" json:"narration" toml:"narration" yaml:"narration"`
 	SalesRepID string    `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
 	CreatedAt  time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt  null.Time `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
 	ArchivedAt null.Time `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
+	UpdatedAt  time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *withdrawalR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L withdrawalL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -44,8 +44,8 @@ var WithdrawalColumns = struct {
 	Narration  string
 	SalesRepID string
 	CreatedAt  string
-	UpdatedAt  string
 	ArchivedAt string
+	UpdatedAt  string
 }{
 	ID:         "id",
 	AccountID:  "account_id",
@@ -53,8 +53,8 @@ var WithdrawalColumns = struct {
 	Narration:  "narration",
 	SalesRepID: "sales_rep_id",
 	CreatedAt:  "created_at",
-	UpdatedAt:  "updated_at",
 	ArchivedAt: "archived_at",
+	UpdatedAt:  "updated_at",
 }
 
 // Generated where
@@ -66,8 +66,8 @@ var WithdrawalWhere = struct {
 	Narration  whereHelperstring
 	SalesRepID whereHelperstring
 	CreatedAt  whereHelpertime_Time
-	UpdatedAt  whereHelpernull_Time
 	ArchivedAt whereHelpernull_Time
+	UpdatedAt  whereHelpertime_Time
 }{
 	ID:         whereHelperstring{field: "\"withdrawal\".\"id\""},
 	AccountID:  whereHelperstring{field: "\"withdrawal\".\"account_id\""},
@@ -75,8 +75,8 @@ var WithdrawalWhere = struct {
 	Narration:  whereHelperstring{field: "\"withdrawal\".\"narration\""},
 	SalesRepID: whereHelperstring{field: "\"withdrawal\".\"sales_rep_id\""},
 	CreatedAt:  whereHelpertime_Time{field: "\"withdrawal\".\"created_at\""},
-	UpdatedAt:  whereHelpernull_Time{field: "\"withdrawal\".\"updated_at\""},
 	ArchivedAt: whereHelpernull_Time{field: "\"withdrawal\".\"archived_at\""},
+	UpdatedAt:  whereHelpertime_Time{field: "\"withdrawal\".\"updated_at\""},
 }
 
 // WithdrawalRels is where relationship names are stored.
@@ -103,8 +103,8 @@ func (*withdrawalR) NewStruct() *withdrawalR {
 type withdrawalL struct{}
 
 var (
-	withdrawalAllColumns            = []string{"id", "account_id", "amount", "narration", "sales_rep_id", "created_at", "updated_at", "archived_at"}
-	withdrawalColumnsWithoutDefault = []string{"id", "sales_rep_id", "created_at", "updated_at", "archived_at"}
+	withdrawalAllColumns            = []string{"id", "account_id", "amount", "narration", "sales_rep_id", "created_at", "archived_at", "updated_at"}
+	withdrawalColumnsWithoutDefault = []string{"id", "sales_rep_id", "created_at", "archived_at", "updated_at"}
 	withdrawalColumnsWithDefault    = []string{"account_id", "amount", "narration"}
 	withdrawalPrimaryKeyColumns     = []string{"id"}
 )

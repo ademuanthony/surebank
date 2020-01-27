@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/checklist"
+	"merryworld/surebank/internal/deposit"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
@@ -17,40 +17,37 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 )
 
-// Accounts represents the Account API method handler set.
-type Accounts struct {
-	Repository *account.Repository
+// Deposits represents the Deposit API method handler set.
+type Deposits struct {
+	Repository *deposit.Repository
 
 	// ADD OTHER STATE LIKE THE LOGGER IF NEEDED.
 }
 
 // Find godoc
-// @Summary List accounts
-// @Description Find returns the existing accounts in the system.
-// @Tags account
+// @Summary List deposits
+// @Description Find returns the existing deposits in the system.
+// @Tags deposit
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param where				query string 	false	"Filter string, example: number = 'SB10000001'"
+// @Param where				query string 	false	"Filter string, example: account_id = '1232-123dasf-324fdas-324423'"
 // @Param order				query string   	false 	"Order columns separated by comma, example: created_at desc"
 // @Param limit				query integer  	false 	"Limit, example: 10"
 // @Param offset			query integer  	false 	"Offset, example: 20"
 // @Param include-archived query boolean 	false 	"Included Archived, example: false"
-// @Param include-customer query boolean 	false 	"Included Customer info, example: false"
-// @Param include-branch query boolean 	false 	"Included Branch info, example: false"
-// @Param include-sales-rep query boolean 	false 	"Included Sale rep info, example: false"
-// @Success 200 {array} account.Response
+// @Success 200 {array} deposit.Response
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /accounts [get]
-func (h *Accounts) Find(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+// @Router /deposits [get]
+func (h *Deposits) Find(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 	claims, ok := ctx.Value(auth.Key).(auth.Claims)
 	if !ok {
 		return errors.New("claims missing from context")
 	}
 
-	var req account.FindRequest
+	var req deposit.FindRequest
 
 	// Handle where query value if set.
 	if v := r.URL.Query().Get("where"); v != "" {
@@ -104,36 +101,6 @@ func (h *Accounts) Find(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		req.IncludeArchived = b
 	}
 
-	// Handle include-branch query value if set.
-	if v := r.URL.Query().Get("include-branch"); v != "" {
-		b, err := strconv.ParseBool(v)
-		if err != nil {
-			err = errors.WithMessagef(err, "unable to parse %s as boolean for include-archived param", v)
-			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
-		}
-		req.IncludeBranch = b
-	}
-
-	// Handle include-customer query value if set.
-	if v := r.URL.Query().Get("include-customer"); v != "" {
-		b, err := strconv.ParseBool(v)
-		if err != nil {
-			err = errors.WithMessagef(err, "unable to parse %s as boolean for include-archived param", v)
-			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
-		}
-		req.IncludeCustomer = b
-	}
-
-	// Handle include-sales-rep query value if set.
-	if v := r.URL.Query().Get("include-sales-rep"); v != "" {
-		b, err := strconv.ParseBool(v)
-		if err != nil {
-			err = errors.WithMessagef(err, "unable to parse %s as boolean for include-archived param", v)
-			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
-		}
-		req.IncludeSalesRep = b
-	}
-
 	res, err := h.Repository.Find(ctx, claims, req)
 	if err != nil {
 		return err
@@ -143,19 +110,19 @@ func (h *Accounts) Find(ctx context.Context, w http.ResponseWriter, r *http.Requ
 }
 
 // Read godoc
-// @Summary Get account by ID.
-// @Description Read returns the specified account from the system.
-// @Tags account
+// @Summary Get deposit by ID.
+// @Description Read returns the specified deposit from the system.
+// @Tags deposit
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param id path string true "Account ID"
-// @Success 200 {object} account.Response
+// @Param id path string true "Deposit ID"
+// @Success 200 {object} deposit.Response
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 404 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /accounts/{id} [get]
-func (h *Accounts) Read(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+// @Router /deposits/{id} [get]
+func (h *Deposits) Read(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 	claims, ok := ctx.Value(auth.Key).(auth.Claims)
 	if !ok {
 		return errors.New("claims missing from context")
@@ -176,20 +143,20 @@ func (h *Accounts) Read(ctx context.Context, w http.ResponseWriter, r *http.Requ
 }
 
 // Create godoc
-// @Summary Create new account.
-// @Description Create inserts a new account into the system.
-// @Tags account
+// @Summary Create new deposit.
+// @Description Create inserts a new deposit into the system.
+// @Tags deposit
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param data body account.CreateRequest true "Account details"
-// @Success 201 {object} account.Response
+// @Param data body deposit.CreateRequest true "Account details"
+// @Success 201 {object} deposit.Response
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 404 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /accounts [post]
-func (h *Accounts) Create(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+// @Router /deposit [post]
+func (h *Deposits) Create(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 	v, err := webcontext.ContextValues(ctx)
 	if err != nil {
 		return err
@@ -200,7 +167,7 @@ func (h *Accounts) Create(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return err
 	}
 
-	var req account.CreateRequest
+	var req deposit.CreateRequest
 	if err := web.Decode(ctx, r, &req); err != nil {
 		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
 			err = weberror.NewError(ctx, err, http.StatusBadRequest)
@@ -219,7 +186,7 @@ func (h *Accounts) Create(ctx context.Context, w http.ResponseWriter, r *http.Re
 			if ok {
 				return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 			}
-			return errors.Wrapf(err, "Customer: %+v", &req)
+			return errors.Wrapf(err, "Deposit: %+v", &req)
 		}
 	}
 
@@ -227,19 +194,19 @@ func (h *Accounts) Create(ctx context.Context, w http.ResponseWriter, r *http.Re
 }
 
 // Read godoc
-// @Summary Update account by ID
-// @Description Update updates the specified account in the system.
-// @Tags account
+// @Summary Update deposit by ID
+// @Description Update updates the specified deposit in the system.
+// @Tags deposit
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param data body account.UpdateRequest true "Update fields"
+// @Param data body deposit.UpdateRequest true "Update fields"
 // @Success 204
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /accounts [patch]
-func (h *Accounts) Update(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+// @Router /deposits [patch]
+func (h *Deposits) Update(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 	v, err := webcontext.ContextValues(ctx)
 	if err != nil {
 		return err
@@ -250,7 +217,7 @@ func (h *Accounts) Update(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return err
 	}
 
-	var req account.UpdateRequest
+	var req deposit.UpdateRequest
 	if err := web.Decode(ctx, r, &req); err != nil {
 		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
 			err = weberror.NewError(ctx, err, http.StatusBadRequest)
@@ -278,19 +245,19 @@ func (h *Accounts) Update(ctx context.Context, w http.ResponseWriter, r *http.Re
 }
 
 // Read godoc
-// @Summary Archive account by ID
-// @Description Archive soft-deletes the specified account from the system.
-// @Tags account
+// @Summary Archive deposit by ID
+// @Description Archive soft-deletes the specified deposit from the system.
+// @Tags deposit
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param data body account.ArchiveRequest true "Update fields"
+// @Param data body deposit.ArchiveRequest true "Update fields"
 // @Success 204
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /accounts/archive [patch]
-func (h *Accounts) Archive(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+// @Router /deposits/archive [patch]
+func (h *Deposits) Archive(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 	v, err := webcontext.ContextValues(ctx)
 	if err != nil {
 		return err
@@ -301,7 +268,7 @@ func (h *Accounts) Archive(ctx context.Context, w http.ResponseWriter, r *http.R
 		return err
 	}
 
-	var req account.ArchiveRequest
+	var req deposit.ArchiveRequest
 	if err := web.Decode(ctx, r, &req); err != nil {
 		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
 			err = weberror.NewError(ctx, err, http.StatusBadRequest)

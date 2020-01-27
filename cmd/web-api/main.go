@@ -7,8 +7,6 @@ import (
 	"expvar"
 	"fmt"
 	"log"
-	"merryworld/surebank/internal/account"
-	"merryworld/surebank/internal/customer"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -22,7 +20,10 @@ import (
 
 	"merryworld/surebank/cmd/web-api/docs"
 	"merryworld/surebank/cmd/web-api/handlers"
+	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/checklist"
+	"merryworld/surebank/internal/customer"
+	"merryworld/surebank/internal/deposit"
 	"merryworld/surebank/internal/mid"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/flag"
@@ -455,6 +456,7 @@ func main() {
 	chklstRepo := checklist.NewRepository(masterDb)
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
+	depositRepo := deposit.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -471,6 +473,7 @@ func main() {
 		ChecklistRepo:   chklstRepo,
 		CustomerRepo:    customerRepo,
 		AccountRepo:     accountRepo,
+		DepositRepo:     depositRepo,
 		Authenticator:   authenticator,
 	}
 
