@@ -125,17 +125,6 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	}
 	app.Handle("POST", "/v1/signup", s.Signup)
 
-	// Register checklist.
-	p := Checklists{
-		Repository: appCtx.ChecklistRepo,
-	}
-	app.Handle("GET", "/v1/checklists", p.Find, mid.AuthenticateHeader(appCtx.Authenticator))
-	app.Handle("POST", "/v1/checklists", p.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/v1/checklists/:id", p.Read, mid.AuthenticateHeader(appCtx.Authenticator))
-	app.Handle("PATCH", "/v1/checklists", p.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("PATCH", "/v1/checklists/archive", p.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("DELETE", "/v1/checklists/:id", p.Delete, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-
 	// Register customer.
 	cus := Customers{
 		Repository: appCtx.CustomerRepo,

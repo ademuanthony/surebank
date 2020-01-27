@@ -149,7 +149,7 @@ func (h *Deposits) Read(ctx context.Context, w http.ResponseWriter, r *http.Requ
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param data body deposit.CreateRequest true "Account details"
+// @Param data body deposit.CreateRequest true "Deposit details"
 // @Success 201 {object} deposit.Response
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse

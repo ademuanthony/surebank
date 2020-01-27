@@ -6,3 +6,5 @@
 tmp
 .devops.json
 postgres-data/
+cmd/web-api/web-api
+cmd/web-app/web-app
