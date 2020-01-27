@@ -35,6 +35,7 @@ type Account struct {
 	ArchivedAt  null.Time `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
 	BranchID    string    `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
 	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Balance     float64   `boil:"balance" json:"balance" toml:"balance" yaml:"balance"`
 
 	R *accountR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L accountL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -52,6 +53,7 @@ var AccountColumns = struct {
 	ArchivedAt  string
 	BranchID    string
 	UpdatedAt   string
+	Balance     string
 }{
 	ID:          "id",
 	Number:      "number",
@@ -64,6 +66,7 @@ var AccountColumns = struct {
 	ArchivedAt:  "archived_at",
 	BranchID:    "branch_id",
 	UpdatedAt:   "updated_at",
+	Balance:     "balance",
 }
 
 // Generated where
@@ -155,6 +158,7 @@ var AccountWhere = struct {
 	ArchivedAt  whereHelpernull_Time
 	BranchID    whereHelperstring
 	UpdatedAt   whereHelpertime_Time
+	Balance     whereHelperfloat64
 }{
 	ID:          whereHelperstring{field: "\"account\".\"id\""},
 	Number:      whereHelperstring{field: "\"account\".\"number\""},
@@ -167,30 +171,28 @@ var AccountWhere = struct {
 	ArchivedAt:  whereHelpernull_Time{field: "\"account\".\"archived_at\""},
 	BranchID:    whereHelperstring{field: "\"account\".\"branch_id\""},
 	UpdatedAt:   whereHelpertime_Time{field: "\"account\".\"updated_at\""},
+	Balance:     whereHelperfloat64{field: "\"account\".\"balance\""},
 }
 
 // AccountRels is where relationship names are stored.
 var AccountRels = struct {
-	Branch      string
-	Customer    string
-	SalesRep    string
-	Deposits    string
-	Withdrawals string
+	Branch       string
+	Customer     string
+	SalesRep     string
+	Transactions string
 }{
-	Branch:      "Branch",
-	Customer:    "Customer",
-	SalesRep:    "SalesRep",
-	Deposits:    "Deposits",
-	Withdrawals: "Withdrawals",
+	Branch:       "Branch",
+	Customer:     "Customer",
+	SalesRep:     "SalesRep",
+	Transactions: "Transactions",
 }
 
 // accountR is where relationships are stored.
 type accountR struct {
-	Branch      *Branch
-	Customer    *Customer
-	SalesRep    *User
-	Deposits    DepositSlice
-	Withdrawals WithdrawalSlice
+	Branch       *Branch
+	Customer     *Customer
+	SalesRep     *User
+	Transactions TransactionSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -202,9 +204,9 @@ func (*accountR) NewStruct() *accountR {
 type accountL struct{}
 
 var (
-	accountAllColumns            = []string{"id", "number", "customer_id", "account_type", "target", "target_info", "sales_rep_id", "created_at", "archived_at", "branch_id", "updated_at"}
+	accountAllColumns            = []string{"id", "number", "customer_id", "account_type", "target", "target_info", "sales_rep_id", "created_at", "archived_at", "branch_id", "updated_at", "balance"}
 	accountColumnsWithoutDefault = []string{"id", "number", "account_type", "sales_rep_id", "created_at", "archived_at", "updated_at"}
-	accountColumnsWithDefault    = []string{"customer_id", "target", "target_info", "branch_id"}
+	accountColumnsWithDefault    = []string{"customer_id", "target", "target_info", "branch_id", "balance"}
 	accountPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -341,43 +343,22 @@ func (o *Account) SalesRep(mods ...qm.QueryMod) userQuery {
 	return query
 }
 
-// Deposits retrieves all the deposit's Deposits with an executor.
-func (o *Account) Deposits(mods ...qm.QueryMod) depositQuery {
+// Transactions retrieves all the transaction's Transactions with an executor.
+func (o *Account) Transactions(mods ...qm.QueryMod) transactionQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"deposit\".\"account_id\"=?", o.ID),
+		qm.Where("\"transaction\".\"account_id\"=?", o.ID),
 	)
 
-	query := Deposits(queryMods...)
-	queries.SetFrom(query.Query, "\"deposit\"")
+	query := Transactions(queryMods...)
+	queries.SetFrom(query.Query, "\"transaction\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"deposit\".*"})
-	}
-
-	return query
-}
-
-// Withdrawals retrieves all the withdrawal's Withdrawals with an executor.
-func (o *Account) Withdrawals(mods ...qm.QueryMod) withdrawalQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"withdrawal\".\"account_id\"=?", o.ID),
-	)
-
-	query := Withdrawals(queryMods...)
-	queries.SetFrom(query.Query, "\"withdrawal\"")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"withdrawal\".*"})
+		queries.SetSelect(query.Query, []string{"\"transaction\".*"})
 	}
 
 	return query
@@ -662,9 +643,9 @@ func (accountL) LoadSalesRep(ctx context.Context, e boil.ContextExecutor, singul
 	return nil
 }
 
-// LoadDeposits allows an eager lookup of values, cached into the
+// LoadTransactions allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (accountL) LoadDeposits(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount interface{}, mods queries.Applicator) error {
+func (accountL) LoadTransactions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount interface{}, mods queries.Applicator) error {
 	var slice []*Account
 	var object *Account
 
@@ -701,33 +682,33 @@ func (accountL) LoadDeposits(ctx context.Context, e boil.ContextExecutor, singul
 		return nil
 	}
 
-	query := NewQuery(qm.From(`deposit`), qm.WhereIn(`deposit.account_id in ?`, args...))
+	query := NewQuery(qm.From(`transaction`), qm.WhereIn(`transaction.account_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
 	}
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load deposit")
+		return errors.Wrap(err, "failed to eager load transaction")
 	}
 
-	var resultSlice []*Deposit
+	var resultSlice []*Transaction
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice deposit")
+		return errors.Wrap(err, "failed to bind eager loaded slice transaction")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on deposit")
+		return errors.Wrap(err, "failed to close results in eager load on transaction")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for deposit")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transaction")
 	}
 
 	if singular {
-		object.R.Deposits = resultSlice
+		object.R.Transactions = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &depositR{}
+				foreign.R = &transactionR{}
 			}
 			foreign.R.Account = object
 		}
@@ -737,97 +718,9 @@ func (accountL) LoadDeposits(ctx context.Context, e boil.ContextExecutor, singul
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
 			if local.ID == foreign.AccountID {
-				local.R.Deposits = append(local.R.Deposits, foreign)
+				local.R.Transactions = append(local.R.Transactions, foreign)
 				if foreign.R == nil {
-					foreign.R = &depositR{}
-				}
-				foreign.R.Account = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadWithdrawals allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (accountL) LoadWithdrawals(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount interface{}, mods queries.Applicator) error {
-	var slice []*Account
-	var object *Account
-
-	if singular {
-		object = maybeAccount.(*Account)
-	} else {
-		slice = *maybeAccount.(*[]*Account)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &accountR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &accountR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(qm.From(`withdrawal`), qm.WhereIn(`withdrawal.account_id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load withdrawal")
-	}
-
-	var resultSlice []*Withdrawal
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice withdrawal")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on withdrawal")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for withdrawal")
-	}
-
-	if singular {
-		object.R.Withdrawals = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &withdrawalR{}
-			}
-			foreign.R.Account = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.AccountID {
-				local.R.Withdrawals = append(local.R.Withdrawals, foreign)
-				if foreign.R == nil {
-					foreign.R = &withdrawalR{}
+					foreign.R = &transactionR{}
 				}
 				foreign.R.Account = local
 				break
@@ -979,11 +872,11 @@ func (o *Account) SetSalesRep(ctx context.Context, exec boil.ContextExecutor, in
 	return nil
 }
 
-// AddDeposits adds the given related objects to the existing relationships
+// AddTransactions adds the given related objects to the existing relationships
 // of the account, optionally inserting them as new records.
-// Appends related to o.R.Deposits.
+// Appends related to o.R.Transactions.
 // Sets related.R.Account appropriately.
-func (o *Account) AddDeposits(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Deposit) error {
+func (o *Account) AddTransactions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Transaction) error {
 	var err error
 	for _, rel := range related {
 		if insert {
@@ -993,9 +886,9 @@ func (o *Account) AddDeposits(ctx context.Context, exec boil.ContextExecutor, in
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"deposit\" SET %s WHERE %s",
+				"UPDATE \"transaction\" SET %s WHERE %s",
 				strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
-				strmangle.WhereClause("\"", "\"", 2, depositPrimaryKeyColumns),
+				strmangle.WhereClause("\"", "\"", 2, transactionPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -1014,68 +907,15 @@ func (o *Account) AddDeposits(ctx context.Context, exec boil.ContextExecutor, in
 
 	if o.R == nil {
 		o.R = &accountR{
-			Deposits: related,
+			Transactions: related,
 		}
 	} else {
-		o.R.Deposits = append(o.R.Deposits, related...)
+		o.R.Transactions = append(o.R.Transactions, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &depositR{
-				Account: o,
-			}
-		} else {
-			rel.R.Account = o
-		}
-	}
-	return nil
-}
-
-// AddWithdrawals adds the given related objects to the existing relationships
-// of the account, optionally inserting them as new records.
-// Appends related to o.R.Withdrawals.
-// Sets related.R.Account appropriately.
-func (o *Account) AddWithdrawals(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Withdrawal) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.AccountID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"withdrawal\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
-				strmangle.WhereClause("\"", "\"", 2, withdrawalPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.AccountID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &accountR{
-			Withdrawals: related,
-		}
-	} else {
-		o.R.Withdrawals = append(o.R.Withdrawals, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &withdrawalR{
+			rel.R = &transactionR{
 				Account: o,
 			}
 		} else {

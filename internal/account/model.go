@@ -28,20 +28,22 @@ func NewRepository(db *sqlx.DB) *Repository {
 
 // Account represents a customer account.
 type Account struct {
-	ID         string             `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	CustomerID string             `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	Customer   *customer.Customer `json:"customer"`
-	Number     string             `json:"number"  validate:"required" example:"Rocket Launch"`
-	Type       string             `json:"type" truss:"api-read"`
-	Target     float64            `json:"target" truss:"api-read"`
-	TargetInfo string             `json:"target_info" truss:"api-read"`
-	SalesRepID string             `json:"sales_rep_id" truss:"api-read"`
-	BranchID   string             `json:"branch_id" truss:"api-read"`
-	SalesRep   *user.User         `json:"sales_rep" truss:"api-read"`
-	Branch     *branch.Branch     `json:"branch" truss:"api-read"`
-	CreatedAt  time.Time          `json:"created_at" truss:"api-read"`
-	UpdatedAt  time.Time          `json:"updated_at" truss:"api-read"`
-	ArchivedAt *time.Time         `json:"archived_at,omitempty" truss:"api-hide"`
+	ID         string     `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	CustomerID string     `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	Number     string     `json:"number"  validate:"required" example:"Rocket Launch"`
+	Type       string     `json:"type" truss:"api-read"`
+	Balance    float64    `json:"balance" truss:"api-read"`
+	Target     float64    `json:"target" truss:"api-read"`
+	TargetInfo string     `json:"target_info" truss:"api-read"`
+	SalesRepID string     `json:"sales_rep_id" truss:"api-read"`
+	BranchID   string     `json:"branch_id" truss:"api-read"`
+	CreatedAt  time.Time  `json:"created_at" truss:"api-read"`
+	UpdatedAt  time.Time  `json:"updated_at" truss:"api-read"`
+	ArchivedAt *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
+
+	Customer *customer.Customer `json:"customer"`
+	SalesRep *user.User         `json:"sales_rep" truss:"api-read"`
+	Branch   *branch.Branch     `json:"branch" truss:"api-read"`
 }
 
 func FromModel(rec *models.Account) *Account {
@@ -50,6 +52,7 @@ func FromModel(rec *models.Account) *Account {
 		CustomerID: rec.CustomerID,
 		Number:     rec.Number,
 		Type:       rec.AccountType,
+		Balance:    rec.Balance,
 		Target:     rec.Target,
 		TargetInfo: rec.TargetInfo,
 		SalesRepID: rec.SalesRepID,
@@ -86,6 +89,7 @@ type Response struct {
 	Customer   *customer.Response `json:"customer,omitempty"`
 	Number     string             `json:"number" example:"Rocket Launch"`
 	Type       string             `json:"type" truss:"api-read"`
+	Balance    float64            `json:"balance" truss:"api-read"`
 	Target     float64            `json:"target" truss:"api-read"`
 	TargetInfo string             `json:"target_info" truss:"api-read"`
 	SalesRepID string             `json:"sales_rep_id" truss:"api-read"`
@@ -110,6 +114,7 @@ func (m *Account) Response(ctx context.Context) *Response {
 		Customer:   m.Customer.Response(ctx),
 		Number:     m.Number,
 		Type:       m.Type,
+		Balance:    m.Balance,
 		Target:     m.Target,
 		TargetInfo: m.TargetInfo,
 		SalesRepID: m.SalesRepID,

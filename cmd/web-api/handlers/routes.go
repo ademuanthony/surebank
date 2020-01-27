@@ -8,7 +8,7 @@ import (
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/customer"
-	"merryworld/surebank/internal/deposit"
+	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/mid"
 	saasSwagger "merryworld/surebank/internal/mid/saas-swagger"
 	"merryworld/surebank/internal/platform/auth"
@@ -42,7 +42,7 @@ type AppContext struct {
 	ChecklistRepo     *checklist.Repository
 	CustomerRepo      *customer.Repository
 	AccountRepo 	  *account.Repository
-	DepositRepo		  *deposit.Repository
+	DepositRepo		  *transaction.Repository
 	Authenticator     *auth.Authenticator
 	PreAppMiddleware  []web.Middleware
 	PostAppMiddleware []web.Middleware
@@ -141,7 +141,7 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("PATCH", "/v1/accounts/archive", acc.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 
 	// Register deposit.
-	dep := Deposits{
+	dep := Transactions{
 		Repository: appCtx.DepositRepo,
 	}
 	app.Handle("GET", "/v1/deposits", dep.Find, mid.AuthenticateHeader(appCtx.Authenticator))

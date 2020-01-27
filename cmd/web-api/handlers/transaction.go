@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"merryworld/surebank/internal/checklist"
-	"merryworld/surebank/internal/deposit"
+	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
@@ -17,37 +17,37 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 )
 
-// Deposits represents the Deposit API method handler set.
-type Deposits struct {
-	Repository *deposit.Repository
+// Transactions represents the Transaction API method handler set.
+type Transactions struct {
+	Repository *transaction.Repository
 
 	// ADD OTHER STATE LIKE THE LOGGER IF NEEDED.
 }
 
 // Find godoc
-// @Summary List deposits
-// @Description Find returns the existing deposits in the system.
-// @Tags deposit
+// @Summary List transactions
+// @Description Find returns the existing transactions in the system.
+// @Tags transaction
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param where				query string 	false	"Filter string, example: account_id = '1232-123dasf-324fdas-324423'"
+// @Param where				query string 	false	"Filter string, example: tx_type = 'deposit' and account_id = '1232-123dasf-324fdas-324423'"
 // @Param order				query string   	false 	"Order columns separated by comma, example: created_at desc"
 // @Param limit				query integer  	false 	"Limit, example: 10"
 // @Param offset			query integer  	false 	"Offset, example: 20"
 // @Param include-archived query boolean 	false 	"Included Archived, example: false"
-// @Success 200 {array} deposit.Response
+// @Success 200 {array} transaction.Response
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /deposits [get]
-func (h *Deposits) Find(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+// @Router /transactions [get]
+func (h *Transactions) Find(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 	claims, ok := ctx.Value(auth.Key).(auth.Claims)
 	if !ok {
 		return errors.New("claims missing from context")
 	}
 
-	var req deposit.FindRequest
+	var req transaction.FindRequest
 
 	// Handle where query value if set.
 	if v := r.URL.Query().Get("where"); v != "" {
@@ -110,19 +110,19 @@ func (h *Deposits) Find(ctx context.Context, w http.ResponseWriter, r *http.Requ
 }
 
 // Read godoc
-// @Summary Get deposit by ID.
-// @Description Read returns the specified deposit from the system.
-// @Tags deposit
+// @Summary Get transaction by ID.
+// @Description Read returns the specified transaction from the system.
+// @Tags transaction
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param id path string true "Deposit ID"
-// @Success 200 {object} deposit.Response
+// @Param id path string true "Transaction ID"
+// @Success 200 {object} transaction.Response
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 404 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /deposits/{id} [get]
-func (h *Deposits) Read(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+// @Router /transactions/{id} [get]
+func (h *Transactions) Read(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 	claims, ok := ctx.Value(auth.Key).(auth.Claims)
 	if !ok {
 		return errors.New("claims missing from context")
@@ -149,14 +149,14 @@ func (h *Deposits) Read(ctx context.Context, w http.ResponseWriter, r *http.Requ
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param data body deposit.CreateRequest true "Deposit details"
-// @Success 201 {object} deposit.Response
+// @Param data body transaction.CreateDepositRequest true "Deposit details"
+// @Success 201 {object} transaction.Response
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 404 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /deposit [post]
-func (h *Deposits) Create(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+// @Router /transactions [post]
+func (h *Transactions) Create(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 	v, err := webcontext.ContextValues(ctx)
 	if err != nil {
 		return err
@@ -167,7 +167,7 @@ func (h *Deposits) Create(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return err
 	}
 
-	var req deposit.CreateRequest
+	var req transaction.CreateDepositRequest
 	if err := web.Decode(ctx, r, &req); err != nil {
 		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
 			err = weberror.NewError(ctx, err, http.StatusBadRequest)
@@ -175,7 +175,12 @@ func (h *Deposits) Create(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return web.RespondJsonError(ctx, w, err)
 	}
 
-	res, err := h.Repository.Create(ctx, claims, req, v.Now)
+	res, err := h.Repository.Create(ctx, claims, transaction.CreateRequest{
+		Type:          transaction.TransactionType_Deposit,
+		AccountNumber: req.AccountNumber,
+		Amount:        req.Amount,
+		Narration:     req.Narration,
+	}, v.Now)
 	if err != nil {
 		cause := errors.Cause(err)
 		switch cause {
@@ -186,7 +191,7 @@ func (h *Deposits) Create(ctx context.Context, w http.ResponseWriter, r *http.Re
 			if ok {
 				return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 			}
-			return errors.Wrapf(err, "Deposit: %+v", &req)
+			return errors.Wrapf(err, "Transaction: %+v", &req)
 		}
 	}
 
@@ -194,19 +199,19 @@ func (h *Deposits) Create(ctx context.Context, w http.ResponseWriter, r *http.Re
 }
 
 // Read godoc
-// @Summary Update deposit by ID
-// @Description Update updates the specified deposit in the system.
-// @Tags deposit
+// @Summary Update transaction by ID
+// @Description Update updates the specified transaction in the system.
+// @Tags transaction
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param data body deposit.UpdateRequest true "Update fields"
+// @Param data body transaction.UpdateRequest true "Update fields"
 // @Success 204
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /deposits [patch]
-func (h *Deposits) Update(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+// @Router /transactions [patch]
+func (h *Transactions) Update(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 	v, err := webcontext.ContextValues(ctx)
 	if err != nil {
 		return err
@@ -217,7 +222,7 @@ func (h *Deposits) Update(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return err
 	}
 
-	var req deposit.UpdateRequest
+	var req transaction.UpdateRequest
 	if err := web.Decode(ctx, r, &req); err != nil {
 		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
 			err = weberror.NewError(ctx, err, http.StatusBadRequest)
@@ -245,19 +250,19 @@ func (h *Deposits) Update(ctx context.Context, w http.ResponseWriter, r *http.Re
 }
 
 // Read godoc
-// @Summary Archive deposit by ID
-// @Description Archive soft-deletes the specified deposit from the system.
-// @Tags deposit
+// @Summary Archive transaction by ID
+// @Description Archive soft-deletes the specified transaction from the system.
+// @Tags transaction
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password
-// @Param data body deposit.ArchiveRequest true "Update fields"
+// @Param data body transaction.ArchiveRequest true "Update fields"
 // @Success 204
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /deposits/archive [patch]
-func (h *Deposits) Archive(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+// @Router /transactions/archive [patch]
+func (h *Transactions) Archive(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 	v, err := webcontext.ContextValues(ctx)
 	if err != nil {
 		return err
@@ -268,7 +273,7 @@ func (h *Deposits) Archive(ctx context.Context, w http.ResponseWriter, r *http.R
 		return err
 	}
 
-	var req deposit.ArchiveRequest
+	var req transaction.ArchiveRequest
 	if err := web.Decode(ctx, r, &req); err != nil {
 		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
 			err = weberror.NewError(ctx, err, http.StatusBadRequest)

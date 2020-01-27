@@ -23,7 +23,7 @@ import (
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/customer"
-	"merryworld/surebank/internal/deposit"
+	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/mid"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/flag"
@@ -456,7 +456,7 @@ func main() {
 	chklstRepo := checklist.NewRepository(masterDb)
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
-	depositRepo := deposit.NewRepository(masterDb)
+	depositRepo := transaction.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,

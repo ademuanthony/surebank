@@ -9,28 +9,26 @@ var TableNames = struct {
 	Brand           string
 	Category        string
 	Customer        string
-	Deposit         string
 	Payment         string
 	Product         string
 	ProductCategory string
 	Sale            string
 	SaleItem        string
 	Stock           string
+	Transaction     string
 	Users           string
-	Withdrawal      string
 }{
 	Account:         "account",
 	Branch:          "branch",
 	Brand:           "brand",
 	Category:        "category",
 	Customer:        "customer",
-	Deposit:         "deposit",
 	Payment:         "payment",
 	Product:         "product",
 	ProductCategory: "product_category",
 	Sale:            "sale",
 	SaleItem:        "sale_item",
 	Stock:           "stock",
+	Transaction:     "transaction",
 	Users:           "users",
-	Withdrawal:      "withdrawal",
 }

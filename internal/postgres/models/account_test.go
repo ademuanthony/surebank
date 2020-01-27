@@ -353,14 +353,14 @@ func testAccountsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testAccountToManyDeposits(t *testing.T) {
+func testAccountToManyTransactions(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Account
-	var b, c Deposit
+	var b, c Transaction
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, accountDBTypes, true, accountColumnsWithDefault...); err != nil {
@@ -371,10 +371,10 @@ func testAccountToManyDeposits(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, depositDBTypes, false, depositColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, depositDBTypes, false, depositColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -388,7 +388,7 @@ func testAccountToManyDeposits(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.Deposits().All(ctx, tx)
+	check, err := a.Transactions().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -411,96 +411,18 @@ func testAccountToManyDeposits(t *testing.T) {
 	}
 
 	slice := AccountSlice{&a}
-	if err = a.L.LoadDeposits(ctx, tx, false, (*[]*Account)(&slice), nil); err != nil {
+	if err = a.L.LoadTransactions(ctx, tx, false, (*[]*Account)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.Deposits); got != 2 {
+	if got := len(a.R.Transactions); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.Deposits = nil
-	if err = a.L.LoadDeposits(ctx, tx, true, &a, nil); err != nil {
+	a.R.Transactions = nil
+	if err = a.L.LoadTransactions(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.Deposits); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testAccountToManyWithdrawals(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Account
-	var b, c Withdrawal
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, accountDBTypes, true, accountColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Account struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, withdrawalDBTypes, false, withdrawalColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, withdrawalDBTypes, false, withdrawalColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.AccountID = a.ID
-	c.AccountID = a.ID
-
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.Withdrawals().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if v.AccountID == b.AccountID {
-			bFound = true
-		}
-		if v.AccountID == c.AccountID {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := AccountSlice{&a}
-	if err = a.L.LoadWithdrawals(ctx, tx, false, (*[]*Account)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.Withdrawals); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.Withdrawals = nil
-	if err = a.L.LoadWithdrawals(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.Withdrawals); got != 2 {
+	if got := len(a.R.Transactions); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -509,7 +431,7 @@ func testAccountToManyWithdrawals(t *testing.T) {
 	}
 }
 
-func testAccountToManyAddOpDeposits(t *testing.T) {
+func testAccountToManyAddOpTransactions(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -517,15 +439,15 @@ func testAccountToManyAddOpDeposits(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Account
-	var b, c, d, e Deposit
+	var b, c, d, e Transaction
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*Deposit{&b, &c, &d, &e}
+	foreigners := []*Transaction{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, depositDBTypes, false, strmangle.SetComplement(depositPrimaryKeyColumns, depositColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -540,13 +462,13 @@ func testAccountToManyAddOpDeposits(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*Deposit{
+	foreignersSplitByInsertion := [][]*Transaction{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddDeposits(ctx, tx, i != 0, x...)
+		err = a.AddTransactions(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -568,89 +490,14 @@ func testAccountToManyAddOpDeposits(t *testing.T) {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.Deposits[i*2] != first {
+		if a.R.Transactions[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.Deposits[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.Deposits().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-func testAccountToManyAddOpWithdrawals(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Account
-	var b, c, d, e Withdrawal
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Withdrawal{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, withdrawalDBTypes, false, strmangle.SetComplement(withdrawalPrimaryKeyColumns, withdrawalColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*Withdrawal{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddWithdrawals(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if a.ID != first.AccountID {
-			t.Error("foreign key was wrong value", a.ID, first.AccountID)
-		}
-		if a.ID != second.AccountID {
-			t.Error("foreign key was wrong value", a.ID, second.AccountID)
-		}
-
-		if first.R.Account != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Account != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.Withdrawals[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.Withdrawals[i*2+1] != second {
+		if a.R.Transactions[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.Withdrawals().Count(ctx, tx)
+		count, err := a.Transactions().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1058,7 +905,7 @@ func testAccountsSelect(t *testing.T) {
 }
 
 var (
-	accountDBTypes = map[string]string{`ID`: `character`, `Number`: `character varying`, `CustomerID`: `character`, `AccountType`: `enum.account_type('DS','SB')`, `Target`: `double precision`, `TargetInfo`: `character varying`, `SalesRepID`: `character`, `CreatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `BranchID`: `character`, `UpdatedAt`: `timestamp with time zone`}
+	accountDBTypes = map[string]string{`ID`: `character`, `Number`: `character varying`, `CustomerID`: `character`, `AccountType`: `enum.account_type('DS','SB')`, `Target`: `double precision`, `TargetInfo`: `character varying`, `SalesRepID`: `character`, `CreatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `BranchID`: `character`, `UpdatedAt`: `timestamp with time zone`, `Balance`: `double precision`}
 	_              = bytes.MinRead
 )
 

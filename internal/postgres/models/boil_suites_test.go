@@ -17,15 +17,14 @@ func TestParent(t *testing.T) {
 	t.Run("Brands", testBrands)
 	t.Run("Categories", testCategories)
 	t.Run("Customers", testCustomers)
-	t.Run("Deposits", testDeposits)
 	t.Run("Payments", testPayments)
 	t.Run("Products", testProducts)
 	t.Run("ProductCategories", testProductCategories)
 	t.Run("Sales", testSales)
 	t.Run("SaleItems", testSaleItems)
 	t.Run("Stocks", testStocks)
+	t.Run("Transactions", testTransactions)
 	t.Run("Users", testUsers)
-	t.Run("Withdrawals", testWithdrawals)
 }
 
 func TestDelete(t *testing.T) {
@@ -34,15 +33,14 @@ func TestDelete(t *testing.T) {
 	t.Run("Brands", testBrandsDelete)
 	t.Run("Categories", testCategoriesDelete)
 	t.Run("Customers", testCustomersDelete)
-	t.Run("Deposits", testDepositsDelete)
 	t.Run("Payments", testPaymentsDelete)
 	t.Run("Products", testProductsDelete)
 	t.Run("ProductCategories", testProductCategoriesDelete)
 	t.Run("Sales", testSalesDelete)
 	t.Run("SaleItems", testSaleItemsDelete)
 	t.Run("Stocks", testStocksDelete)
+	t.Run("Transactions", testTransactionsDelete)
 	t.Run("Users", testUsersDelete)
-	t.Run("Withdrawals", testWithdrawalsDelete)
 }
 
 func TestQueryDeleteAll(t *testing.T) {
@@ -51,15 +49,14 @@ func TestQueryDeleteAll(t *testing.T) {
 	t.Run("Brands", testBrandsQueryDeleteAll)
 	t.Run("Categories", testCategoriesQueryDeleteAll)
 	t.Run("Customers", testCustomersQueryDeleteAll)
-	t.Run("Deposits", testDepositsQueryDeleteAll)
 	t.Run("Payments", testPaymentsQueryDeleteAll)
 	t.Run("Products", testProductsQueryDeleteAll)
 	t.Run("ProductCategories", testProductCategoriesQueryDeleteAll)
 	t.Run("Sales", testSalesQueryDeleteAll)
 	t.Run("SaleItems", testSaleItemsQueryDeleteAll)
 	t.Run("Stocks", testStocksQueryDeleteAll)
+	t.Run("Transactions", testTransactionsQueryDeleteAll)
 	t.Run("Users", testUsersQueryDeleteAll)
-	t.Run("Withdrawals", testWithdrawalsQueryDeleteAll)
 }
 
 func TestSliceDeleteAll(t *testing.T) {
@@ -68,15 +65,14 @@ func TestSliceDeleteAll(t *testing.T) {
 	t.Run("Brands", testBrandsSliceDeleteAll)
 	t.Run("Categories", testCategoriesSliceDeleteAll)
 	t.Run("Customers", testCustomersSliceDeleteAll)
-	t.Run("Deposits", testDepositsSliceDeleteAll)
 	t.Run("Payments", testPaymentsSliceDeleteAll)
 	t.Run("Products", testProductsSliceDeleteAll)
 	t.Run("ProductCategories", testProductCategoriesSliceDeleteAll)
 	t.Run("Sales", testSalesSliceDeleteAll)
 	t.Run("SaleItems", testSaleItemsSliceDeleteAll)
 	t.Run("Stocks", testStocksSliceDeleteAll)
+	t.Run("Transactions", testTransactionsSliceDeleteAll)
 	t.Run("Users", testUsersSliceDeleteAll)
-	t.Run("Withdrawals", testWithdrawalsSliceDeleteAll)
 }
 
 func TestExists(t *testing.T) {
@@ -85,15 +81,14 @@ func TestExists(t *testing.T) {
 	t.Run("Brands", testBrandsExists)
 	t.Run("Categories", testCategoriesExists)
 	t.Run("Customers", testCustomersExists)
-	t.Run("Deposits", testDepositsExists)
 	t.Run("Payments", testPaymentsExists)
 	t.Run("Products", testProductsExists)
 	t.Run("ProductCategories", testProductCategoriesExists)
 	t.Run("Sales", testSalesExists)
 	t.Run("SaleItems", testSaleItemsExists)
 	t.Run("Stocks", testStocksExists)
+	t.Run("Transactions", testTransactionsExists)
 	t.Run("Users", testUsersExists)
-	t.Run("Withdrawals", testWithdrawalsExists)
 }
 
 func TestFind(t *testing.T) {
@@ -102,15 +97,14 @@ func TestFind(t *testing.T) {
 	t.Run("Brands", testBrandsFind)
 	t.Run("Categories", testCategoriesFind)
 	t.Run("Customers", testCustomersFind)
-	t.Run("Deposits", testDepositsFind)
 	t.Run("Payments", testPaymentsFind)
 	t.Run("Products", testProductsFind)
 	t.Run("ProductCategories", testProductCategoriesFind)
 	t.Run("Sales", testSalesFind)
 	t.Run("SaleItems", testSaleItemsFind)
 	t.Run("Stocks", testStocksFind)
+	t.Run("Transactions", testTransactionsFind)
 	t.Run("Users", testUsersFind)
-	t.Run("Withdrawals", testWithdrawalsFind)
 }
 
 func TestBind(t *testing.T) {
@@ -119,15 +113,14 @@ func TestBind(t *testing.T) {
 	t.Run("Brands", testBrandsBind)
 	t.Run("Categories", testCategoriesBind)
 	t.Run("Customers", testCustomersBind)
-	t.Run("Deposits", testDepositsBind)
 	t.Run("Payments", testPaymentsBind)
 	t.Run("Products", testProductsBind)
 	t.Run("ProductCategories", testProductCategoriesBind)
 	t.Run("Sales", testSalesBind)
 	t.Run("SaleItems", testSaleItemsBind)
 	t.Run("Stocks", testStocksBind)
+	t.Run("Transactions", testTransactionsBind)
 	t.Run("Users", testUsersBind)
-	t.Run("Withdrawals", testWithdrawalsBind)
 }
 
 func TestOne(t *testing.T) {
@@ -136,15 +129,14 @@ func TestOne(t *testing.T) {
 	t.Run("Brands", testBrandsOne)
 	t.Run("Categories", testCategoriesOne)
 	t.Run("Customers", testCustomersOne)
-	t.Run("Deposits", testDepositsOne)
 	t.Run("Payments", testPaymentsOne)
 	t.Run("Products", testProductsOne)
 	t.Run("ProductCategories", testProductCategoriesOne)
 	t.Run("Sales", testSalesOne)
 	t.Run("SaleItems", testSaleItemsOne)
 	t.Run("Stocks", testStocksOne)
+	t.Run("Transactions", testTransactionsOne)
 	t.Run("Users", testUsersOne)
-	t.Run("Withdrawals", testWithdrawalsOne)
 }
 
 func TestAll(t *testing.T) {
@@ -153,15 +145,14 @@ func TestAll(t *testing.T) {
 	t.Run("Brands", testBrandsAll)
 	t.Run("Categories", testCategoriesAll)
 	t.Run("Customers", testCustomersAll)
-	t.Run("Deposits", testDepositsAll)
 	t.Run("Payments", testPaymentsAll)
 	t.Run("Products", testProductsAll)
 	t.Run("ProductCategories", testProductCategoriesAll)
 	t.Run("Sales", testSalesAll)
 	t.Run("SaleItems", testSaleItemsAll)
 	t.Run("Stocks", testStocksAll)
+	t.Run("Transactions", testTransactionsAll)
 	t.Run("Users", testUsersAll)
-	t.Run("Withdrawals", testWithdrawalsAll)
 }
 
 func TestCount(t *testing.T) {
@@ -170,15 +161,14 @@ func TestCount(t *testing.T) {
 	t.Run("Brands", testBrandsCount)
 	t.Run("Categories", testCategoriesCount)
 	t.Run("Customers", testCustomersCount)
-	t.Run("Deposits", testDepositsCount)
 	t.Run("Payments", testPaymentsCount)
 	t.Run("Products", testProductsCount)
 	t.Run("ProductCategories", testProductCategoriesCount)
 	t.Run("Sales", testSalesCount)
 	t.Run("SaleItems", testSaleItemsCount)
 	t.Run("Stocks", testStocksCount)
+	t.Run("Transactions", testTransactionsCount)
 	t.Run("Users", testUsersCount)
-	t.Run("Withdrawals", testWithdrawalsCount)
 }
 
 func TestInsert(t *testing.T) {
@@ -192,8 +182,6 @@ func TestInsert(t *testing.T) {
 	t.Run("Categories", testCategoriesInsertWhitelist)
 	t.Run("Customers", testCustomersInsert)
 	t.Run("Customers", testCustomersInsertWhitelist)
-	t.Run("Deposits", testDepositsInsert)
-	t.Run("Deposits", testDepositsInsertWhitelist)
 	t.Run("Payments", testPaymentsInsert)
 	t.Run("Payments", testPaymentsInsertWhitelist)
 	t.Run("Products", testProductsInsert)
@@ -206,10 +194,10 @@ func TestInsert(t *testing.T) {
 	t.Run("SaleItems", testSaleItemsInsertWhitelist)
 	t.Run("Stocks", testStocksInsert)
 	t.Run("Stocks", testStocksInsertWhitelist)
+	t.Run("Transactions", testTransactionsInsert)
+	t.Run("Transactions", testTransactionsInsertWhitelist)
 	t.Run("Users", testUsersInsert)
 	t.Run("Users", testUsersInsertWhitelist)
-	t.Run("Withdrawals", testWithdrawalsInsert)
-	t.Run("Withdrawals", testWithdrawalsInsertWhitelist)
 }
 
 // TestToOne tests cannot be run in parallel
@@ -220,8 +208,6 @@ func TestToOne(t *testing.T) {
 	t.Run("AccountToUserUsingSalesRep", testAccountToOneUserUsingSalesRep)
 	t.Run("CustomerToBranchUsingBranch", testCustomerToOneBranchUsingBranch)
 	t.Run("CustomerToUserUsingSalesRep", testCustomerToOneUserUsingSalesRep)
-	t.Run("DepositToAccountUsingAccount", testDepositToOneAccountUsingAccount)
-	t.Run("DepositToUserUsingSalesRep", testDepositToOneUserUsingSalesRep)
 	t.Run("PaymentToSaleUsingSale", testPaymentToOneSaleUsingSale)
 	t.Run("PaymentToUserUsingSalesRep", testPaymentToOneUserUsingSalesRep)
 	t.Run("ProductToUserUsingArchivedBy", testProductToOneUserUsingArchivedBy)
@@ -242,9 +228,9 @@ func TestToOne(t *testing.T) {
 	t.Run("StockToUserUsingCreatedBy", testStockToOneUserUsingCreatedBy)
 	t.Run("StockToProductUsingProduct", testStockToOneProductUsingProduct)
 	t.Run("StockToUserUsingUpdatedBy", testStockToOneUserUsingUpdatedBy)
+	t.Run("TransactionToAccountUsingAccount", testTransactionToOneAccountUsingAccount)
+	t.Run("TransactionToUserUsingSalesRep", testTransactionToOneUserUsingSalesRep)
 	t.Run("UserToBranchUsingBranch", testUserToOneBranchUsingBranch)
-	t.Run("WithdrawalToAccountUsingAccount", testWithdrawalToOneAccountUsingAccount)
-	t.Run("WithdrawalToUserUsingSalesRep", testWithdrawalToOneUserUsingSalesRep)
 }
 
 // TestOneToOne tests cannot be run in parallel
@@ -254,8 +240,7 @@ func TestOneToOne(t *testing.T) {}
 // TestToMany tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToMany(t *testing.T) {
-	t.Run("AccountToDeposits", testAccountToManyDeposits)
-	t.Run("AccountToWithdrawals", testAccountToManyWithdrawals)
+	t.Run("AccountToTransactions", testAccountToManyTransactions)
 	t.Run("BranchToAccounts", testBranchToManyAccounts)
 	t.Run("BranchToCustomers", testBranchToManyCustomers)
 	t.Run("BranchToSales", testBranchToManySales)
@@ -272,7 +257,6 @@ func TestToMany(t *testing.T) {
 	t.Run("SaleToSaleItems", testSaleToManySaleItems)
 	t.Run("UserToSalesRepAccounts", testUserToManySalesRepAccounts)
 	t.Run("UserToSalesRepCustomers", testUserToManySalesRepCustomers)
-	t.Run("UserToSalesRepDeposits", testUserToManySalesRepDeposits)
 	t.Run("UserToSalesRepPayments", testUserToManySalesRepPayments)
 	t.Run("UserToArchivedByProducts", testUserToManyArchivedByProducts)
 	t.Run("UserToCreatedByProducts", testUserToManyCreatedByProducts)
@@ -283,7 +267,7 @@ func TestToMany(t *testing.T) {
 	t.Run("UserToArchivedByStocks", testUserToManyArchivedByStocks)
 	t.Run("UserToCreatedByStocks", testUserToManyCreatedByStocks)
 	t.Run("UserToUpdatedByStocks", testUserToManyUpdatedByStocks)
-	t.Run("UserToSalesRepWithdrawals", testUserToManySalesRepWithdrawals)
+	t.Run("UserToSalesRepTransactions", testUserToManySalesRepTransactions)
 }
 
 // TestToOneSet tests cannot be run in parallel
@@ -294,8 +278,6 @@ func TestToOneSet(t *testing.T) {
 	t.Run("AccountToUserUsingSalesRepAccounts", testAccountToOneSetOpUserUsingSalesRep)
 	t.Run("CustomerToBranchUsingCustomers", testCustomerToOneSetOpBranchUsingBranch)
 	t.Run("CustomerToUserUsingSalesRepCustomers", testCustomerToOneSetOpUserUsingSalesRep)
-	t.Run("DepositToAccountUsingDeposits", testDepositToOneSetOpAccountUsingAccount)
-	t.Run("DepositToUserUsingSalesRepDeposits", testDepositToOneSetOpUserUsingSalesRep)
 	t.Run("PaymentToSaleUsingPayments", testPaymentToOneSetOpSaleUsingSale)
 	t.Run("PaymentToUserUsingSalesRepPayments", testPaymentToOneSetOpUserUsingSalesRep)
 	t.Run("ProductToUserUsingArchivedByProducts", testProductToOneSetOpUserUsingArchivedBy)
@@ -316,9 +298,9 @@ func TestToOneSet(t *testing.T) {
 	t.Run("StockToUserUsingCreatedByStocks", testStockToOneSetOpUserUsingCreatedBy)
 	t.Run("StockToProductUsingStocks", testStockToOneSetOpProductUsingProduct)
 	t.Run("StockToUserUsingUpdatedByStocks", testStockToOneSetOpUserUsingUpdatedBy)
+	t.Run("TransactionToAccountUsingTransactions", testTransactionToOneSetOpAccountUsingAccount)
+	t.Run("TransactionToUserUsingSalesRepTransactions", testTransactionToOneSetOpUserUsingSalesRep)
 	t.Run("UserToBranchUsingUsers", testUserToOneSetOpBranchUsingBranch)
-	t.Run("WithdrawalToAccountUsingWithdrawals", testWithdrawalToOneSetOpAccountUsingAccount)
-	t.Run("WithdrawalToUserUsingSalesRepWithdrawals", testWithdrawalToOneSetOpUserUsingSalesRep)
 }
 
 // TestToOneRemove tests cannot be run in parallel
@@ -342,8 +324,7 @@ func TestOneToOneRemove(t *testing.T) {}
 // TestToManyAdd tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToManyAdd(t *testing.T) {
-	t.Run("AccountToDeposits", testAccountToManyAddOpDeposits)
-	t.Run("AccountToWithdrawals", testAccountToManyAddOpWithdrawals)
+	t.Run("AccountToTransactions", testAccountToManyAddOpTransactions)
 	t.Run("BranchToAccounts", testBranchToManyAddOpAccounts)
 	t.Run("BranchToCustomers", testBranchToManyAddOpCustomers)
 	t.Run("BranchToSales", testBranchToManyAddOpSales)
@@ -360,7 +341,6 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("SaleToSaleItems", testSaleToManyAddOpSaleItems)
 	t.Run("UserToSalesRepAccounts", testUserToManyAddOpSalesRepAccounts)
 	t.Run("UserToSalesRepCustomers", testUserToManyAddOpSalesRepCustomers)
-	t.Run("UserToSalesRepDeposits", testUserToManyAddOpSalesRepDeposits)
 	t.Run("UserToSalesRepPayments", testUserToManyAddOpSalesRepPayments)
 	t.Run("UserToArchivedByProducts", testUserToManyAddOpArchivedByProducts)
 	t.Run("UserToCreatedByProducts", testUserToManyAddOpCreatedByProducts)
@@ -371,7 +351,7 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("UserToArchivedByStocks", testUserToManyAddOpArchivedByStocks)
 	t.Run("UserToCreatedByStocks", testUserToManyAddOpCreatedByStocks)
 	t.Run("UserToUpdatedByStocks", testUserToManyAddOpUpdatedByStocks)
-	t.Run("UserToSalesRepWithdrawals", testUserToManyAddOpSalesRepWithdrawals)
+	t.Run("UserToSalesRepTransactions", testUserToManyAddOpSalesRepTransactions)
 }
 
 // TestToManySet tests cannot be run in parallel
@@ -400,15 +380,14 @@ func TestReload(t *testing.T) {
 	t.Run("Brands", testBrandsReload)
 	t.Run("Categories", testCategoriesReload)
 	t.Run("Customers", testCustomersReload)
-	t.Run("Deposits", testDepositsReload)
 	t.Run("Payments", testPaymentsReload)
 	t.Run("Products", testProductsReload)
 	t.Run("ProductCategories", testProductCategoriesReload)
 	t.Run("Sales", testSalesReload)
 	t.Run("SaleItems", testSaleItemsReload)
 	t.Run("Stocks", testStocksReload)
+	t.Run("Transactions", testTransactionsReload)
 	t.Run("Users", testUsersReload)
-	t.Run("Withdrawals", testWithdrawalsReload)
 }
 
 func TestReloadAll(t *testing.T) {
@@ -417,15 +396,14 @@ func TestReloadAll(t *testing.T) {
 	t.Run("Brands", testBrandsReloadAll)
 	t.Run("Categories", testCategoriesReloadAll)
 	t.Run("Customers", testCustomersReloadAll)
-	t.Run("Deposits", testDepositsReloadAll)
 	t.Run("Payments", testPaymentsReloadAll)
 	t.Run("Products", testProductsReloadAll)
 	t.Run("ProductCategories", testProductCategoriesReloadAll)
 	t.Run("Sales", testSalesReloadAll)
 	t.Run("SaleItems", testSaleItemsReloadAll)
 	t.Run("Stocks", testStocksReloadAll)
+	t.Run("Transactions", testTransactionsReloadAll)
 	t.Run("Users", testUsersReloadAll)
-	t.Run("Withdrawals", testWithdrawalsReloadAll)
 }
 
 func TestSelect(t *testing.T) {
@@ -434,15 +412,14 @@ func TestSelect(t *testing.T) {
 	t.Run("Brands", testBrandsSelect)
 	t.Run("Categories", testCategoriesSelect)
 	t.Run("Customers", testCustomersSelect)
-	t.Run("Deposits", testDepositsSelect)
 	t.Run("Payments", testPaymentsSelect)
 	t.Run("Products", testProductsSelect)
 	t.Run("ProductCategories", testProductCategoriesSelect)
 	t.Run("Sales", testSalesSelect)
 	t.Run("SaleItems", testSaleItemsSelect)
 	t.Run("Stocks", testStocksSelect)
+	t.Run("Transactions", testTransactionsSelect)
 	t.Run("Users", testUsersSelect)
-	t.Run("Withdrawals", testWithdrawalsSelect)
 }
 
 func TestUpdate(t *testing.T) {
@@ -451,15 +428,14 @@ func TestUpdate(t *testing.T) {
 	t.Run("Brands", testBrandsUpdate)
 	t.Run("Categories", testCategoriesUpdate)
 	t.Run("Customers", testCustomersUpdate)
-	t.Run("Deposits", testDepositsUpdate)
 	t.Run("Payments", testPaymentsUpdate)
 	t.Run("Products", testProductsUpdate)
 	t.Run("ProductCategories", testProductCategoriesUpdate)
 	t.Run("Sales", testSalesUpdate)
 	t.Run("SaleItems", testSaleItemsUpdate)
 	t.Run("Stocks", testStocksUpdate)
+	t.Run("Transactions", testTransactionsUpdate)
 	t.Run("Users", testUsersUpdate)
-	t.Run("Withdrawals", testWithdrawalsUpdate)
 }
 
 func TestSliceUpdateAll(t *testing.T) {
@@ -468,13 +444,12 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("Brands", testBrandsSliceUpdateAll)
 	t.Run("Categories", testCategoriesSliceUpdateAll)
 	t.Run("Customers", testCustomersSliceUpdateAll)
-	t.Run("Deposits", testDepositsSliceUpdateAll)
 	t.Run("Payments", testPaymentsSliceUpdateAll)
 	t.Run("Products", testProductsSliceUpdateAll)
 	t.Run("ProductCategories", testProductCategoriesSliceUpdateAll)
 	t.Run("Sales", testSalesSliceUpdateAll)
 	t.Run("SaleItems", testSaleItemsSliceUpdateAll)
 	t.Run("Stocks", testStocksSliceUpdateAll)
+	t.Run("Transactions", testTransactionsSliceUpdateAll)
 	t.Run("Users", testUsersSliceUpdateAll)
-	t.Run("Withdrawals", testWithdrawalsSliceUpdateAll)
 }

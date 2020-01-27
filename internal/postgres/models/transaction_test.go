@@ -21,24 +21,24 @@ var (
 	_ = queries.Equal
 )
 
-func testWithdrawals(t *testing.T) {
+func testTransactions(t *testing.T) {
 	t.Parallel()
 
-	query := Withdrawals()
+	query := Transactions()
 
 	if query.Query == nil {
 		t.Error("expected a query, got nothing")
 	}
 }
 
-func testWithdrawalsDelete(t *testing.T) {
+func testTransactionsDelete(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -54,7 +54,7 @@ func testWithdrawalsDelete(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Withdrawals().Count(ctx, tx)
+	count, err := Transactions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -64,14 +64,14 @@ func testWithdrawalsDelete(t *testing.T) {
 	}
 }
 
-func testWithdrawalsQueryDeleteAll(t *testing.T) {
+func testTransactionsQueryDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -81,13 +81,13 @@ func testWithdrawalsQueryDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	if rowsAff, err := Withdrawals().DeleteAll(ctx, tx); err != nil {
+	if rowsAff, err := Transactions().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Withdrawals().Count(ctx, tx)
+	count, err := Transactions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,14 +97,14 @@ func testWithdrawalsQueryDeleteAll(t *testing.T) {
 	}
 }
 
-func testWithdrawalsSliceDeleteAll(t *testing.T) {
+func testTransactionsSliceDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -114,7 +114,7 @@ func testWithdrawalsSliceDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := WithdrawalSlice{o}
+	slice := TransactionSlice{o}
 
 	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
@@ -122,7 +122,7 @@ func testWithdrawalsSliceDeleteAll(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Withdrawals().Count(ctx, tx)
+	count, err := Transactions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -132,14 +132,14 @@ func testWithdrawalsSliceDeleteAll(t *testing.T) {
 	}
 }
 
-func testWithdrawalsExists(t *testing.T) {
+func testTransactionsExists(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -149,23 +149,23 @@ func testWithdrawalsExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := WithdrawalExists(ctx, tx, o.ID)
+	e, err := TransactionExists(ctx, tx, o.ID)
 	if err != nil {
-		t.Errorf("Unable to check if Withdrawal exists: %s", err)
+		t.Errorf("Unable to check if Transaction exists: %s", err)
 	}
 	if !e {
-		t.Errorf("Expected WithdrawalExists to return true, but got false.")
+		t.Errorf("Expected TransactionExists to return true, but got false.")
 	}
 }
 
-func testWithdrawalsFind(t *testing.T) {
+func testTransactionsFind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -175,24 +175,24 @@ func testWithdrawalsFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	withdrawalFound, err := FindWithdrawal(ctx, tx, o.ID)
+	transactionFound, err := FindTransaction(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if withdrawalFound == nil {
+	if transactionFound == nil {
 		t.Error("want a record, got nil")
 	}
 }
 
-func testWithdrawalsBind(t *testing.T) {
+func testTransactionsBind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -202,19 +202,19 @@ func testWithdrawalsBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err = Withdrawals().Bind(ctx, tx, o); err != nil {
+	if err = Transactions().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
 
-func testWithdrawalsOne(t *testing.T) {
+func testTransactionsOne(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -224,38 +224,38 @@ func testWithdrawalsOne(t *testing.T) {
 		t.Error(err)
 	}
 
-	if x, err := Withdrawals().One(ctx, tx); err != nil {
+	if x, err := Transactions().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
 	}
 }
 
-func testWithdrawalsAll(t *testing.T) {
+func testTransactionsAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	withdrawalOne := &Withdrawal{}
-	withdrawalTwo := &Withdrawal{}
-	if err = randomize.Struct(seed, withdrawalOne, withdrawalDBTypes, false, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	transactionOne := &Transaction{}
+	transactionTwo := &Transaction{}
+	if err = randomize.Struct(seed, transactionOne, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
-	if err = randomize.Struct(seed, withdrawalTwo, withdrawalDBTypes, false, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	if err = randomize.Struct(seed, transactionTwo, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = withdrawalOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = transactionOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = withdrawalTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = transactionTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := Withdrawals().All(ctx, tx)
+	slice, err := Transactions().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -265,31 +265,31 @@ func testWithdrawalsAll(t *testing.T) {
 	}
 }
 
-func testWithdrawalsCount(t *testing.T) {
+func testTransactionsCount(t *testing.T) {
 	t.Parallel()
 
 	var err error
 	seed := randomize.NewSeed()
-	withdrawalOne := &Withdrawal{}
-	withdrawalTwo := &Withdrawal{}
-	if err = randomize.Struct(seed, withdrawalOne, withdrawalDBTypes, false, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	transactionOne := &Transaction{}
+	transactionTwo := &Transaction{}
+	if err = randomize.Struct(seed, transactionOne, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
-	if err = randomize.Struct(seed, withdrawalTwo, withdrawalDBTypes, false, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	if err = randomize.Struct(seed, transactionTwo, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = withdrawalOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = transactionOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = withdrawalTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = transactionTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Withdrawals().Count(ctx, tx)
+	count, err := Transactions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,14 +299,14 @@ func testWithdrawalsCount(t *testing.T) {
 	}
 }
 
-func testWithdrawalsInsert(t *testing.T) {
+func testTransactionsInsert(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -316,7 +316,7 @@ func testWithdrawalsInsert(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Withdrawals().Count(ctx, tx)
+	count, err := Transactions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -326,24 +326,24 @@ func testWithdrawalsInsert(t *testing.T) {
 	}
 }
 
-func testWithdrawalsInsertWhitelist(t *testing.T) {
+func testTransactionsInsertWhitelist(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(ctx, tx, boil.Whitelist(withdrawalColumnsWithoutDefault...)); err != nil {
+	if err = o.Insert(ctx, tx, boil.Whitelist(transactionColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Withdrawals().Count(ctx, tx)
+	count, err := Transactions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -353,17 +353,17 @@ func testWithdrawalsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testWithdrawalToOneAccountUsingAccount(t *testing.T) {
+func testTransactionToOneAccountUsingAccount(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local Withdrawal
+	var local Transaction
 	var foreign Account
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, withdrawalDBTypes, false, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	if err := randomize.Struct(seed, &local, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, accountDBTypes, false, accountColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Account struct: %s", err)
@@ -387,8 +387,8 @@ func testWithdrawalToOneAccountUsingAccount(t *testing.T) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
-	slice := WithdrawalSlice{&local}
-	if err = local.L.LoadAccount(ctx, tx, false, (*[]*Withdrawal)(&slice), nil); err != nil {
+	slice := TransactionSlice{&local}
+	if err = local.L.LoadAccount(ctx, tx, false, (*[]*Transaction)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.Account == nil {
@@ -404,17 +404,17 @@ func testWithdrawalToOneAccountUsingAccount(t *testing.T) {
 	}
 }
 
-func testWithdrawalToOneUserUsingSalesRep(t *testing.T) {
+func testTransactionToOneUserUsingSalesRep(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local Withdrawal
+	var local Transaction
 	var foreign User
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, withdrawalDBTypes, false, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	if err := randomize.Struct(seed, &local, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, userDBTypes, false, userColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize User struct: %s", err)
@@ -438,8 +438,8 @@ func testWithdrawalToOneUserUsingSalesRep(t *testing.T) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
-	slice := WithdrawalSlice{&local}
-	if err = local.L.LoadSalesRep(ctx, tx, false, (*[]*Withdrawal)(&slice), nil); err != nil {
+	slice := TransactionSlice{&local}
+	if err = local.L.LoadSalesRep(ctx, tx, false, (*[]*Transaction)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.SalesRep == nil {
@@ -455,18 +455,18 @@ func testWithdrawalToOneUserUsingSalesRep(t *testing.T) {
 	}
 }
 
-func testWithdrawalToOneSetOpAccountUsingAccount(t *testing.T) {
+func testTransactionToOneSetOpAccountUsingAccount(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Withdrawal
+	var a Transaction
 	var b, c Account
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, withdrawalDBTypes, false, strmangle.SetComplement(withdrawalPrimaryKeyColumns, withdrawalColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	if err = randomize.Struct(seed, &b, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
@@ -493,7 +493,7 @@ func testWithdrawalToOneSetOpAccountUsingAccount(t *testing.T) {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.Withdrawals[0] != &a {
+		if x.R.Transactions[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
 		if a.AccountID != x.ID {
@@ -512,18 +512,18 @@ func testWithdrawalToOneSetOpAccountUsingAccount(t *testing.T) {
 		}
 	}
 }
-func testWithdrawalToOneSetOpUserUsingSalesRep(t *testing.T) {
+func testTransactionToOneSetOpUserUsingSalesRep(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Withdrawal
+	var a Transaction
 	var b, c User
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, withdrawalDBTypes, false, strmangle.SetComplement(withdrawalPrimaryKeyColumns, withdrawalColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	if err = randomize.Struct(seed, &b, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
@@ -550,7 +550,7 @@ func testWithdrawalToOneSetOpUserUsingSalesRep(t *testing.T) {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.SalesRepWithdrawals[0] != &a {
+		if x.R.SalesRepTransactions[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
 		if a.SalesRepID != x.ID {
@@ -570,14 +570,14 @@ func testWithdrawalToOneSetOpUserUsingSalesRep(t *testing.T) {
 	}
 }
 
-func testWithdrawalsReload(t *testing.T) {
+func testTransactionsReload(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -592,14 +592,14 @@ func testWithdrawalsReload(t *testing.T) {
 	}
 }
 
-func testWithdrawalsReloadAll(t *testing.T) {
+func testTransactionsReloadAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -609,21 +609,21 @@ func testWithdrawalsReloadAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := WithdrawalSlice{o}
+	slice := TransactionSlice{o}
 
 	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
 
-func testWithdrawalsSelect(t *testing.T) {
+func testTransactionsSelect(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -633,7 +633,7 @@ func testWithdrawalsSelect(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice, err := Withdrawals().All(ctx, tx)
+	slice, err := Transactions().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -644,25 +644,25 @@ func testWithdrawalsSelect(t *testing.T) {
 }
 
 var (
-	withdrawalDBTypes = map[string]string{`ID`: `character`, `AccountID`: `character`, `Amount`: `double precision`, `Narration`: `character varying`, `SalesRepID`: `character`, `CreatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`}
-	_                 = bytes.MinRead
+	transactionDBTypes = map[string]string{`ID`: `character`, `AccountID`: `character`, `Amount`: `double precision`, `Narration`: `character varying`, `SalesRepID`: `character`, `CreatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `TXType`: `character varying`, `OpeningBalance`: `double precision`}
+	_                  = bytes.MinRead
 )
 
-func testWithdrawalsUpdate(t *testing.T) {
+func testTransactionsUpdate(t *testing.T) {
 	t.Parallel()
 
-	if 0 == len(withdrawalPrimaryKeyColumns) {
+	if 0 == len(transactionPrimaryKeyColumns) {
 		t.Skip("Skipping table with no primary key columns")
 	}
-	if len(withdrawalAllColumns) == len(withdrawalPrimaryKeyColumns) {
+	if len(transactionAllColumns) == len(transactionPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -672,7 +672,7 @@ func testWithdrawalsUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Withdrawals().Count(ctx, tx)
+	count, err := Transactions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -681,8 +681,8 @@ func testWithdrawalsUpdate(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
@@ -692,18 +692,18 @@ func testWithdrawalsUpdate(t *testing.T) {
 	}
 }
 
-func testWithdrawalsSliceUpdateAll(t *testing.T) {
+func testTransactionsSliceUpdateAll(t *testing.T) {
 	t.Parallel()
 
-	if len(withdrawalAllColumns) == len(withdrawalPrimaryKeyColumns) {
+	if len(transactionAllColumns) == len(transactionPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Withdrawal{}
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := &Transaction{}
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -713,7 +713,7 @@ func testWithdrawalsSliceUpdateAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Withdrawals().Count(ctx, tx)
+	count, err := Transactions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -722,18 +722,18 @@ func testWithdrawalsSliceUpdateAll(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, withdrawalDBTypes, true, withdrawalPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	// Remove Primary keys and unique columns from what we plan to update
 	var fields []string
-	if strmangle.StringSliceMatch(withdrawalAllColumns, withdrawalPrimaryKeyColumns) {
-		fields = withdrawalAllColumns
+	if strmangle.StringSliceMatch(transactionAllColumns, transactionPrimaryKeyColumns) {
+		fields = transactionAllColumns
 	} else {
 		fields = strmangle.SetComplement(
-			withdrawalAllColumns,
-			withdrawalPrimaryKeyColumns,
+			transactionAllColumns,
+			transactionPrimaryKeyColumns,
 		)
 	}
 
@@ -751,7 +751,7 @@ func testWithdrawalsSliceUpdateAll(t *testing.T) {
 		}
 	}
 
-	slice := WithdrawalSlice{o}
+	slice := TransactionSlice{o}
 	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
@@ -759,29 +759,29 @@ func testWithdrawalsSliceUpdateAll(t *testing.T) {
 	}
 }
 
-func testWithdrawalsUpsert(t *testing.T) {
+func testTransactionsUpsert(t *testing.T) {
 	t.Parallel()
 
-	if len(withdrawalAllColumns) == len(withdrawalPrimaryKeyColumns) {
+	if len(transactionAllColumns) == len(transactionPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
-	o := Withdrawal{}
-	if err = randomize.Struct(seed, &o, withdrawalDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	o := Transaction{}
+	if err = randomize.Struct(seed, &o, transactionDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert Withdrawal: %s", err)
+		t.Errorf("Unable to upsert Transaction: %s", err)
 	}
 
-	count, err := Withdrawals().Count(ctx, tx)
+	count, err := Transactions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -790,15 +790,15 @@ func testWithdrawalsUpsert(t *testing.T) {
 	}
 
 	// Attempt the UPDATE side of an UPSERT
-	if err = randomize.Struct(seed, &o, withdrawalDBTypes, false, withdrawalPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Withdrawal struct: %s", err)
+	if err = randomize.Struct(seed, &o, transactionDBTypes, false, transactionPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 
 	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert Withdrawal: %s", err)
+		t.Errorf("Unable to upsert Transaction: %s", err)
 	}
 
-	count, err = Withdrawals().Count(ctx, tx)
+	count, err = Transactions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

@@ -1238,7 +1238,95 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		// Add balance to account
+		{
+			ID:       "20200127-03",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE account ADD balance FLOAT8 NOT NULL DEFAULT 0;`
 
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
+		// Rename deposit to transaction
+		{
+			ID:       "20200127-04",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE deposit RENAME TO transaction;`
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				q2 := `ALTER TABLE transaction ADD tx_type VARCHAR(36) NOT NULL;`
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+
+				q3 := `DROP TABLE withdrawal;`
+				if _, err := tx.Exec(q3); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
+		// Add opening balance to transaction
+		{
+			ID:       "20200127-05",
+			Migrate: func(tx *sql.Tx) error {
+
+				q2 := `ALTER TABLE transaction ADD opening_balance FLOAT8 NOT NULL;`
+				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q2)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
+		// Drop balance from account
+		{
+			ID:       "20200127-06",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE account DROP COLUMN balance;`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
+		// Add balance to account
+		{
+			ID:       "20200127-07",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE account ADD balance FLOAT8 NOT NULL DEFAULT 0;`
+
+				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
 	}
 }
 
