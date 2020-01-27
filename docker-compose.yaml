@@ -8,7 +8,7 @@ networks:
   main:
 
 services:
-  postgres:
+  postgres: #docker exec -it dd5f2eb6ee17 psql -U postgres -W postgres shared
     image: postgres:11-alpine
     expose:
       - "5433"
