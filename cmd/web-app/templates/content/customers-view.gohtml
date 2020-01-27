@@ -1,0 +1,75 @@
+{{define "title"}}Customer - {{ .customer.Name }}{{end}}
+{{define "style"}}
+
+{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ .urlCustomersIndex }}">Customers</a></li>
+            <li class="breadcrumb-item"><a href="{{ .urlCustomersView }}">{{ .customer.Name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">View</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ .customer.Name }}</h1>
+        <!-- a href="{{ .urlCustomersUpdate }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+        <i class="far fa-edit fa-sm text-white-50 mr-1"></i>Edit Details</a -->
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-dark">Customer Details</h6>
+            <div class="dropdown no-arrow show">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink" x-placement="bottom-end" style="position: absolute; transform: translate3d(-156px, 19px, 0px); top: 0px; left: 0px; will-change: transform;">
+                    <div class="dropdown-header">Actions</div>
+                    <a class="dropdown-item" href="{{ .urlCustomersUpdate }}">Update Details</a>
+                    {{ if HasRole $._Ctx "admin" }}
+                        <form method="post"><input type="hidden" name="action" value="archive" /><input type="submit" value="Archive Customer" class="dropdown-item"></form>
+                    {{ end }}
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+
+                <div class="col-md-6">
+                    <p>
+                        <small>Name</small><br/>
+                        <b>{{ .customer.Name }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-6">
+                    <p>
+                        <small>Email</small><br/>
+                        <b>{{ .customer.Email }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-6">
+                    <p>
+                        <small>Phone Number</small><br/>
+                        <b>{{ .customer.PhoneNumber }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-6">
+                    <p>
+                        <small>Address</small><br/>
+                        <b>{{ .customer.Address }}</b>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+{{end}}
+{{define "js"}}
+
+{{end}}

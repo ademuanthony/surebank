@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/customer"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -46,15 +48,17 @@ type AppContext struct {
 	Redis             *redis.Client
 	UserRepo          *user.Repository
 	UserAccountRepo   *user_account.Repository
-	AccountRepo       *tenant.Repository
+	TenantRepo        *tenant.Repository
 	AccountPrefRepo   *account_preference.Repository
 	AuthRepo          *user_auth.Repository
 	SignupRepo        *signup.Repository
 	InviteRepo        *invite.Repository
 	ChecklistRepo     *checklist.Repository
 	GeoRepo           *geonames.Repository
-	ShopRepo 		  *shop.Repository
-	BranchRepo 		  *branch.Repository
+	ShopRepo          *shop.Repository
+	BranchRepo        *branch.Repository
+	CustomerRepo      *customer.Repository
+	AccountRepo       *account.Repository
 	Authenticator     *auth.Authenticator
 	StaticDir         string
 	TemplateDir       string
@@ -212,6 +216,21 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/shop/inventory/report", stock.Report, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/shop/inventory", stock.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
+	// Customers
+	custs := Customers{
+		CustomerRepo: appCtx.CustomerRepo,
+		AccountRepo: appCtx.AccountRepo,
+		Redis:    appCtx.Redis,
+		Renderer: appCtx.Renderer,
+	}
+	app.Handle("POST", "/customers/:customer_id/update", custs.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/customers/:customer_id/update", custs.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/customers/:customer_id", custs.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/customers/:customer_id", custs.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/customers", custs.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+
 	// Register user management pages.
 	us := Users{
 		UserRepo:        appCtx.UserRepo,
@@ -239,7 +258,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	u := UserRepos{
 		UserRepo:        appCtx.UserRepo,
 		UserAccountRepo: appCtx.UserAccountRepo,
-		AccountRepo:     appCtx.AccountRepo,
+		AccountRepo:     appCtx.TenantRepo,
 		AuthRepo:        appCtx.AuthRepo,
 		GeoRepo:         appCtx.GeoRepo,
 		Renderer:        appCtx.Renderer,
@@ -266,7 +285,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 
 	// Register account management endpoints.
 	acc := Account{
-		AccountRepo:     appCtx.AccountRepo,
+		AccountRepo:     appCtx.TenantRepo,
 		AccountPrefRepo: appCtx.AccountPrefRepo,
 		AuthRepo:        appCtx.AuthRepo,
 		Authenticator:   appCtx.Authenticator,

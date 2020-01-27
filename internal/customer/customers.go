@@ -24,7 +24,10 @@ var (
 
 // Find gets all the customers from the database based on the request params.
 func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (Customers, error) {
-	var queries []QueryMod
+	var queries = []QueryMod{
+		Load(models.CustomerRels.SalesRep),
+		Load(models.CustomerRels.Branch),
+	}
 
 	if req.Where != "" {
 		queries = append(queries, Where(req.Where, req.Args...))

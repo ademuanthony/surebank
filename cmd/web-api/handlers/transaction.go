@@ -143,9 +143,9 @@ func (h *Transactions) Read(ctx context.Context, w http.ResponseWriter, r *http.
 }
 
 // Create godoc
-// @Summary Create new deposit.
+// @Summary Create new Deposit.
 // @Description Create inserts a new deposit into the system.
-// @Tags deposit
+// @Tags transaction
 // @Accept  json
 // @Produce  json
 // @Security OAuth2Password

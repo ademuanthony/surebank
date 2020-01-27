@@ -77,7 +77,7 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 			case "quantity":
 				v.Value = fmt.Sprintf("%d", q.Quantity)
 				p := message.NewPrinter(language.English)
-				v.Formatted = p.Sprintf("%.2d", q.Quantity)
+				v.Formatted = p.Sprintf("%d", q.Quantity)
 			case "unit_cost_price":
 				v.Value = fmt.Sprintf("%f", q.UnitCostPrice)
 				p := message.NewPrinter(language.English)
@@ -114,7 +114,7 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		res, err := h.ShopRepo.FindStock(ctx, shop.StockFindRequest{
 			Order: strings.Split(sorting, ","), IncludeProducts: true,
 		})
-		
+
 		if err != nil {
 			return resp, err
 		}
@@ -167,7 +167,7 @@ func (h *Stocks) Create(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
 		return err
-	} 
+	}
 
 	//
 	req := new(shop.StockCreateRequest)
@@ -226,7 +226,7 @@ func (h *Stocks) Create(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		Order: []string{"name asc"},
 	})
 	if err != nil {
-		return err 
+		return err
 	}
 
 	data["form"] = req
@@ -376,7 +376,7 @@ func (h *Stocks) Update(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		Order: []string{"name asc"},
 	})
 	if err != nil {
-		return err 
+		return err
 	}
 
 	data["urlStocksIndex"] = urlStocksIndex()
@@ -403,7 +403,7 @@ func (h *Stocks) Update(ctx context.Context, w http.ResponseWriter, r *http.Requ
 func (h *Stocks) Report(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 
 	claims, err := auth.ClaimsFromContext(ctx)
-	if err != nil { 
+	if err != nil {
 		return err
 	}
 
@@ -440,7 +440,7 @@ func (h *Stocks) Report(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		res, err := h.ShopRepo.StockReport(ctx, claims, shop.StockReportRequest{
 			Order: strings.Split(sorting, ","),
 		})
-		
+
 		if err != nil {
 			return resp, err
 		}

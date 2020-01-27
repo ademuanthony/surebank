@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/branch"
+	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/shop"
 	"net"
 	"net/http"
@@ -459,6 +461,8 @@ func main() {
 	chklstRepo := checklist.NewRepository(masterDb)
 	shopRepo := shop.NewRepository(masterDb)
 	branchRepo := branch.NewRepository(masterDb)
+	customerRepo := customer.NewRepository(masterDb)
+	accountRepo := account.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -471,17 +475,19 @@ func main() {
 		WebRoute:        webRoute,
 		UserRepo:        usrRepo,
 		UserAccountRepo: usrAccRepo,
-		AccountRepo:     accRepo,
+		TenantRepo:      accRepo,
 		AccountPrefRepo: accPrefRepo,
 		AuthRepo:        authRepo,
 		GeoRepo:         geoRepo,
 		SignupRepo:      signupRepo,
 		InviteRepo:      inviteRepo,
 		ChecklistRepo:   chklstRepo,
+		CustomerRepo:    customerRepo,
+		AccountRepo:     accountRepo,
 		Authenticator:   authenticator,
 		AwsSession:      awsSession,
 		ShopRepo:        shopRepo,
-		BranchRepo:		 branchRepo,
+		BranchRepo:      branchRepo,
 	}
 
 	// =========================================================================

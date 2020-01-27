@@ -144,11 +144,11 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	dep := Transactions{
 		Repository: appCtx.DepositRepo,
 	}
-	app.Handle("GET", "/v1/deposits", dep.Find, mid.AuthenticateHeader(appCtx.Authenticator))
-	app.Handle("POST", "/v1/deposits", dep.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/v1/deposits/:id", dep.Read, mid.AuthenticateHeader(appCtx.Authenticator))
-	app.Handle("PATCH", "/v1/deposits", dep.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("PATCH", "/v1/deposits/archive", dep.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/v1/transactions", dep.Find, mid.AuthenticateHeader(appCtx.Authenticator))
+	app.Handle("POST", "/v1/transactions", dep.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/v1/transactions/:id", dep.Read, mid.AuthenticateHeader(appCtx.Authenticator))
+	app.Handle("PATCH", "/v1/transactions", dep.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("PATCH", "/v1/transactions/archive", dep.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 
 	// Register swagger documentation.
 	// TODO: Add authentication. Current authenticator requires an Authorization header

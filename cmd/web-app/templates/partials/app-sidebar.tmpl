@@ -43,7 +43,7 @@
             <!-- Nav Item - Users -->
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#navSectionUsers" aria-expanded="true" aria-controls="navSectionUsers">
-                    <i class="fas fa-fw fa-users"></i>
+                    <i class="fas fa-fw fa-user-circle"></i>
                     <span>Users</span>
                 </a>
                 <div id="navSectionUsers" class="collapse" data-parent="#accordionSidebar">
@@ -54,24 +54,29 @@
                 </div>
             </li>
             {{end}}
+            <!-- Nav Item - Customers -->
+            <li class="nav-item">
+                <a class="nav-link" href="/customers">
+                    <i class="fas fa-fw fa-users"></i>
+                    <span>Customers</span></a>
+            </li>
 
-        {{ end }}
-
-        <li class="nav-item">
-            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#navSectionChecklists" aria-expanded="true" aria-controls="navSectionChecklists">
-                <i class="fas fa-fw fa-shopping-cart"></i>
-                <span>Shop</span>
-            </a>
-            <div id="navSectionChecklists" class="collapse" data-parent="#accordionSidebar">
-                <div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-item" href="/shop/brands">Brands</a>
-                    <a class="collapse-item" href="/shop/categories">Categories</a>
-                    <a class="collapse-item" href="/shop/products">Products</a>
-                    <a class="collapse-item" href="/shop/inventory">Inventory</a>
-                    <a class="collapse-item" href="/shop/inventory/report">Stock Report</a>
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#navSectionChecklists" aria-expanded="true" aria-controls="navSectionChecklists">
+                    <i class="fas fa-fw fa-shopping-cart"></i>
+                    <span>Shop</span>
+                </a>
+                <div id="navSectionChecklists" class="collapse" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <a class="collapse-item" href="/shop/brands">Brands</a>
+                        <a class="collapse-item" href="/shop/categories">Categories</a>
+                        <a class="collapse-item" href="/shop/products">Products</a>
+                        <a class="collapse-item" href="/shop/inventory">Inventory</a>
+                        <a class="collapse-item" href="/shop/inventory/report">Stock Report</a>
+                    </div>
                 </div>
-            </div>
-        </li>
+            </li>
+        {{ end }}
 
         <!-- Divider -->
         <hr class="sidebar-divider d-none d-md-block">
