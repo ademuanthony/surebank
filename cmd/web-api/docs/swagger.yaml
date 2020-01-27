@@ -275,24 +275,6 @@ definitions:
     - region
     - zipcode
     type: object
-  signup.SignupRequest:
-    properties:
-      account:
-        $ref: '#/definitions/signup.SignupAccount'
-        type: object
-      user:
-        $ref: '#/definitions/signup.SignupUser'
-        type: object
-    type: object
-  signup.SignupResponse:
-    properties:
-      account:
-        $ref: '#/definitions/tenant.AccountResponse'
-        type: object
-      user:
-        $ref: '#/definitions/user.UserResponse'
-        type: object
-    type: object
   signup.SignupUser:
     properties:
       email:
@@ -785,7 +767,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/tenant.AccountUpdateRequest'
+          $ref: '#/definitions/account.UpdateRequest'
           type: object
       produces:
       - application/json
@@ -865,7 +847,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/tenant.AccountResponse'
+            $ref: '#/definitions/account.Response'
         "400":
           description: Bad Request
           schema:
@@ -880,7 +862,7 @@ paths:
             $ref: '#/definitions/weberror.ErrorResponse'
       security:
       - OAuth2Password: []
-      summary: Get account by ID
+      summary: Get account by ID.
       tags:
       - account
   /accounts/archive:
@@ -1384,37 +1366,6 @@ paths:
       summary: Token handles a request to authenticate a user.
       tags:
       - user
-  /signup:
-    post:
-      consumes:
-      - application/json
-      description: Signup creates a new account and user in the system.
-      parameters:
-      - description: Signup details
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/signup.SignupRequest'
-          type: object
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/signup.SignupResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/weberror.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/weberror.ErrorResponse'
-      summary: Signup handles new account creation.
-      tags:
-      - signup
   /user_accounts:
     delete:
       consumes:

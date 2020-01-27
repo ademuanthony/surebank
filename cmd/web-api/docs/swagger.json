@@ -194,7 +194,7 @@
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/tenant.AccountUpdateRequest"
+                            "$ref": "#/definitions/account.UpdateRequest"
                         }
                     }
                 ],
@@ -291,7 +291,7 @@
                 "tags": [
                     "account"
                 ],
-                "summary": "Get account by ID",
+                "summary": "Get account by ID.",
                 "parameters": [
                     {
                         "type": "string",
@@ -305,7 +305,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/tenant.AccountResponse"
+                            "$ref": "#/definitions/account.Response"
                         }
                     },
                     "400": {
@@ -1038,53 +1038,6 @@
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/signup": {
-            "post": {
-                "description": "Signup creates a new account and user in the system.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "signup"
-                ],
-                "summary": "Signup handles new account creation.",
-                "parameters": [
-                    {
-                        "description": "Signup details",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/signup.SignupRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/signup.SignupResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/weberror.ErrorResponse"
                         }
@@ -2279,32 +2232,6 @@
                 "zipcode": {
                     "type": "string",
                     "example": "99686"
-                }
-            }
-        },
-        "signup.SignupRequest": {
-            "type": "object",
-            "properties": {
-                "account": {
-                    "type": "object",
-                    "$ref": "#/definitions/signup.SignupAccount"
-                },
-                "user": {
-                    "type": "object",
-                    "$ref": "#/definitions/signup.SignupUser"
-                }
-            }
-        },
-        "signup.SignupResponse": {
-            "type": "object",
-            "properties": {
-                "account": {
-                    "type": "object",
-                    "$ref": "#/definitions/tenant.AccountResponse"
-                },
-                "user": {
-                    "type": "object",
-                    "$ref": "#/definitions/user.UserResponse"
                 }
             }
         },

@@ -119,12 +119,6 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/v1/tenants/:id", a.Read, mid.AuthenticateHeader(appCtx.Authenticator))
 	app.Handle("PATCH", "/v1/tenants", a.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 
-	// Register signup endpoints.
-	s := Signup{
-		Repository: appCtx.SignupRepo,
-	}
-	app.Handle("POST", "/v1/signup", s.Signup)
-
 	// Register customer.
 	cus := Customers{
 		Repository: appCtx.CustomerRepo,
