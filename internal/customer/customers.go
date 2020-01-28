@@ -2,6 +2,8 @@ package customer
 
 import (
 	"context"
+	"database/sql"
+	"merryworld/surebank/internal/platform/web/weberror"
 	"time"
 
 	"github.com/pborman/uuid"
@@ -53,6 +55,9 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	customerSlice, err := models.Customers(queries...).All(ctx, repo.DbConn)
 	if err != nil {
+		if err.Error() == sql.ErrNoRows.Error() {
+			return Customers{}, nil
+		}
 		return nil, err
 	}
 
@@ -68,7 +73,10 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*Customer, error) {
 	branchModel, err := models.FindCustomer(ctx, repo.DbConn, id)
 	if err != nil {
-		return nil, err
+		if err.Error() == sql.ErrNoRows.Error() {
+			return nil, weberror.WithMessage(ctx, err, "Invalid customer ID")
+		}
+		return nil, weberror.NewError(ctx, err, 500)
 	}
 
 	return FromModel(branchModel), nil
@@ -82,9 +90,16 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, errors.WithStack(ErrForbidden)
 	}
 
+	salesRep, err := models.Users(models.UserWhere.ID.EQ(claims.Subject)).One(ctx, repo.DbConn)
+	if err != nil {
+		return nil, weberror.NewErrorMessage(ctx, err, 400, "Something went wrong. Are you logged in?")
+	}
+	req.SalesRepID = salesRep.ID
+	req.BranchID = salesRep.BranchID
+
 	// Validate the request.
 	v := webcontext.Validator()
-	err := v.Struct(req)
+	err = v.Struct(req)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +127,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	}
 
 	if err := m.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
-		return nil, errors.WithMessage(err, "Insert customer failed")
+		return nil, weberror.WithMessage(ctx, err, "Insert customer failed")
 	}
 
 	return &Customer{
