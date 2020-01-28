@@ -59,7 +59,7 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 		{Field: "sales_rep", Title: "Manager", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Manager"},
 		{Field: "branch", Title: "Branch", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Branch"},
 	}
- 
+
 	mapFunc := func(q *customer.Customer, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
@@ -219,6 +219,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 		return nil
 	}
 
+	data["accountTypes"] = []string{"SB", "OM"}
 	data["form"] = req
 	data["urlCustomersIndex"] = urlCustomersIndex()
 
