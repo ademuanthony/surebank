@@ -25,7 +25,7 @@ var (
 )
 
 // Find gets all the customers from the database based on the request params.
-func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (Customers, error) {
+func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
 	var queries = []QueryMod{
 		Load(models.CustomerRels.SalesRep),
 		Load(models.CustomerRels.Branch),
@@ -37,6 +37,11 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	if !req.IncludeArchived {
 		queries = append(queries, And("archived_at is null"))
+	}
+
+	totalCount, err := models.Customers(queries...).Count(ctx, repo.DbConn)
+	if err != nil {
+		return nil, weberror.WithMessage(ctx, err, "Cannot get customer count")
 	}
 
 	if len(req.Order) > 0 {
@@ -56,9 +61,9 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	customerSlice, err := models.Customers(queries...).All(ctx, repo.DbConn)
 	if err != nil {
 		if err.Error() == sql.ErrNoRows.Error() {
-			return Customers{}, nil
+			return &PagedResponseList{}, nil
 		}
-		return nil, err
+		return nil, weberror.WithMessage(ctx, err, "Cannot get customer list")
 	}
 
 	var result Customers
@@ -66,7 +71,14 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 		result = append(result, FromModel(rec))
 	}
 
-	return result, nil
+	if len(result) == 0 {
+		return &PagedResponseList{}, nil
+	}
+
+	return &PagedResponseList{
+		Customers:  result.Response(ctx),
+		TotalCount: totalCount,
+	}, nil
 }
 
 // ReadByID gets the specified branch by ID from the database.

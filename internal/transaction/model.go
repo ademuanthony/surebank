@@ -144,6 +144,12 @@ func (m *Transactions) Response(ctx context.Context) []*Response {
 	return l
 }
 
+// PagedResponseList holds list of transaction and total count for pagination
+type PagedResponseList struct {
+	Transactions []*Response `json:"transactions"`
+	TotalCount   int64       `json:"total_count"`
+}
+
 // CreateRequest contains information needed to make a new Transaction.
 type CreateRequest struct {
 	Type          TransactionType `json:"type" validate:"required,oneof=deposit withdrawal"`

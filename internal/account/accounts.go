@@ -28,7 +28,7 @@ var (
 )
 
 // Find gets all the accounts from the database based on the request params.
-func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (Accounts, error) {
+func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -37,6 +37,11 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	if !req.IncludeArchived {
 		queries = append(queries, And("archived_at is null"))
+	}
+
+	totalCount, err := models.Accounts(queries...).Count(ctx, repo.DbConn)
+	if err != nil {
+		return nil, weberror.WithMessage(ctx, err, "Cannot get account total count")
 	}
 
 	if req.IncludeBranch {
@@ -68,7 +73,7 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	accountSlice, err := models.Accounts(queries...).All(ctx, repo.DbConn)
 	if err != nil {
 		if err.Error() == sql.ErrNoRows.Error() {
-			return Accounts{}, nil
+			return &PagedResponseList{}, nil
 		}
 		return nil, weberror.NewError(ctx, err, 500)
 	}
@@ -78,7 +83,14 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 		result = append(result, FromModel(rec))
 	}
 
-	return result, nil
+	if len(result) == 0 {
+		return &PagedResponseList{}, nil
+	}
+
+	return &PagedResponseList{
+		Accounts:   result.Response(ctx),
+		TotalCount: totalCount,
+	}, nil
 }
 
 // ReadByID gets the specified branch by ID from the database.

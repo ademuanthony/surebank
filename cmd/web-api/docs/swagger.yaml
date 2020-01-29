@@ -24,6 +24,15 @@ definitions:
     - customer_id
     - type
     type: object
+  account.PagedResponseList:
+    properties:
+      accounts:
+        items:
+          $ref: '#/definitions/account.Response'
+        type: array
+      total_count:
+        type: integer
+    type: object
   account.Response:
     properties:
       archived_at:
@@ -118,6 +127,15 @@ definitions:
     - phone_number
     - sales_rep_id
     - type
+    type: object
+  customer.PagedResponseList:
+    properties:
+      customers:
+        items:
+          $ref: '#/definitions/customer.Response'
+        type: array
+      total_count:
+        type: integer
     type: object
   customer.Response:
     properties:
@@ -343,6 +361,15 @@ definitions:
     required:
     - account_number
     - amount
+    type: object
+  transaction.PagedResponseList:
+    properties:
+      total_count:
+        type: integer
+      transactions:
+        items:
+          $ref: '#/definitions/transaction.Response'
+        type: array
     type: object
   transaction.Response:
     properties:
@@ -741,9 +768,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/account.Response'
-            type: array
+            $ref: '#/definitions/account.PagedResponseList'
         "400":
           description: Bad Request
           schema:
@@ -970,7 +995,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/customer.Response'
+              $ref: '#/definitions/customer.PagedResponseList'
             type: array
         "400":
           description: Bad Request
@@ -1208,9 +1233,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/transaction.Response'
-            type: array
+            $ref: '#/definitions/transaction.PagedResponseList'
         "400":
           description: Bad Request
           schema:

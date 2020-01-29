@@ -39,7 +39,7 @@ type Accounts struct {
 // @Param include-customer query boolean 	false 	"Included Customer info, example: false"
 // @Param include-branch query boolean 	false 	"Included Branch info, example: false"
 // @Param include-sales-rep query boolean 	false 	"Included Sale rep info, example: false"
-// @Success 200 {array} account.Response
+// @Success 200 {object} account.PagedResponseList
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
@@ -139,7 +139,7 @@ func (h *Accounts) Find(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return err
 	}
 
-	return web.RespondJson(ctx, w, res.Response(ctx), http.StatusOK)
+	return web.RespondJson(ctx, w, res, http.StatusOK)
 }
 
 // Read godoc

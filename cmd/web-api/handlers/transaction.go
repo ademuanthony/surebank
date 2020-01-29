@@ -36,7 +36,7 @@ type Transactions struct {
 // @Param limit				query integer  	false 	"Limit, example: 10"
 // @Param offset			query integer  	false 	"Offset, example: 20"
 // @Param include-archived query boolean 	false 	"Included Archived, example: false"
-// @Success 200 {array} transaction.Response
+// @Success 200 {object} transaction.PagedResponseList
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
@@ -106,7 +106,7 @@ func (h *Transactions) Find(ctx context.Context, w http.ResponseWriter, r *http.
 		return err
 	}
 
-	return web.RespondJson(ctx, w, res.Response(ctx), http.StatusOK)
+	return web.RespondJson(ctx, w, res, http.StatusOK)
 }
 
 // Read godoc

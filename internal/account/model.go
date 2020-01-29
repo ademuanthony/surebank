@@ -148,6 +148,12 @@ func (m *Accounts) Response(ctx context.Context) []*Response {
 	return l
 }
 
+// PagedResponseList hold a list of accounts and total count
+type PagedResponseList struct {
+	Accounts   []*Response `json:"accounts"`
+	TotalCount int64       `json:"total_count"`
+}
+
 // CreateRequest contains information needed to create a new Account.
 type CreateRequest struct {
 	CustomerID string  `json:"customer_id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`

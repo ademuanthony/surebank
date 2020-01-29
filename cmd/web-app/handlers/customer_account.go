@@ -58,7 +58,7 @@ func (h *CustomerAccounts) Index(ctx context.Context, w http.ResponseWriter, r *
 		{Field: "balance", Title: "Account Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
 	}
 
-	mapFunc := func(q *account.Account, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q *account.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -111,7 +111,7 @@ func (h *CustomerAccounts) Index(ctx context.Context, w http.ResponseWriter, r *
 			return resp, err
 		}
 
-		for _, a := range res {
+		for _, a := range res.Accounts {
 			l, err := mapFunc(a, fields)
 			if err != nil {
 				return resp, errors.Wrapf(err, "Failed to map brand for display.")

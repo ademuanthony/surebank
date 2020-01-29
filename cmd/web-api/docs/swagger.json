@@ -81,10 +81,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/account.Response"
-                            }
+                            "$ref": "#/definitions/account.PagedResponseList"
                         }
                     },
                     "400": {
@@ -438,7 +435,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/customer.Response"
+                                "$ref": "#/definitions/customer.PagedResponseList"
                             }
                         }
                     },
@@ -801,10 +798,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/transaction.Response"
-                            }
+                            "$ref": "#/definitions/transaction.PagedResponseList"
                         }
                     },
                     "400": {
@@ -1879,6 +1873,20 @@
                 }
             }
         },
+        "account.PagedResponseList": {
+            "type": "object",
+            "properties": {
+                "accounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/account.Response"
+                    }
+                },
+                "total_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "account.Response": {
             "type": "object",
             "properties": {
@@ -2010,6 +2018,20 @@
                 },
                 "type": {
                     "type": "string"
+                }
+            }
+        },
+        "customer.PagedResponseList": {
+            "type": "object",
+            "properties": {
+                "customers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/customer.Response"
+                    }
+                },
+                "total_count": {
+                    "type": "integer"
                 }
             }
         },
@@ -2320,6 +2342,20 @@
                 },
                 "narration": {
                     "type": "string"
+                }
+            }
+        },
+        "transaction.PagedResponseList": {
+            "type": "object",
+            "properties": {
+                "total_count": {
+                    "type": "integer"
+                },
+                "transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/transaction.Response"
+                    }
                 }
             }
         },

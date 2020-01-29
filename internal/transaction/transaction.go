@@ -28,7 +28,7 @@ var (
 )
 
 // Find gets all the transaction from the database based on the request params.
-func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (Transactions, error) {
+func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
 	var queries = []QueryMod {
 		Load(models.TransactionRels.SalesRep),
 		Load(models.TransactionRels.Account),
@@ -36,6 +36,11 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	if req.Where != "" {
 		queries = append(queries, Where(req.Where, req.Args...))
+	}
+
+	totalCount, err := models.Transactions(queries...).Count(ctx, repo.DbConn)
+	if err != nil {
+		return nil, weberror.WithMessage(ctx, err, "Cannot get transaction count")
 	}
 
 	if !req.IncludeArchived {
@@ -58,7 +63,10 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	slice, err := models.Transactions(queries...).All(ctx, repo.DbConn)
 	if err != nil {
-		return nil, err
+		if err.Error() == sql.ErrNoRows.Error() {
+			return &PagedResponseList{}, nil
+		}
+		return nil, weberror.NewError(ctx, err, 500)
 	}
 
 	var result Transactions
@@ -66,7 +74,14 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 		result = append(result, FromModel(rec))
 	}
 
-	return result, nil
+	if len(result) == 0 {
+		return &PagedResponseList{}, nil
+	}
+
+	return &PagedResponseList{
+		Transactions: result.Response(ctx),
+		TotalCount:   totalCount,
+	}, nil
 }
 
 // ReadByID gets the specified transaction by ID from the database.
