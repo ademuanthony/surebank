@@ -2,17 +2,21 @@ package account
 
 import (
 	"context"
+	"database/sql"
+	"math/rand"
+	"strconv"
+	"time"
+
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
-	"math/rand"
+
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
-	"strconv"
-	"time"
 )
 
 var (
@@ -63,7 +67,10 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	accountSlice, err := models.Accounts(queries...).All(ctx, repo.DbConn)
 	if err != nil {
-		return nil, err
+		if err.Error() == sql.ErrNoRows.Error() {
+			return Accounts{}, nil
+		}
+		return nil, weberror.NewError(ctx, err, 500)
 	}
 
 	var result Accounts
@@ -84,7 +91,10 @@ func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id str
 	}
 	branchModel, err := models.Accounts(queries...).One(ctx, repo.DbConn)
 	if err != nil {
-		return nil, err
+		if err.Error() == sql.ErrNoRows.Error() {
+			return nil, weberror.WithMessage(ctx, err, "Invalid account id")
+		}
+		return nil, weberror.NewError(ctx, err, 500)
 	}
 
 	return FromModel(branchModel), nil
@@ -98,9 +108,15 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, errors.WithStack(ErrForbidden)
 	}
 
+	salesRep, err := models.Users(models.UserWhere.ID.EQ(claims.Subject)).One(ctx, repo.DbConn)
+	if err != nil {
+		return nil, weberror.NewErrorMessage(ctx, err, 400, "Something went wrong. Are you logged in?")
+	}
+	req.BranchID = salesRep.BranchID
+
 	// Validate the request.
 	v := webcontext.Validator()
-	err := v.Struct(req)
+	err = v.Struct(req)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +149,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	}
 
 	if err := m.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
-		return nil, errors.WithMessage(err, "Insert account failed")
+		return nil, weberror.WithMessage(ctx, err, "Insert account failed")
 	}
 
 	return &Account{
@@ -219,6 +235,10 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	_,err = models.Accounts(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
+	if err != nil {
+		return weberror.NewError(ctx, err, 500)
+	}
+
 	return nil
 }
 
@@ -253,6 +273,10 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	now = now.Truncate(time.Millisecond)
 
 	_,err = models.Accounts(models.AccountWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.AccountColumns.ArchivedAt: now})
+
+	if err != nil {
+		return weberror.NewError(ctx, err, 500)
+	}
 
 	return nil
 }

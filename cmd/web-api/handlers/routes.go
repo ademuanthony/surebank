@@ -121,7 +121,8 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 
 	// Register customer.
 	cus := Customers{
-		Repository: appCtx.CustomerRepo,
+		Repository:  appCtx.CustomerRepo,
+		AccountRepo: appCtx.AccountRepo,
 	}
 	app.Handle("GET", "/v1/customers", cus.Find, mid.AuthenticateHeader(appCtx.Authenticator))
 	app.Handle("POST", "/v1/customers", cus.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))

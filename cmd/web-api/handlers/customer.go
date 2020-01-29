@@ -206,6 +206,8 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 	accRes, err := h.AccountRepo.Create(ctx, claims, accReq, v.Now)
 	if err != nil {
+		// delete the created customer account
+		_ = h.Repository.Delete(ctx, claims, customer.DeleteRequest{ID: res.ID}) // TODO: log delete error for debug
 		cause := errors.Cause(err)
 		switch cause {
 		case checklist.ErrForbidden:

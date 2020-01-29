@@ -189,6 +189,8 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 
 			_, err = h.AccountRepo.Create(ctx, claims, accReq, ctxValues.Now)
 			if err != nil {
+				// delete the created customer account
+				_ = h.CustomerRepo.Delete(ctx, claims, customer.DeleteRequest{ID: res.ID}) // TODO: log delete error for debug
 				cause := errors.Cause(err)
 				switch cause {
 				default:
