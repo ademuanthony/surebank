@@ -1327,6 +1327,7 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		// TODO: store dates in unix
 	}
 }
 
