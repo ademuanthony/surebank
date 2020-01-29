@@ -191,7 +191,7 @@
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/tenant.AccountUpdateRequest"
+                            "$ref": "#/definitions/account.UpdateRequest"
                         }
                     }
                 ],
@@ -288,7 +288,7 @@
                 "tags": [
                     "account"
                 ],
-                "summary": "Get account by ID",
+                "summary": "Get account by ID.",
                 "parameters": [
                     {
                         "type": "string",
@@ -302,7 +302,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/tenant.AccountResponse"
+                            "$ref": "#/definitions/account.Response"
                         }
                     },
                     "400": {
@@ -433,10 +433,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/customer.PagedResponseList"
-                            }
+                            "$ref": "#/definitions/customer.PagedResponseList"
                         }
                     },
                     "400": {

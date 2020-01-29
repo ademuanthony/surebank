@@ -796,7 +796,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/tenant.AccountUpdateRequest'
+          $ref: '#/definitions/account.UpdateRequest'
           type: object
       produces:
       - application/json
@@ -876,7 +876,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/tenant.AccountResponse'
+            $ref: '#/definitions/account.Response'
         "400":
           description: Bad Request
           schema:
@@ -891,7 +891,7 @@ paths:
             $ref: '#/definitions/weberror.ErrorResponse'
       security:
       - OAuth2Password: []
-      summary: Get account by ID
+      summary: Get account by ID.
       tags:
       - account
   /accounts/archive:
@@ -994,9 +994,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/customer.PagedResponseList'
-            type: array
+            $ref: '#/definitions/customer.PagedResponseList'
         "400":
           description: Bad Request
           schema:
