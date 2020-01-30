@@ -71,7 +71,7 @@ func urlCustomersAccountTransactions(customerID, accountID string) string {
 }
 
 func urlCustomersTransactionsCreate(customerID, accountID string) string {
-	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/create", customerID, accountID)
+	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/deposit", customerID, accountID)
 }
 
 // Index handles listing all the customers.
@@ -878,4 +878,93 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-transactions.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// Deposit handles add a new transaction to account.
+func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
+	}
+
+	customerID := params["customer_id"]
+	accountID := params["account_id"]
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
+	if err != nil {
+		return  err
+	}
+
+	req := new(transaction.CreateRequest)
+	data := make(map[string]interface{})
+	f := func() (bool, error) {
+		if r.Method == http.MethodPost {
+			err := r.ParseForm()
+			if err != nil {
+				return false, err
+			}
+
+			decoder := schema.NewDecoder()
+			decoder.IgnoreUnknownKeys(true)
+
+			if err := decoder.Decode(req, r.PostForm); err != nil {
+				return false, err
+			}
+			req.AccountNumber = acc.Number
+			req.Type = transaction.TransactionType_Deposit
+
+			_, err = h.TransactionRepo.Create(ctx, claims, *req, ctxValues.Now)
+			if err != nil {
+				switch errors.Cause(err) {
+				default:
+					if verr, ok := weberror.NewValidationError(ctx, err); ok {
+						data["validationErrors"] = verr.(*weberror.Error)
+						return false, nil
+					} else {
+						return false, err
+					}
+				}
+			}
+
+			// Display a success message to the checklist.
+			webcontext.SessionFlashSuccess(ctx,
+				"Deposit Added",
+				"Deposit successfully Added.")
+
+			return true, web.Redirect(ctx, w, r, urlCustomersView(customerID), http.StatusFound)
+		}
+
+		return false, nil
+	}
+
+	end, err := f()
+	if err != nil {
+		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
+	} else if end {
+		return nil
+	}
+
+	customerRes, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	if err != nil {
+		return err
+	}
+
+	data["form"] = req
+	data["account"] = acc
+	data["customer"] = customerRes
+	data["urlCustomersIndex"] = urlCustomersIndex()
+	data["urlCustomersView"] = urlCustomersView(customerID)
+	data["urlCustomersAccountsView"] = urlCustomersAccountsView(customerID, accountID)
+
+	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(transaction.CreateRequest{})); ok {
+		data["validationDefaults"] = verr.(*weberror.Error)
+	}
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-deposit.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }

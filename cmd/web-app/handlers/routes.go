@@ -230,6 +230,8 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/customers/:customer_id/update", custs.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/customers/:customer_id/add-account", custs.AddAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/customers/:customer_id/add-account", custs.AddAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/customers/:customer_id/accounts/:account_id/transactions/deposit", custs.Deposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/customers/:customer_id/accounts/:account_id/transactions/deposit", custs.Deposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers/:customer_id/accounts/:account_id/transactions", custs.AccountTransactions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers/:customer_id/accounts/:account_id", custs.Account, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers/:customer_id/transactions", custs.Transactions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
