@@ -436,18 +436,21 @@ func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 		return nil
 	}
 
-	prj, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	cust, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
 	if err != nil {
 		return err
 	}
 
-	data["customer"] = prj.Response(ctx)
+	data["customer"] = cust.Response(ctx)
 
 	data["urlCustomersIndex"] = urlCustomersIndex()
 	data["urlCustomersView"] = urlCustomersView(customerID)
 
 	if req.ID == "" {
-		req.Name = &prj.Name
+		req.Name = &cust.Name
+		req.Email = &cust.Email
+		req.PhoneNumber = &cust.PhoneNumber
+		req.Address = &cust.Address
 	}
 
 	data["form"] = req
