@@ -84,18 +84,18 @@ func FromModel(rec *models.Account) *Account {
 
 // Response represents a customer account that is returned for display.
 type Response struct {
-	ID         string             `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	CustomerID string             `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	Customer   *customer.Response `json:"customer,omitempty"`
-	Number     string             `json:"number" example:"Rocket Launch"`
+	ID         string             `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86" truss:"api-read"`
+	CustomerID string             `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86" truss:"api-read"`
+	Customer   *customer.Response `json:"customer,omitempty" truss:"api-read"`
+	Number     string             `json:"number" example:"Rocket Launch" truss:"api-read"`
 	Type       string             `json:"type" truss:"api-read"`
 	Balance    float64            `json:"balance" truss:"api-read"`
 	Target     float64            `json:"target" truss:"api-read"`
 	TargetInfo string             `json:"target_info" truss:"api-read"`
 	SalesRepID string             `json:"sales_rep_id" truss:"api-read"`
 	BranchID   string             `json:"branch_id" truss:"api-read"`
-	SalesRep   *user.UserResponse `json:"sales_rep,omitempty" truss:"api-read"`
-	Branch     *branch.Response   `json:"branch,omitempty" truss:"api-read"`
+	SalesRep   string             `json:"sales_rep,omitempty" truss:"api-read"`
+	Branch     string             `json:"branch,omitempty" truss:"api-read"`
 	CreatedAt  web.TimeResponse   `json:"created_at"`            // CreatedAt contains multiple format options for display.
 	UpdatedAt  web.TimeResponse   `json:"updated_at"`            // UpdatedAt contains multiple format options for display.
 	ArchivedAt *web.TimeResponse  `json:"archived_at,omitempty"` // ArchivedAt contains multiple format options for display.
@@ -119,8 +119,6 @@ func (m *Account) Response(ctx context.Context) *Response {
 		TargetInfo: m.TargetInfo,
 		SalesRepID: m.SalesRepID,
 		BranchID:   m.BranchID,
-		SalesRep:   m.SalesRep.Response(ctx),
-		Branch:     m.Branch.Response(ctx),
 		CreatedAt:  web.NewTimeResponse(ctx, m.CreatedAt),
 		UpdatedAt:  web.NewTimeResponse(ctx, m.UpdatedAt),
 	}
@@ -128,6 +126,14 @@ func (m *Account) Response(ctx context.Context) *Response {
 	if m.ArchivedAt != nil && !m.ArchivedAt.IsZero() {
 		at := web.NewTimeResponse(ctx, *m.ArchivedAt)
 		r.ArchivedAt = &at
+	}
+
+	if m.SalesRep != nil {
+		r.SalesRep = m.SalesRep.FullName()
+	}
+
+	if m.Branch != nil {
+		r.Branch = m.Branch.Name
 	}
 
 	return r

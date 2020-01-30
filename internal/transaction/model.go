@@ -201,8 +201,7 @@ type FindRequest struct {
 	Limit           *uint         `json:"limit" example:"10"`
 	Offset          *uint         `json:"offset" example:"20"`
 	IncludeArchived bool          `json:"include-archived" example:"false"`
-	IncludeCustomer bool          `json:"include_customer" example:"false"`
-	IncludeBranch   bool          `json:"include_branch" example:"false"`
+	IncludeAccount  bool          `json:"include_account" example:"false"`
 	IncludeSalesRep bool          `json:"include_sales_rep" example:"false"`
 }
 // ChecklistStatus represents the status of checklist.

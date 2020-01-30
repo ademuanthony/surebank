@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"merryworld/surebank/internal/postgres/models"
 	"strconv"
 	"strings"
@@ -50,6 +51,10 @@ type User struct {
 	CreatedAt     time.Time       `json:"created_at"`
 	UpdatedAt     time.Time       `json:"updated_at"`
 	ArchivedAt    *pq.NullTime    `json:"archived_at,omitempty"`
+}
+
+func (m User) FullName() string {
+	return fmt.Sprintf("%s %s", m.LastName, m.FirstName)
 }
 
 func FromModel(usr *models.User) *User {

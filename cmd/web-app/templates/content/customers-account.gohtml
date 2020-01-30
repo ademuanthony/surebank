@@ -1,0 +1,132 @@
+{{define "title"}}Account - {{ .account.Number }}{{end}}
+{{define "style"}}
+
+{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ .urlCustomersIndex }}">Customers</a></li>
+            <li class="breadcrumb-item"><a href="{{ .urlCustomersView }}">{{ .customer.Name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Account - {{ .account.Number }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ .account.Number }}</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-dark">Account Details</h6>
+        </div>
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-3">
+                    <p>
+                        <small>Account Number</small><br/>
+                        <b>{{ .account.Number }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-3">
+                    <p>
+                        <small>Type</small><br/>
+                        <b>{{ .account.Type }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-3">
+                    <p>
+                        <small>Account Manager</small><br/>
+                        <b><a href="/users/{{ .account.SalesRepID }}">{{ .account.SalesRep }}</a></b>
+                    </p>
+                </div>
+
+                <div class="col-md-3">
+                    <p>
+                        <small>Branch</small><br/>
+                        <b><a href="/branches/{{ .account.BranchID }}">{{ .account.Branch }}</a></b>
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <p>
+                        <small>Account Balance</small><br/>
+                        <b>{{ .account.Balance }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <p>
+                        <small>Target Amount</small><br/>
+                        <b>{{ .account.Target }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <p>
+                        <small>Target Info</small><br/>
+                        <b>{{ .account.TargetInfo }}</b>
+                    </p>
+                </div>
+
+            </div>
+
+            <hr/>
+
+            <div class="row">
+                <div class="col-md-12">
+
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h3>Recent Transactions</h3>
+                        <a href="{{ .urlCustomersTransactionsCreate }}"
+                           class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                            <i class="fas fa-folder-plus fa-sm text-white-50 mr-1"></i>New Deposit</a>
+                    </div>
+
+                    <table class="table-bordered table">
+                        <thead>
+                        <tr>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Narration</th>
+                            <th>Account</th>
+                            <th>Recorded By</th>
+                            <th>Opening Balance</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        {{ range $tran := $.transactions }}
+                            <tr>
+                                <td><a href="/transactions/{{ $tran.ID }}">{{ $tran.Amount }}</a></td>
+                                <td>{{ $tran.CreatedAt.Local }}</td>
+                                <td>{{ $tran.Narration }}</td>
+                                <td><a href="/accounts/{{ $tran.AccountID }}">{{ $tran.AccountNumber }}</a></td>
+                                <td><a href="/users/{{ $tran.SalesRepID }}">{{ $tran.SalesRep}}</a></td>
+                                <td>{{ $tran.OpeningBalance }}</td>
+                            </tr>
+                        {{ end }}
+                        </tbody>
+
+                        <tfoot>
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <a href="{{ $.urlCustomersAccountTransactions }}">View All</a>
+                            </td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+{{end}}
+{{define "js"}}
+
+{{end}}

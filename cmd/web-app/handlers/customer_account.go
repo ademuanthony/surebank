@@ -6,25 +6,22 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/pkg/errors"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/datatable"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
-	"merryworld/surebank/internal/platform/web/weberror"
-
-	"github.com/gorilla/schema"
-	"github.com/pkg/errors"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 )
 
 // CustomerAccounts represents the Customer Accounts API method handler set.
 type CustomerAccounts struct {
-	Repository *account.Repository
-	Redis    *redis.Client
-	Renderer web.Renderer
+	Repository   *account.Repository
+	Redis        *redis.Client
+	Renderer     web.Renderer
 }
 
 func urlCustomerAccountsIndex() string {
@@ -80,7 +77,7 @@ func (h *CustomerAccounts) Index(ctx context.Context, w http.ResponseWriter, r *
 			case "account_manager":
 				v.Value = "N/A"
 				if q.Customer != nil {
-					v.Value = q.SalesRep.LastName + " " + q.SalesRep.FirstName
+					v.Value = q.SalesRep
 				}
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), v.Value)
 			case "target_amount":
@@ -146,77 +143,6 @@ func (h *CustomerAccounts) Index(ctx context.Context, w http.ResponseWriter, r *
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customer-accounts-index.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
-}
-
-// Create handles creating a new customer account.
-func (h *CustomerAccounts) Create(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
-
-	ctxValues, err := webcontext.ContextValues(ctx)
-	if err != nil {
-		return err
-	}
-
-	claims, err := auth.ClaimsFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	//
-	req := new(account.CreateRequest)
-	data := make(map[string]interface{})
-	f := func() (bool, error) {
-		if r.Method == http.MethodPost {
-			err := r.ParseForm()
-			if err != nil {
-				return false, err
-			}
-
-			decoder := schema.NewDecoder()
-			decoder.IgnoreUnknownKeys(true)
-
-			if err := decoder.Decode(req, r.PostForm); err != nil {
-				return false, err
-			}
-
-			usr, err := h.Repository.Create(ctx, claims, *req, ctxValues.Now)
-			if err != nil {
-				switch errors.Cause(err) {
-				default:
-					if verr, ok := weberror.NewValidationError(ctx, err); ok {
-						data["validationErrors"] = verr.(*weberror.Error)
-						return false, nil
-					} else {
-						return false, err
-					}
-				}
-			}
-
-			// Display a success message to the checklist.
-			webcontext.SessionFlashSuccess(ctx,
-				"Account Created",
-				"Account successfully created.")
-
-			return true, web.Redirect(ctx, w, r, urlCustomerAccountsView(usr.ID), http.StatusFound)
-		}
-
-		return false, nil
-	}
-
-	end, err := f()
-	if err != nil {
-		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
-	} else if end {
-		return nil
-	}
-
-	data["form"] = req
-	data["urlCustomerAccountsIndex"] = urlCustomerAccountsIndex()
-
-	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(account.CreateRequest{})); ok {
-		data["validationDefaults"] = verr.(*weberror.Error)
-	}
-
-	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customer-accounts-create.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // View handles displaying a customer account.

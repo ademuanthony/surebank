@@ -22,19 +22,26 @@
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
             <h6 class="m-0 font-weight-bold text-dark">Customer Details</h6>
             <div class="dropdown no-arrow show">
-                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown"
+                   aria-haspopup="true" aria-expanded="true">
                     <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
                 </a>
-                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink" x-placement="bottom-end" style="position: absolute; transform: translate3d(-156px, 19px, 0px); top: 0px; left: 0px; will-change: transform;">
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                     aria-labelledby="dropdownMenuLink" x-placement="bottom-end"
+                     style="position: absolute; transform: translate3d(-156px, 19px, 0px); top: 0px; left: 0px; will-change: transform;">
                     <div class="dropdown-header">Actions</div>
                     <a class="dropdown-item" href="{{ .urlCustomersUpdate }}">Update Details</a>
                     {{ if HasRole $._Ctx "admin" }}
-                        <form method="post"><input type="hidden" name="action" value="archive" /><input type="submit" value="Archive Customer" class="dropdown-item"></form>
+                        <form method="post"><input type="hidden" name="action" value="archive"/><input type="submit"
+                                                                                                       value="Archive Customer"
+                                                                                                       class="dropdown-item">
+                        </form>
                     {{ end }}
                 </div>
             </div>
         </div>
         <div class="card-body">
+
             <div class="row">
 
                 <div class="col-md-6">
@@ -66,6 +73,85 @@
                 </div>
 
             </div>
+
+            <hr/>
+
+            <div class="row">
+                <div class="col-md-12">
+
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h3>Accounts</h3>
+                        <a href="{{ .urlCustomersAddAccount }}"
+                           class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                            <i class="fas fa-folder-plus fa-sm text-white-50 mr-1"></i>Add Account</a>
+                    </div>
+
+                    <table class="table-bordered table">
+                        <tr>
+                            <th>Account Number</th>
+                            <th>Account Type</th>
+                            <th>Balance</th>
+                            <th>Branch</th>
+                            <th>Manager</th>
+                        </tr>
+                        {{ range $acc := $.accounts }}
+                            <tr>
+                                <td><a href="/customers/{{$.customer.ID}}/accounts/{{ $acc.ID }}">{{ $acc.Number }}</a></td>
+                                <td>{{ $acc.Type }}</td>
+                                <td>{{ $acc.Balance }}</td>
+                                <td><a href="/branches/{{ $acc.BranchID }}">{{ $acc.Branch }}</a></td>
+                                <td><a href="/users/{{ $acc.SalesRepID }}">{{ $acc.SalesRep }}</a></td>
+                            </tr>
+                        {{ end }}
+                    </table>
+                </div>
+
+                <hr/>
+                <div class="col-md-12">
+
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h3>Recent Transactions</h3>
+                        <a href="{{ .urlTransactionsCreate }}"
+                           class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                            <i class="fas fa-folder-plus fa-sm text-white-50 mr-1"></i>New Deposit</a>
+                    </div>
+
+                    <table class="table-bordered table">
+                        <thead>
+                        <tr>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Narration</th>
+                            <th>Account</th>
+                            <th>Recorded By</th>
+                            <th>Opening Balance</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        {{ range $tran := $.transactions }}
+                            <tr>
+                                <td><a href="/transactions/{{ $tran.ID }}">{{ $tran.Amount }}</a></td>
+                                <td>{{ $tran.CreatedAt.Local }}</td>
+                                <td>{{ $tran.Narration }}</td>
+                                <td><a href="/customers/{{$.customer.ID}}/accounts/{{ $tran.AccountID }}">{{ $tran.AccountNumber }}</a></td>
+                                <td><a href="/users/{{ $tran.SalesRepID }}">{{ $tran.SalesRep}}</a></td>
+                                <td>{{ $tran.OpeningBalance }}</td>
+                            </tr>
+                        {{ end }}
+                        </tbody>
+
+                        <tfoot>
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <a href="{{ $.urlCustomersTransactions }}">View All</a>
+                            </td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 

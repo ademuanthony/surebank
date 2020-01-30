@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"expvar"
 	"fmt"
+	"github.com/volatiletech/sqlboiler/boil"
 	"html/template"
 	"log"
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/shop"
+	"merryworld/surebank/internal/transaction"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -80,6 +82,11 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 	log.SetPrefix(service + " : ")
 	log := log.New(os.Stdout, log.Prefix(), log.Flags())
+
+	// =========================================================================
+	// Debug mode for sqlboiler
+	// TODO: disable in production
+	boil.DebugMode = true
 
 	// =========================================================================
 	// Configuration
@@ -463,6 +470,7 @@ func main() {
 	branchRepo := branch.NewRepository(masterDb)
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
+	transactionRepo := transaction.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -484,6 +492,7 @@ func main() {
 		ChecklistRepo:   chklstRepo,
 		CustomerRepo:    customerRepo,
 		AccountRepo:     accountRepo,
+		TransactionRepo: transactionRepo,
 		Authenticator:   authenticator,
 		AwsSession:      awsSession,
 		ShopRepo:        shopRepo,

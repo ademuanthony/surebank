@@ -6,6 +6,7 @@ import (
 	"log"
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
+	"merryworld/surebank/internal/transaction"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -59,6 +60,7 @@ type AppContext struct {
 	BranchRepo        *branch.Repository
 	CustomerRepo      *customer.Repository
 	AccountRepo       *account.Repository
+	TransactionRepo   *transaction.Repository
 	Authenticator     *auth.Authenticator
 	StaticDir         string
 	TemplateDir       string
@@ -220,15 +222,21 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	custs := Customers{
 		CustomerRepo: appCtx.CustomerRepo,
 		AccountRepo: appCtx.AccountRepo,
+		TransactionRepo: appCtx.TransactionRepo,
 		Redis:    appCtx.Redis,
 		Renderer: appCtx.Renderer,
 	}
 	app.Handle("POST", "/customers/:customer_id/update", custs.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/customers/:customer_id/update", custs.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/customers/:customer_id/add-account", custs.AddAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/customers/:customer_id/add-account", custs.AddAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/customers/:customer_id/accounts/:account_id/transactions", custs.AccountTransactions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/customers/:customer_id/accounts/:account_id", custs.Account, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/customers/:customer_id/transactions", custs.Transactions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/customers/:customer_id", custs.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers/:customer_id", custs.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	app.Handle("POST", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers", custs.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
 	// Register user management pages.

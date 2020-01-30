@@ -2,7 +2,12 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"merryworld/surebank/internal/postgres/models"
+	"merryworld/surebank/internal/transaction"
 	"net/http"
 	"strings"
 
@@ -21,10 +26,16 @@ import (
 
 // Customers represents the Customers API method handler set.
 type Customers struct {
-	CustomerRepo *customer.Repository
-	AccountRepo  *account.Repository
-	Renderer     web.Renderer
-	Redis        *redis.Client
+	CustomerRepo    *customer.Repository
+	AccountRepo     *account.Repository
+	TransactionRepo *transaction.Repository
+	Renderer        web.Renderer
+	Redis           *redis.Client
+}
+
+var accountTypes = []string {
+	models.AccountTypeSB,
+	models.AccountTypeDS,
 }
 
 func urlCustomersIndex() string {
@@ -41,6 +52,26 @@ func urlCustomersView(customerID string) string {
 
 func urlCustomersUpdate(customerID string) string {
 	return fmt.Sprintf("/customers/%s/update", customerID)
+}
+
+func urlCustomersTransactions(customerID string) string {
+	return fmt.Sprintf("/customers/%s/transactions", customerID)
+}
+
+func urlCustomersAddAccount(customerID string) string {
+	return fmt.Sprintf("/customers/%s/add-account", customerID)
+}
+
+func urlCustomersAccountsView(customerID, accountID string) string {
+	return fmt.Sprintf("/customers/%s/accounts/%s", customerID, accountID)
+}
+
+func urlCustomersAccountTransactions(customerID, accountID string) string {
+	return fmt.Sprintf("/customers/%s/accounts/%s/transactions", customerID, accountID)
+}
+
+func urlCustomersTransactionsCreate(customerID, accountID string) string {
+	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/create", customerID, accountID)
 }
 
 // Index handles listing all the customers.
@@ -221,7 +252,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 		return nil
 	}
 
-	data["accountTypes"] = []string{"SB", "OM"}
+	data["accountTypes"] = accountTypes
 	data["form"] = req
 	data["urlCustomersIndex"] = urlCustomersIndex()
 
@@ -288,9 +319,56 @@ func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 	data["customer"] = cust.Response(ctx)
 
+	accountsResp, err := h.AccountRepo.Find(ctx, claims, account.FindRequest{
+		Where: "customer_id = ?", Args: []interface{}{customerID}, IncludeSalesRep: true, IncludeBranch: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	var accountBalance float64
+	var txWhere []string
+	var txArgs []interface{}
+	for _, acc := range accountsResp.Accounts {
+		accountBalance += acc.Balance
+		txWhere = append(txWhere, "account_id = ?")
+		txArgs = append(txArgs, acc.ID)
+	}
+
+	data["accounts"] = accountsResp.Accounts
+	data["accountBalance"] = accountBalance
+
+	var limit uint = 5
+	var offset uint = 0
+	var tranxListResp = &transaction.PagedResponseList{}
+	// 0 length implies that the customer has no associated account
+	if len(txWhere) > 0 {
+		tranxListResp, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
+			Where:           strings.Join(txWhere, " OR "),
+			Args:            txArgs,
+			Order:           []string{"created_at desc"},
+			Limit:           &limit,
+			Offset:          &offset,
+			IncludeAccount:  true,
+			IncludeSalesRep: true,
+		})
+		if err != nil && err.Error() != sql.ErrNoRows.Error() {
+			return err
+		}
+	}
+
+	data["transactions"] = tranxListResp.Transactions
+
 	data["urlCustomersIndex"] = urlCustomersIndex()
 	data["urlCustomersUpdate"] = urlCustomersUpdate(customerID)
 	data["urlCustomersView"] = urlCustomersView(customerID)
+	data["urlCustomersAddAccount"] = urlCustomersAddAccount(customerID)
+	data["urlCustomersTransactions"] = urlCustomersTransactions(customerID)
+	var accountID string
+	if len(accountsResp.Accounts) > 0 {
+		accountID = accountsResp.Accounts[0].ID
+	}
+	data["urlCustomersTransactionsCreate"] = urlCustomersTransactionsCreate(customerID, accountID)
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-view.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
@@ -379,4 +457,425 @@ func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-update.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// Transactions handles listing all the customers transactions across all his accounts.
+func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	customerID := params["customer_id"]
+
+	fields := []datatable.DisplayField{
+		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
+		{Field: "amount", Title: "Amount", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Amount"},
+		{Field: "created_at", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
+		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
+		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
+		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
+		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
+	}
+
+	mapFunc := func(q *transaction.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+		for i := 0; i < len(cols); i++ {
+			col := cols[i]
+			var v datatable.ColumnValue
+			switch col.Field {
+			case "id":
+				v.Value = fmt.Sprintf("%s", q.ID)
+			case "amount":
+				v.Value = fmt.Sprintf("%f", q.Amount)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlTransactionsView(q.ID), q.Amount)
+			case "created_at":
+				v.Value = q.CreatedAt.Local
+				v.Formatted = q.CreatedAt.Local
+			case "narration":
+				v.Value = q.Narration
+				v.Formatted = q.Narration
+			case "account":
+				v.Value = q.AccountNumber
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomerAccountsView(q.AccountID), v.Value)
+			case "sales_rep_id":
+				v.Value = q.SalesRepID
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)
+			case "opening_balance":
+				v.Value = fmt.Sprintf("%f", q.OpeningBalance)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("%.2f", q.OpeningBalance)
+			default:
+				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
+			}
+			resp = append(resp, v)
+		}
+
+		return resp, nil
+	}
+
+	customer, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	if err != nil {
+		return  err
+	}
+
+	accountsResp, err := h.AccountRepo.Find(ctx, claims, account.FindRequest{
+		Where: "customer_id = ?", Args: []interface{}{customerID},
+	})
+	if err != nil {
+		return err
+	}
+
+	var txWhere []string
+	var txArgs []interface{}
+	for _, acc := range accountsResp.Accounts {
+		txWhere = append(txWhere, "account_id = ?")
+		txArgs = append(txArgs, acc.ID)
+	}
+
+	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+		var res = &transaction.PagedResponseList{}
+		// 0 where means this customer has no associated account
+		if len(txWhere) > 0 {
+			res, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
+				Order: strings.Split(sorting, ","), Where: strings.Join(txWhere, " OR "), Args: txArgs,
+			})
+			if err != nil {
+				return resp, err
+			}
+		}
+
+		for _, a := range res.Transactions {
+			l, err := mapFunc(a, fields)
+			if err != nil {
+				return resp, errors.Wrapf(err, "Failed to map brand for display.")
+			}
+
+			resp = append(resp, l)
+		}
+
+		return resp, nil
+	}
+
+	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
+	if err != nil {
+		return err
+	}
+
+	if dt.HasCache() {
+		return nil
+	}
+
+	if ok, err := dt.Render(); ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	var accountID string
+	if len(accountsResp.Accounts) > 0 {
+		accountID = accountsResp.Accounts[0].ID
+	}
+
+	data := map[string]interface{}{
+		"customer":              customer,
+		"datatable":             dt.Response(),
+		"urlCustomersTransactionsCreate": urlCustomersTransactionsCreate(customerID, accountID),
+		"urlCustomersIndex":     urlCustomersIndex(),
+		"urlCustomersView":      urlCustomersView(customerID),
+	}
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-transactions.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// AddAccount handles add a new customer account.
+func (h *Customers) AddAccount(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
+	}
+
+	customerID := params["customer_id"]
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	//
+	req := new(account.CreateRequest)
+	data := make(map[string]interface{})
+	f := func() (bool, error) {
+		if r.Method == http.MethodPost {
+			err := r.ParseForm()
+			if err != nil {
+				return false, err
+			}
+
+			decoder := schema.NewDecoder()
+			decoder.IgnoreUnknownKeys(true)
+
+			if err := decoder.Decode(req, r.PostForm); err != nil {
+				return false, err
+			}
+			req.CustomerID = customerID
+
+			_, err = h.AccountRepo.Create(ctx, claims, *req, ctxValues.Now)
+			if err != nil {
+				switch errors.Cause(err) {
+				default:
+					if verr, ok := weberror.NewValidationError(ctx, err); ok {
+						data["validationErrors"] = verr.(*weberror.Error)
+						return false, nil
+					} else {
+						return false, err
+					}
+				}
+			}
+
+			// Display a success message to the checklist.
+			webcontext.SessionFlashSuccess(ctx,
+				"Account Added",
+				"Account successfully Added.")
+
+			return true, web.Redirect(ctx, w, r, urlCustomersView(customerID), http.StatusFound)
+		}
+
+		return false, nil
+	}
+
+	end, err := f()
+	if err != nil {
+		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
+	} else if end {
+		return nil
+	}
+
+	customerRes, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	if err != nil {
+		return err
+	}
+
+	data["form"] = req
+	data["accountTypes"] = accountTypes
+	data["customer"] = customerRes
+	data["urlCustomersIndex"] = urlCustomersIndex()
+	data["urlCustomersView"] = urlCustomersView(customerID)
+
+	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(account.CreateRequest{})); ok {
+		data["validationDefaults"] = verr.(*weberror.Error)
+	}
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-add-account.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// Account handles displaying an account for a customer
+func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
+	}
+
+	customerID := params["customer_id"]
+	accountID := params["account_id"]
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	data := make(map[string]interface{})
+	f := func() (bool, error) {
+		if r.Method == http.MethodPost {
+			err := r.ParseForm()
+			if err != nil {
+				return false, err
+			}
+
+			switch r.PostForm.Get("action") {
+			case "archive":
+				err = h.CustomerRepo.Archive(ctx, claims, customer.ArchiveRequest{
+					ID: customerID,
+				}, ctxValues.Now)
+				if err != nil {
+					return false, err
+				}
+
+				webcontext.SessionFlashSuccess(ctx,
+					"Customer Archived",
+					"Customer successfully archived.")
+
+				return true, web.Redirect(ctx, w, r, urlCustomersIndex(), http.StatusFound)
+			}
+		}
+
+		return false, nil
+	}
+
+	end, err := f()
+	if err != nil {
+		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
+	} else if end {
+		return nil
+	}
+
+	cust, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	if err != nil {
+		return err
+	}
+	data["customer"] = cust.Response(ctx)
+
+	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
+	if err != nil {
+		return  weberror.NewError(ctx, err, 404)
+	}
+	data["account"] = acc.Response(ctx)
+
+	var limit uint = 5
+	var offset uint = 0
+	tranxListResp, err := h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
+		Where:           "account_id = ?",
+		Args:            []interface{}{accountID},
+		Order:           []string{"created_at desc"},
+		Limit:           &limit,
+		Offset:          &offset,
+		IncludeAccount:  true,
+		IncludeSalesRep: true,
+	})
+	if err != nil && err.Error() != sql.ErrNoRows.Error() {
+		return err
+	}
+
+	data["transactions"] = tranxListResp.Transactions
+
+	data["urlCustomersIndex"] = urlCustomersIndex()
+	data["urlCustomersView"] = urlCustomersView(customerID)
+	data["urlCustomersAccountTransactions"] = urlCustomersAccountTransactions(customerID, accountID)
+	data["urlCustomersTransactionsCreate"] = urlCustomersTransactionsCreate(customerID, accountID)
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// AccountTransactions handles listing all the transactions for the selected account.
+func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	accountID := params["account_id"]
+
+	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
+	if err != nil {
+		return  err
+	}
+
+	cust, err := h.CustomerRepo.ReadByID(ctx, claims, acc.CustomerID)
+	if err != nil {
+		return err
+	}
+
+	fields := []datatable.DisplayField{
+		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
+		{Field: "amount", Title: "Amount", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Amount"},
+		{Field: "created_at", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
+		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
+		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
+		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
+		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
+	}
+
+	mapFunc := func(q *transaction.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+		for i := 0; i < len(cols); i++ {
+			col := cols[i]
+			var v datatable.ColumnValue
+			switch col.Field {
+			case "id":
+				v.Value = fmt.Sprintf("%s", q.ID)
+			case "amount":
+				v.Value = fmt.Sprintf("%f", q.Amount)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlTransactionsView(q.ID), q.Amount)
+			case "created_at":
+				v.Value = q.CreatedAt.Local
+				v.Formatted = q.CreatedAt.Local
+			case "narration":
+				v.Value = q.Narration
+				v.Formatted = q.Narration
+			case "account":
+				v.Value = q.AccountNumber
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomerAccountsView(q.AccountID), v.Value)
+			case "sales_rep_id":
+				v.Value = q.SalesRepID
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)
+			case "opening_balance":
+				v.Value = fmt.Sprintf("%f", q.OpeningBalance)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("%.2f", q.OpeningBalance)
+			default:
+				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
+			}
+			resp = append(resp, v)
+		}
+
+		return resp, nil
+	}
+
+	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+		var res = &transaction.PagedResponseList{}
+		res, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
+			Order: strings.Split(sorting, ","),
+			Where: "account_id = ?",
+			Args: []interface{}{accountID},
+		})
+		if err != nil {
+			return resp, err
+		}
+
+		for _, a := range res.Transactions {
+			l, err := mapFunc(a, fields)
+			if err != nil {
+				return resp, errors.Wrapf(err, "Failed to map brand for display.")
+			}
+
+			resp = append(resp, l)
+		}
+
+		return resp, nil
+	}
+
+	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
+	if err != nil {
+		return err
+	}
+
+	if dt.HasCache() {
+		return nil
+	}
+
+	if ok, err := dt.Render(); ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	data := map[string]interface{}{
+		"customer":                       cust.Response(ctx),
+		"account":                        acc.Response(ctx),
+		"datatable":                      dt.Response(),
+		"urlCustomersTransactionsCreate": urlCustomersTransactionsCreate(cust.ID, accountID),
+		"urlCustomersAccountsView":       urlCustomersAccountsView(cust.ID, accountID),
+		"urlCustomersIndex":              urlCustomersIndex(),
+		"urlCustomersView":               urlCustomersView(cust.ID),
+	}
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-transactions.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }

@@ -38,13 +38,21 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 		queries = append(queries, Where(req.Where, req.Args...))
 	}
 
+	if !req.IncludeArchived {
+		queries = append(queries, And("archived_at is null"))
+	}
+
 	totalCount, err := models.Transactions(queries...).Count(ctx, repo.DbConn)
 	if err != nil {
 		return nil, weberror.WithMessage(ctx, err, "Cannot get transaction count")
 	}
 
-	if !req.IncludeArchived {
-		queries = append(queries, And("archived_at is null"))
+	if req.IncludeAccount {
+		queries = append(queries, Load(models.TransactionRels.Account))
+	}
+
+	if req.IncludeSalesRep {
+		queries = append(queries, Load(models.TransactionRels.SalesRep))
 	}
 
 	if len(req.Order) > 0 {
