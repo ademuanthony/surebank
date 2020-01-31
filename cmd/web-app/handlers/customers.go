@@ -74,6 +74,10 @@ func urlCustomersTransactionsCreate(customerID, accountID string) string {
 	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/deposit", customerID, accountID)
 }
 
+func urlCustomersTransactionsView(customerID, accountID, tranxID string) string {
+	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/%s", customerID, accountID, tranxID)
+}
+
 // Index handles listing all the customers.
 func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 
@@ -492,7 +496,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 			case "amount":
 				v.Value = fmt.Sprintf("%f", q.Amount)
 				p := message.NewPrinter(language.English)
-				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlTransactionsView(q.ID), q.Amount)
+				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlCustomersTransactionsView(customerID, q.AccountID, q.ID), q.Amount)
 			case "created_at":
 				v.Value = q.CreatedAt.Local
 				v.Formatted = q.CreatedAt.Local
@@ -501,7 +505,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 				v.Formatted = q.Narration
 			case "account":
 				v.Value = q.AccountNumber
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomerAccountsView(q.AccountID), v.Value)
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(customerID, q.AccountID), v.Value)
 			case "sales_rep_id":
 				v.Value = q.SalesRepID
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)
@@ -804,7 +808,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 			case "amount":
 				v.Value = fmt.Sprintf("%f", q.Amount)
 				p := message.NewPrinter(language.English)
-				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlTransactionsView(q.ID), q.Amount)
+				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlCustomersTransactionsView(cust.ID, acc.ID, q.ID), q.Amount)
 			case "created_at":
 				v.Value = q.CreatedAt.Local
 				v.Formatted = q.CreatedAt.Local
@@ -813,7 +817,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 				v.Formatted = q.Narration
 			case "account":
 				v.Value = q.AccountNumber
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomerAccountsView(q.AccountID), v.Value)
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(cust.ID, q.AccountID), v.Value)
 			case "sales_rep_id":
 				v.Value = q.SalesRepID
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)
@@ -970,4 +974,83 @@ func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-deposit.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// Transaction handles displaying of a transaction
+func (h *Customers) Transaction(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	ctxValue, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
+	}
+
+	customerID := params["customer_id"]
+	accountID := params["account_id"]
+	transactionID := params["transaction_id"]
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	data := make(map[string]interface{})
+	f := func() (bool, error) {
+		if r.Method == http.MethodPost {
+			err := r.ParseForm()
+			if err != nil {
+				return false, err
+			}
+
+			switch r.PostForm.Get("action") {
+			case "archive":
+				err = h.TransactionRepo.Archive(ctx, claims, transaction.ArchiveRequest{
+					ID: transactionID,
+				}, ctxValue.Now)
+				if err != nil {
+					return false, err
+				}
+
+				webcontext.SessionFlashSuccess(ctx,
+					"Transaction Archived",
+					"Transaction successfully archived.")
+
+				return true, web.Redirect(ctx, w, r, urlCustomersAccountTransactions(customerID, accountID), http.StatusFound)
+			}
+		}
+
+		return false, nil
+	}
+
+	end, err := f()
+	if err != nil {
+		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
+	} else if end {
+		return nil
+	}
+
+	tranx, err := h.TransactionRepo.ReadByID(ctx, claims, transactionID)
+	if err != nil {
+		return err
+	}
+
+	acc, err := h.AccountRepo.ReadByID(ctx, claims, tranx.AccountID)
+	if err != nil {
+		return err
+	}
+
+	cust, err := h.CustomerRepo.ReadByID(ctx, claims, acc.CustomerID)
+	if err != nil {
+		return  err
+	}
+
+	data["transaction"] = tranx.Response(ctx)
+	data["account"] = acc.Response(ctx)
+	data["customer"] = cust.Response(ctx)
+	data["urlCustomersAccountTransactions"] = urlCustomersAccountTransactions(customerID, accountID)
+	data["urlCustomerAccountsView"] = urlCustomersAccountsView(cust.ID, accountID)
+	data["urlCustomersView"] = urlCustomersView(customerID)
+	data["urlCustomersIndex"] = urlCustomersIndex()
+	data["urlCashierView"] = urlUsersView(tranx.SalesRepID)
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-transactions-view.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }

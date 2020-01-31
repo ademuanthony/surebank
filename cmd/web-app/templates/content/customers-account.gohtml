@@ -102,7 +102,7 @@
                         <tbody>
                         {{ range $tran := $.transactions }}
                             <tr>
-                                <td><a href="/transactions/{{ $tran.ID }}">{{ $tran.Amount }}</a></td>
+                                <td><a href="/customers/{{ $.customer.ID }}/accounts/{{ $tran.AccountID}}/transactions/{{ $tran.ID }}">{{ $tran.Amount }}</a></td>
                                 <td>{{ $tran.CreatedAt.Local }}</td>
                                 <td>{{ $tran.Narration }}</td>
                                 <td><a href="/accounts/{{ $tran.AccountID }}">{{ $tran.AccountNumber }}</a></td>

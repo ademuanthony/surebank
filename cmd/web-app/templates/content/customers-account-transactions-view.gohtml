@@ -1,0 +1,77 @@
+{{define "title"}}Transaction Detail - {{ .transaction.Narration }}{{end}}
+{{define "style"}}
+
+{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ .urlCustomersIndex }}">Customers</a></li>
+            <li class="breadcrumb-item"><a href="{{ .urlCustomersView }}">{{ .customer.Name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ .urlCustomerAccountsView }}">{{ .account.Number }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ .urlCustomersAccountTransactions }}">Transactions</a></li>
+            <li class="breadcrumb-item"><a href="">{{ .transaction.Amount }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">View</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ .transaction.Narration }}</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-dark">Transaction Details</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <p>
+                        <small>Date</small><br/>
+                        <b>{{ .transaction.CreatedAt.Local }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <p>
+                        <small>Amount</small><br/>
+                        <b>{{ .transaction.OpeningBalance }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <p>
+                        <small>Amount</small><br/>
+                        <b>{{ .transaction.Amount }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <p>
+                        <small>Type</small><br/>
+                        <b>{{ .transaction.Type }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <p>
+                        <small>Narration</small><br/>
+                        <b>{{ .transaction.Narration }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <p>
+                        <small>Recorded By</small><br/>
+                        <b><a href="{{ .urlCashierView }}">{{ .transaction.SalesRep }}</a></b>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+{{end}}
+{{define "js"}}
+
+{{end}}

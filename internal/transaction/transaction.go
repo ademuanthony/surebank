@@ -95,7 +95,7 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 // ReadByID gets the specified transaction by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) (*Transaction, error) {
 	queries := []QueryMod{
-		models.AccountWhere.ID.EQ(id),
+		models.TransactionWhere.ID.EQ(id),
 		Load(models.TransactionRels.Account),
 		Load(models.TransactionRels.SalesRep),
 	}

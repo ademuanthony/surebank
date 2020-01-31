@@ -148,3 +148,8 @@ div.dataTable_card a.paginate_button.current {
     background-color: #428bca;
     padding : 5px 15px;
 }
+
+.bg-login-image {
+    background: url("../../images/surebank-login.png") top center;
+    background-size: cover;
+}
