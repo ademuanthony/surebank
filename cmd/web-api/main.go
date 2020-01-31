@@ -65,10 +65,13 @@ var build = "develop"
 // ie: export WEB_API_ENV=dev
 var service = "WEB_API"
 
-// @title SaaS Example API
+// @title Surebank API
 
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host api.surebankltd.com
+// @BasePath /v1
 
 // @securityDefinitions.basic BasicAuth
 

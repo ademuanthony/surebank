@@ -8,3 +8,5 @@ tmp
 postgres-data/
 cmd/web-api/web-api
 cmd/web-app/web-app
+cmd/web-api/web-api/.env
+cmd/web-app/web-app/.env

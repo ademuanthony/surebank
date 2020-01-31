@@ -1,13 +1,15 @@
 {
     "swagger": "2.0",
     "info": {
-        "title": "SaaS Example API",
+        "title": "Surebank API",
         "contact": {},
         "license": {
             "name": "Apache 2.0",
             "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
         }
     },
+    "host": "api.surebankltd.com",
+    "basePath": "/v1",
     "paths": {
         "/accounts": {
             "get": {
@@ -1917,8 +1919,7 @@
                     "example": "Rocket Launch"
                 },
                 "sales_rep": {
-                    "type": "object",
-                    "$ref": "#/definitions/user.UserResponse"
+                    "type": "string"
                 },
                 "sales_rep_id": {
                     "type": "string"

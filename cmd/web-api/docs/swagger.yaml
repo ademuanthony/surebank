@@ -1,3 +1,4 @@
+basePath: /v1
 definitions:
   account.ArchiveRequest:
     properties:
@@ -57,8 +58,7 @@ definitions:
         example: Rocket Launch
         type: string
       sales_rep:
-        $ref: '#/definitions/user.UserResponse'
-        type: object
+        type: string
       sales_rep_id:
         type: string
       target:
@@ -717,12 +717,13 @@ definitions:
       value:
         type: object
     type: object
+host: api.surebankltd.com
 info:
   contact: {}
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: SaaS Example API
+  title: Surebank API
 paths:
   /accounts:
     get:
