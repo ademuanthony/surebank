@@ -183,7 +183,7 @@ func (repo *Repository) generateAccountNumber(ctx context.Context, accountType s
 	for accountNumber == "" || repo.accountNumberExists(ctx, accountNumber) {
 		accountNumber = accountType
 		rand.Seed(time.Now().UTC().UnixNano())
-		for i := 0; i < 8; i++ {
+		for i := 0; i < 5; i++ {
 			accountNumber += strconv.Itoa(rand.Intn(10))
 		}
 	}
