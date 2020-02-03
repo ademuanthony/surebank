@@ -21,6 +21,7 @@ require (
 	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/google/go-cmp v0.4.0
+	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.0

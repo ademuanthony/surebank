@@ -528,6 +528,9 @@ func main() {
 		appCtx.PostAppMiddleware = append(appCtx.PostAppMiddleware, mid.Minify())
 	}
 
+	// Apply compression
+	appCtx.PreAppMiddleware = append(appCtx.PostAppMiddleware, mid.Compress())
+
 	// Generate the new session store and append it to the global list of middlewares.
 
 	// Init session store
