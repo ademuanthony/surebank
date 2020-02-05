@@ -62,7 +62,7 @@ module.exports = {
   ],
   output: {
     filename: 'js/[name].bundle.js',
-    path: path.resolve(__dirname, '../../dist'),
-    publicPath: '../dist/'
+    path: path.resolve(__dirname, '../../cmd/web-app/static/dist'),
+    publicPath: '/dist/js/'
   }
 }
