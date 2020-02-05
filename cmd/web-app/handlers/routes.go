@@ -243,6 +243,17 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers", custs.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
+	// Customers
+	reports := Reports{
+		CustomerRepo: appCtx.CustomerRepo,
+		AccountRepo: appCtx.AccountRepo,
+		TransactionRepo: appCtx.TransactionRepo,
+		ShopRepo: appCtx.ShopRepo,
+		Redis:    appCtx.Redis,
+		Renderer: appCtx.Renderer,
+	}
+	app.Handle("GET", "/report/stocks", reports.Stocks, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+
 	// Register user management pages.
 	us := Users{
 		UserRepo:        appCtx.UserRepo,

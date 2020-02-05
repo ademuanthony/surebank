@@ -84,18 +84,19 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, errors.WithStack(ErrForbidden)
 	}
 
-	// Validate the request.
-	v := webcontext.Validator()
-	err := v.Struct(req)
-	if err != nil {
-		return nil, err
-	}
-
 	exists, err := models.Branches(models.BranchWhere.Name.EQ(req.Name)).Exists(ctx, repo.DbConn)
 	if err != nil {
 		return nil, err
 	}
 	ctx = webcontext.ContextAddUniqueValue(ctx, req, "Name", !exists)
+	// ctx = context.WithValue(ctx, webcontext.KeyTagUnique, !exists)
+
+	// Validate the request.
+	v := webcontext.Validator()
+	err = v.Struct(req)
+	if err != nil {
+		return nil, err
+	}
 
 	// If now empty set it to the current time.
 	if now.IsZero() {

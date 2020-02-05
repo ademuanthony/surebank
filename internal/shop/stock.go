@@ -107,7 +107,7 @@ func stockFromModel(stock *models.Stock) *Stock {
 			s.ProductName = stock.R.Product.Name
 		}
 	}
-	
+
 	return s
 }
 
@@ -173,14 +173,14 @@ func (m *Stocks) Response(ctx context.Context) []*StockResponse {
 		}
 	}
 
-	return l 
+	return l
 }
 
 // StockCreateRequest contains information needed to create a new Stock.
 type StockCreateRequest struct {
 	BranchID         string     `json:"branch_id" validate:"required"`
 	BatchNumber      string     `json:"batch_number" validate:"required"`
-	ProductID        string     `json:"product_id" validate:"required"`
+	ProductID        string     `json:"product_id" validate:"required,unique"`
 	UnitCostPrice    float64    `json:"unit_cost_price" validate:"required"`
 	Quantity         int        `json:"quantity" validate:"required"`
 	ManufactureDate  *time.Time `json:"manufacture_date,omitempty" schema:"omitempty"`
@@ -254,7 +254,7 @@ type StockInfo struct {
 
 func (repo Repository) FindStock(ctx context.Context, req StockFindRequest) (Stocks, error) {
 	var queries []QueryMod
-	
+
 	if req.Where != "" {
 		queries = append(queries, Where(req.Where, req.Args...))
 	}
@@ -323,7 +323,7 @@ func (repo *Repository) CreateStock(ctx context.Context, claims auth.Claims, req
 
 	// Validate the request.
 	v := webcontext.Validator()
-	err = v.Struct(req)
+	err = v.StructCtx(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -475,6 +475,7 @@ func (repo *Repository) StockReport(ctx context.Context, _ auth.Claims, req Stoc
 	(SUM(stock.deducted_quantity)*-1) + SUM(stock.quantity) AS quantity
 	FROM stock INNER JOIN product ON stock.product_id = product.id
 	GROUP BY product.id`
+
 	// var query = []QueryMod {
 	// 	SQL(selectQuery),
 	// }

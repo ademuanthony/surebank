@@ -164,7 +164,7 @@ func (repo *Repository) CreateCategory(ctx context.Context, claims auth.Claims, 
 
 	// Validate the request.
 	v := webcontext.Validator()
-	err = v.Struct(req)
+	err = v.StructCtx(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -194,12 +194,6 @@ func (repo *Repository) UpdateCategory(ctx context.Context, claims auth.Claims, 
 	if !claims.HasRole(auth.RoleAdmin) {
 		return errors.WithStack(ErrForbidden)
 	}
-	// Validate the request.
-	v := webcontext.Validator()
-	err := v.Struct(req)
-	if err != nil {
-		return err
-	}
 
 	unique := true
 	if req.Name != nil {
@@ -212,6 +206,13 @@ func (repo *Repository) UpdateCategory(ctx context.Context, claims auth.Claims, 
 	}
 
 	ctx = webcontext.ContextAddUniqueValue(ctx, req, "Name", unique)
+
+	// Validate the request.
+	v := webcontext.Validator()
+	err := v.StructCtx(ctx, req)
+	if err != nil {
+		return err
+	}
 
 	cols := models.M{}
 	if req.Name != nil {

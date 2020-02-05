@@ -2,16 +2,18 @@ package shop
 
 import (
 	"context"
+	"database/sql"
 	"time"
+
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/postgres/models"
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
-	"merryworld/surebank/internal/platform/auth"
-	"merryworld/surebank/internal/platform/web/webcontext"
-	"merryworld/surebank/internal/postgres/models"
 )
 
 // Brand
@@ -170,7 +172,7 @@ func (repo *Repository) CreateBrand(ctx context.Context, claims auth.Claims, req
 	}
 
 	exists, err := models.Brands(models.BrandWhere.Name.EQ(req.Name)).Exists(ctx, repo.DbConn)
-	if err != nil {
+	if err != nil && err.Error() != sql.ErrNoRows.Error(){
 		return nil, err
 	}
 
@@ -178,7 +180,7 @@ func (repo *Repository) CreateBrand(ctx context.Context, claims auth.Claims, req
 
 	// Validate the request.
 	v := webcontext.Validator()
-	err = v.Struct(req)
+	err = v.StructCtx(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -210,24 +212,25 @@ func (repo *Repository) UpdateBrand(ctx context.Context, claims auth.Claims, req
 	if !claims.HasRole(auth.RoleAdmin) {
 		return errors.WithStack(ErrForbidden)
 	}
-	// Validate the request.
-	v := webcontext.Validator()
-	err := v.Struct(req)
-	if err != nil {
-		return err
-	}
 
-	unique := true
+	uniq := true
 	if req.Name != nil {
 		exists, err := models.Brands(models.BrandWhere.Name.EQ(*req.Name), models.BrandWhere.ID.NEQ(req.ID)).Exists(ctx, repo.DbConn)
 		if err != nil {
 			return err
 		}
 
-		unique = !exists
+		uniq = !exists
 	}
 
-	ctx = webcontext.ContextAddUniqueValue(ctx, req, "Name", unique)
+	ctx = webcontext.ContextAddUniqueValue(ctx, req, "Name", uniq)
+
+	// Validate the request.
+	v := webcontext.Validator()
+	err := v.StructCtx(ctx, req)
+	if err != nil {
+		return err
+	}
 
 	cols := models.M{}
 	if req.Name != nil {

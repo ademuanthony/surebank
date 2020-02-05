@@ -404,31 +404,31 @@ func (r *TemplateRenderer) Render(ctx context.Context, w http.ResponseWriter, re
 	}
 
 	// If there is a session, check for flashes and ensure the session is saved.
-	/*sess := webcontext.ContextSession(ctx)
-	if sess != nil {
-		// Load any flash messages and append to response data to be included in the rendered template.
-		if msgs := sess.Flashes(); len(msgs) > 0 {
-			var flashes []webcontext.FlashMsgResponse
-			for _, mv := range msgs {
-				dat, ok := mv.([]byte)
-				if !ok {
-					continue
-				}
-				var msg webcontext.FlashMsgResponse
-				if err := json.Unmarshal(dat, &msg); err != nil {
-					continue
-				}
-				flashes = append(flashes, msg)
-			}
+	// sess := webcontext.ContextSession(ctx)
+	// if sess != nil {
+	// 	// Load any flash messages and append to response data to be included in the rendered template.
+	// 	if msgs := sess.Flashes(); len(msgs) > 0 {
+	// 		var flashes []webcontext.FlashMsgResponse
+	// 		for _, mv := range msgs {
+	// 			dat, ok := mv.([]byte)
+	// 			if !ok {
+	// 				continue
+	// 			}
+	// 			var msg webcontext.FlashMsgResponse
+	// 			if err := json.Unmarshal(dat, &msg); err != nil {
+	// 				continue
+	// 			}
+	// 			flashes = append(flashes, msg)
+	// 		}
 
-			renderData["flashes"] = flashes
-		}
+	// 		renderData["flashes"] = flashes
+	// 	}
 
-		// Save the session before writing to the response for the session cookie to be sent to the client.
-		if err := sess.Save(req, w); err != nil {
-			return errors.WithStack(err)
-		}
-	}*/
+	// 	// Save the session before writing to the response for the session cookie to be sent to the client.
+	// 	if err := sess.Save(req, w); err != nil {
+	// 		return errors.WithStack(err)
+	// 	}
+	// }
 
 	// Render template with data.
 	if err := t.Execute(w, renderData); err != nil {
