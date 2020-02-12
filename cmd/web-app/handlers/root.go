@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"merryworld/surebank/internal/shop"
 
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
@@ -19,6 +20,7 @@ import (
 
 // Root represents the Root API method handler set.
 type Root struct {
+	ShopRepo *shop.Repository
 	Renderer web.Renderer
 	Sitemap  *stm.Sitemap
 	WebRoute webroute.WebRoute
@@ -35,7 +37,12 @@ func (h *Root) Index(ctx context.Context, w http.ResponseWriter, r *http.Request
 
 // indexDashboard loads the dashboard for a user when they are authenticated.
 func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
-	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "root-dashboard.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, nil)
+	products, err := h.ShopRepo.FindProduct(ctx, shop.ProductFindRequest{Order:[]string{"name"}})
+	if err != nil {
+		return err
+	}
+	data := map[string]interface{}{"products": products}
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "root-dashboard.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // indexDefault loads the root index page when a user has no authentication.

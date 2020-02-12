@@ -2,6 +2,7 @@ package shop
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/pborman/uuid"
@@ -261,6 +262,9 @@ func (repo Repository) FindProduct(ctx context.Context, req ProductFindRequest) 
 
 	ProductSlice, err := models.Products(queries...).All(ctx, repo.DbConn)
 	if err != nil {
+		if err.Error() == sql.ErrNoRows.Error() {
+			return Products{}, nil
+		}
 		return nil, err
 	}
 

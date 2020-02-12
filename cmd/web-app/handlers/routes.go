@@ -343,6 +343,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 
 	// Register root
 	r := Root{
+		ShopRepo: appCtx.ShopRepo,
 		Renderer: appCtx.Renderer,
 		WebRoute: appCtx.WebRoute,
 		Sitemap:  sm,
