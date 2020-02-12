@@ -25,19 +25,19 @@ import (
 // Sale is an object representing the database table.
 type Sale struct {
 	ID            string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ReceiptNumber null.String `boil:"receipt_number" json:"receipt_number,omitempty" toml:"receipt_number" yaml:"receipt_number,omitempty"`
+	BranchID      string      `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
+	ReceiptNumber string      `boil:"receipt_number" json:"receipt_number" toml:"receipt_number" yaml:"receipt_number"`
 	Amount        float64     `boil:"amount" json:"amount" toml:"amount" yaml:"amount"`
 	AmountTender  float64     `boil:"amount_tender" json:"amount_tender" toml:"amount_tender" yaml:"amount_tender"`
 	Balance       float64     `boil:"balance" json:"balance" toml:"balance" yaml:"balance"`
 	CustomerName  null.String `boil:"customer_name" json:"customer_name,omitempty" toml:"customer_name" yaml:"customer_name,omitempty"`
 	PhoneNumber   null.String `boil:"phone_number" json:"phone_number,omitempty" toml:"phone_number" yaml:"phone_number,omitempty"`
-	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt     null.Time   `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
-	ArchivedAt    null.Time   `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
+	CreatedAt     int64       `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt     int64       `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ArchivedAt    null.Int64  `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
 	CreatedByID   string      `boil:"created_by_id" json:"created_by_id" toml:"created_by_id" yaml:"created_by_id"`
 	UpdatedByID   null.String `boil:"updated_by_id" json:"updated_by_id,omitempty" toml:"updated_by_id" yaml:"updated_by_id,omitempty"`
 	ArchivedByID  null.String `boil:"archived_by_id" json:"archived_by_id,omitempty" toml:"archived_by_id" yaml:"archived_by_id,omitempty"`
-	BranchID      string      `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
 
 	R *saleR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L saleL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -45,6 +45,7 @@ type Sale struct {
 
 var SaleColumns = struct {
 	ID            string
+	BranchID      string
 	ReceiptNumber string
 	Amount        string
 	AmountTender  string
@@ -57,9 +58,9 @@ var SaleColumns = struct {
 	CreatedByID   string
 	UpdatedByID   string
 	ArchivedByID  string
-	BranchID      string
 }{
 	ID:            "id",
+	BranchID:      "branch_id",
 	ReceiptNumber: "receipt_number",
 	Amount:        "amount",
 	AmountTender:  "amount_tender",
@@ -72,41 +73,40 @@ var SaleColumns = struct {
 	CreatedByID:   "created_by_id",
 	UpdatedByID:   "updated_by_id",
 	ArchivedByID:  "archived_by_id",
-	BranchID:      "branch_id",
 }
 
 // Generated where
 
 var SaleWhere = struct {
 	ID            whereHelperstring
-	ReceiptNumber whereHelpernull_String
+	BranchID      whereHelperstring
+	ReceiptNumber whereHelperstring
 	Amount        whereHelperfloat64
 	AmountTender  whereHelperfloat64
 	Balance       whereHelperfloat64
 	CustomerName  whereHelpernull_String
 	PhoneNumber   whereHelpernull_String
-	CreatedAt     whereHelpertime_Time
-	UpdatedAt     whereHelpernull_Time
-	ArchivedAt    whereHelpernull_Time
+	CreatedAt     whereHelperint64
+	UpdatedAt     whereHelperint64
+	ArchivedAt    whereHelpernull_Int64
 	CreatedByID   whereHelperstring
 	UpdatedByID   whereHelpernull_String
 	ArchivedByID  whereHelpernull_String
-	BranchID      whereHelperstring
 }{
 	ID:            whereHelperstring{field: "\"sale\".\"id\""},
-	ReceiptNumber: whereHelpernull_String{field: "\"sale\".\"receipt_number\""},
+	BranchID:      whereHelperstring{field: "\"sale\".\"branch_id\""},
+	ReceiptNumber: whereHelperstring{field: "\"sale\".\"receipt_number\""},
 	Amount:        whereHelperfloat64{field: "\"sale\".\"amount\""},
 	AmountTender:  whereHelperfloat64{field: "\"sale\".\"amount_tender\""},
 	Balance:       whereHelperfloat64{field: "\"sale\".\"balance\""},
 	CustomerName:  whereHelpernull_String{field: "\"sale\".\"customer_name\""},
 	PhoneNumber:   whereHelpernull_String{field: "\"sale\".\"phone_number\""},
-	CreatedAt:     whereHelpertime_Time{field: "\"sale\".\"created_at\""},
-	UpdatedAt:     whereHelpernull_Time{field: "\"sale\".\"updated_at\""},
-	ArchivedAt:    whereHelpernull_Time{field: "\"sale\".\"archived_at\""},
+	CreatedAt:     whereHelperint64{field: "\"sale\".\"created_at\""},
+	UpdatedAt:     whereHelperint64{field: "\"sale\".\"updated_at\""},
+	ArchivedAt:    whereHelpernull_Int64{field: "\"sale\".\"archived_at\""},
 	CreatedByID:   whereHelperstring{field: "\"sale\".\"created_by_id\""},
 	UpdatedByID:   whereHelpernull_String{field: "\"sale\".\"updated_by_id\""},
 	ArchivedByID:  whereHelpernull_String{field: "\"sale\".\"archived_by_id\""},
-	BranchID:      whereHelperstring{field: "\"sale\".\"branch_id\""},
 }
 
 // SaleRels is where relationship names are stored.
@@ -145,7 +145,7 @@ func (*saleR) NewStruct() *saleR {
 type saleL struct{}
 
 var (
-	saleAllColumns            = []string{"id", "receipt_number", "amount", "amount_tender", "balance", "customer_name", "phone_number", "created_at", "updated_at", "archived_at", "created_by_id", "updated_by_id", "archived_by_id", "branch_id"}
+	saleAllColumns            = []string{"id", "branch_id", "receipt_number", "amount", "amount_tender", "balance", "customer_name", "phone_number", "created_at", "updated_at", "archived_at", "created_by_id", "updated_by_id", "archived_by_id"}
 	saleColumnsWithoutDefault = []string{"id", "receipt_number", "amount", "amount_tender", "balance", "customer_name", "phone_number", "created_at", "updated_at", "archived_at", "created_by_id", "updated_by_id", "archived_by_id"}
 	saleColumnsWithDefault    = []string{"branch_id"}
 	salePrimaryKeyColumns     = []string{"id"}

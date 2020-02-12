@@ -149,6 +149,13 @@ func WithMessage(ctx context.Context, er error, msg string) error {
 	return weberr
 }
 
+// WithMessagef appends the error with a message.
+func WithMessagef(ctx context.Context, er error, format string, args ...interface{}) error {
+	weberr := NewError(ctx, er, 0).(*Error)
+	weberr.Message = fmt.Sprintf(format, args...)
+	return weberr
+}
+
 // SessionFlashError
 func SessionFlashError(ctx context.Context, er error) {
 

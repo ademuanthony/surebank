@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/shop"
 	"merryworld/surebank/internal/branch"
 	"net/http"
@@ -21,12 +22,13 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 )
 
-// Stocks represents the Stock API method handler set.
+// Stocks represents the Inventory API method handler set.
 type Stocks struct {
-	ShopRepo *shop.Repository
+	Repo       *inventory.Repository
+	ShopRepo   *shop.Repository
 	BranchRepo *branch.Repository
-	Redis    *redis.Client
-	Renderer web.Renderer
+	Redis      *redis.Client
+	Renderer   web.Renderer
 }
 
 func urlStocksIndex() string {
@@ -45,21 +47,27 @@ func urlStocksUpdate(id string) string {
 	return fmt.Sprintf("/shop/inventory/%s/update", id)
 }
 
-// Index handles listing all stocks.
+// Index handles listing all stock transactions.
 func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
 
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
-		{Field: "product_id", Title: "Product ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
+		{Field: "product_id", Title: "Product ID", Visible: false, Searchable: false, Orderable: false, Filterable: false},
 		{Field: "product_name", Title: "Product", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-		{Field: "batch_number", Title: "Batch", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Batch"},
+		{Field: "branch_id", Title: "Branch ID", Visible: false, Searchable: false, Orderable: false, Filterable: false},
+		{Field: "branch_name", Title: "Branch", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Branch"},
+		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: false, Filterable: false,},
 		{Field: "quantity", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: false, },
-		{Field: "unit_cost_price", Title: "Unit Cost Price", Visible: true, Searchable: false, Orderable: true, Filterable: false, },
-		{Field: "manufacture_date", Title: "Manufacture Date", Visible: true, Searchable: false, Orderable: true, Filterable: false, },
-		{Field: "expiry_date", Title: "Expiry Date", Visible: true, Searchable: false, Orderable: true, Filterable: false, },
+		{Field: "created_at", Title: "Date", Visible: true, Searchable: false, Orderable: true, Filterable: true, },
+		{Field: "sales_rep", Title: "Added By", Visible: true, Searchable: false, Orderable: true, Filterable: true, },
 	}
 
-	mapFunc := func(q *shop.Stock, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q *inventory.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -69,37 +77,28 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 			case "product_id":
 				v.Value = fmt.Sprintf("%s", q.ProductID)
 			case "product_name":
-				v.Value = q.ProductName
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlStocksView(q.ID), v.Value)
-			case "batch_number":
-				v.Value = q.BatchNumber
-				v.Formatted = q.BatchNumber
+				v.Value = q.Product
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlProductsView(q.ProductID), v.Value)
+			case "branch_id":
+				v.Value = fmt.Sprintf("%s", q.BranchID)
+			case "branch_name":
+				v.Value = q.Branch
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlBranchesView(q.BranchID), v.Value)
+			case "opening_balance":
+				v.Value = fmt.Sprintf("%d", q.OpeningBalance)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("%d", q.OpeningBalance)
+				v.Formatted = v.Value
 			case "quantity":
 				v.Value = fmt.Sprintf("%d", q.Quantity)
 				p := message.NewPrinter(language.English)
 				v.Formatted = p.Sprintf("%d", q.Quantity)
-			case "unit_cost_price":
-				v.Value = fmt.Sprintf("%f", q.UnitCostPrice)
-				p := message.NewPrinter(language.English)
-				v.Formatted = p.Sprintf("%.2f", q.UnitCostPrice)
-			case "manufacture_date":
-				if q.ManufactureDate != nil {
-					dt := web.NewTimeResponse(ctx, *q.ManufactureDate)
-					v.Value = dt.Local
-					v.Formatted = fmt.Sprintf("<span class='cell-font-date'>%s</span>", v.Value)
-				} else {
-					v.Value = "N/A"
-					v.Formatted = "N/A"
-				}
-			case "expiry_date":
-				if q.ExpiryDate != nil {
-					dt := web.NewTimeResponse(ctx, *q.ExpiryDate)
-					v.Value = dt.Local
-					v.Formatted = fmt.Sprintf("<span class='cell-font-date'>%s</span>", v.Value)
-				} else {
-					v.Value = "N/A"
-					v.Formatted = "N/A"
-				}
+			case "created_at":
+				v.Value = q.CreatedAt.Local
+				v.Formatted = fmt.Sprintf("<span class='cell-font-date'>%s</span>", v.Value)
+			case "sales_rep":
+				v.Value = q.SalesRep
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), v.Value)
 
 			default:
 				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
@@ -111,15 +110,15 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	}
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
-		res, err := h.ShopRepo.FindStock(ctx, shop.StockFindRequest{
-			Order: strings.Split(sorting, ","), IncludeProducts: true,
+		res, err := h.Repo.Find(ctx, claims, inventory.FindRequest{
+			Order: strings.Split(sorting, ","), IncludeProduct: true, IncludeBranch: true,
 		})
 
 		if err != nil {
 			return resp, err
 		}
 
-		for _, a := range res {
+		for _, a := range res.Transactions {
 			l, err := mapFunc(a, fields)
 			if err != nil {
 				return resp, errors.Wrapf(err, "Failed to map category for display.")
@@ -156,7 +155,7 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "stocks-index.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
-// Create handles creating a new stock.
+// Create handles creating a new stock transaction.
 func (h *Stocks) Create(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
@@ -170,7 +169,7 @@ func (h *Stocks) Create(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	//
-	req := new(shop.StockCreateRequest)
+	req := new(inventory.AddStockRequest)
 	data := make(map[string]interface{})
 	f := func() (bool, error) {
 		if r.Method == http.MethodPost {
@@ -186,7 +185,7 @@ func (h *Stocks) Create(ctx context.Context, w http.ResponseWriter, r *http.Requ
 				return false, errors.WithMessage(err, "Something wrong")
 			}
 
-			resp, err := h.ShopRepo.CreateStock(ctx, claims, *req, ctxValues.Now)
+			resp, err := h.Repo.AddStock(ctx, claims, *req, ctxValues.Now)
 			if err != nil {
 				switch errors.Cause(err) {
 				default:
@@ -201,8 +200,8 @@ func (h *Stocks) Create(ctx context.Context, w http.ResponseWriter, r *http.Requ
 
 			// Display a success message to the product.
 			webcontext.SessionFlashSuccess(ctx,
-				"Stock Created",
-				"Stock successfully created.")
+				"Inventory Created",
+				"Inventory successfully created.")
 
 			return true, web.Redirect(ctx, w, r, urlStocksView(resp.ID), http.StatusFound)
 		}
@@ -222,17 +221,10 @@ func (h *Stocks) Create(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return err
 	}
 
-	data["branches"], err = h.BranchRepo.Find(ctx, claims, branch.FindRequest{
-		Order: []string{"name asc"},
-	})
-	if err != nil {
-		return err
-	}
-
 	data["form"] = req
 	data["urlStocksIndex"] = urlStocksIndex()
 
-	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(shop.StockCreateRequest{})); ok {
+	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(inventory.AddStockRequest{})); ok {
 		data["validationDefaults"] = verr.(*weberror.Error)
 	}
 
@@ -243,6 +235,11 @@ func (h *Stocks) Create(ctx context.Context, w http.ResponseWriter, r *http.Requ
 func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	id := params["stock_id"]
+
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
+	}
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
@@ -259,16 +256,16 @@ func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 
 			switch r.PostForm.Get("action") {
 			case "archive":
-				err = h.ShopRepo.DeleteStock(ctx, claims, shop.StockDeleteRequest{
+				err = h.Repo.Archive(ctx, claims, inventory.ArchiveRequest{
 					ID: id,
-				})
+				}, ctxValues.Now)
 				if err != nil {
 					return false, err
 				}
 
 				webcontext.SessionFlashSuccess(ctx,
-					"Stock Deleted",
-					"Stock successfully deleted.")
+					"Inventory Deleted",
+					"Inventory successfully deleted.")
 
 				return true, web.Redirect(ctx, w, r, urlStocksIndex(), http.StatusFound)
 			}
@@ -284,7 +281,7 @@ func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		return nil
 	}
 
-	prj, err := h.ShopRepo.ReadStockByID(ctx, claims, id)
+	prj, err := h.Repo.ReadByID(ctx, claims, id)
 	if err != nil {
 		return err
 	}
@@ -296,111 +293,8 @@ func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "stocks-view.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
-// Update handles updating a stock.
-func (h *Stocks) Update(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
-
-	ctxValues, err := webcontext.ContextValues(ctx)
-	if err != nil {
-		return err
-	}
-
-	id := params["stock_id"]
-
-	claims, err := auth.ClaimsFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	//
-	req := new(shop.StockUpdateRequest)
-	data := make(map[string]interface{})
-	f := func() (bool, error) {
-		if r.Method == http.MethodPost {
-			err := r.ParseForm()
-			if err != nil {
-				return false, err
-			}
-
-			decoder := schema.NewDecoder()
-			decoder.IgnoreUnknownKeys(true)
-
-			if err := decoder.Decode(req, r.PostForm); err != nil {
-				return false, err
-			}
-			req.ID = id
-
-			err = h.ShopRepo.UpdateStock(ctx, claims, *req, ctxValues.Now)
-			if err != nil {
-				switch errors.Cause(err) {
-				default:
-					if verr, ok := weberror.NewValidationError(ctx, err); ok {
-						data["validationErrors"] = verr.(*weberror.Error)
-						return false, nil
-					} else {
-						return false, err
-					}
-				}
-			}
-
-			// Display a success message to the checklist.
-			webcontext.SessionFlashSuccess(ctx,
-				"Stock Updated",
-				"Stock successfully updated.")
-
-			return true, web.Redirect(ctx, w, r, urlStocksView(req.ID), http.StatusFound)
-		}
-
-		return false, nil
-	}
-
-	end, err := f()
-	if err != nil {
-		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
-	} else if end {
-		return nil
-	}
-
-	prj, err := h.ShopRepo.ReadStockByID(ctx, claims, id)
-	if err != nil {
-		return err
-	}
-
-	data["stock"] = prj.Response(ctx)
-
-	data["products"], err = h.ShopRepo.FindProduct(ctx, shop.ProductFindRequest{ Order: []string{"name"} })
-	if err != nil {
-		return err
-	}
-
-	data["branches"], err = h.BranchRepo.Find(ctx, claims, branch.FindRequest{
-		Order: []string{"name asc"},
-	})
-	if err != nil {
-		return err
-	}
-
-	data["urlStocksIndex"] = urlStocksIndex()
-	data["urlStocksView"] = urlStocksView(id)
-
-	if req.ID == "" {
-		req.UnitCostPrice = &prj.UnitCostPrice
-		req.ExpiryDate = prj.ExpiryDate
-		req.ManufactureDate = prj.ManufactureDate
-		req.Quantity = &prj.Quantity
-		req.BatchNumber = &prj.BatchNumber
-	}
-
-	data["form"] = req
-
-	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(shop.StockUpdateRequest{})); ok {
-		data["validationDefaults"] = verr.(*weberror.Error)
-	}
-
-	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "stocks-update.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
-}
-
 // Index handles listing all stocks.
-func (h *Stocks) Report(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+/*func (h *Stocks) Report(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
@@ -437,7 +331,7 @@ func (h *Stocks) Report(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
-		res, err := h.ShopRepo.StockReport(ctx, claims, shop.StockReportRequest{
+		res, err := h.Repo.StockReport(ctx, claims, shop.StockReportRequest{
 			Order: strings.Split(sorting, ","),
 		})
 
@@ -480,4 +374,4 @@ func (h *Stocks) Report(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "stocks-report.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
-}
+}*/

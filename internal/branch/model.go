@@ -34,11 +34,12 @@ func FromModel(rec *models.Branch) *Branch {
 	b := &Branch{
 		ID:         rec.ID,
 		Name:       rec.Name,
-		CreatedAt:  rec.CreatedAt,
-		UpdatedAt:  rec.UpdatedAt,
+		CreatedAt:  time.Unix(rec.CreatedAt, 0),
+		UpdatedAt:  time.Unix(rec.UpdatedAt, 0),
 	}
 	if rec.ArchivedAt.Valid {
-		b.ArchivedAt = &rec.ArchivedAt.Time
+		archivedAt := time.Unix(rec.ArchivedAt.Int64, 0)
+		b.ArchivedAt = &archivedAt
 	}
 
 	return b

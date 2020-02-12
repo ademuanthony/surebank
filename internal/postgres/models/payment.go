@@ -24,14 +24,14 @@ import (
 
 // Payment is an object representing the database table.
 type Payment struct {
-	ID            string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	SaleID        string    `boil:"sale_id" json:"sale_id" toml:"sale_id" yaml:"sale_id"`
-	Amount        float64   `boil:"amount" json:"amount" toml:"amount" yaml:"amount"`
-	PaymentMethod string    `boil:"payment_method" json:"payment_method" toml:"payment_method" yaml:"payment_method"`
-	SalesRepID    string    `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
-	CreatedAt     time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt     null.Time `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
-	ArchivedAt    null.Time `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
+	ID            string     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	SaleID        string     `boil:"sale_id" json:"sale_id" toml:"sale_id" yaml:"sale_id"`
+	Amount        float64    `boil:"amount" json:"amount" toml:"amount" yaml:"amount"`
+	PaymentMethod string     `boil:"payment_method" json:"payment_method" toml:"payment_method" yaml:"payment_method"`
+	SalesRepID    string     `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
+	CreatedAt     int64      `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt     int64      `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ArchivedAt    null.Int64 `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
 
 	R *paymentR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L paymentL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -65,18 +65,18 @@ var PaymentWhere = struct {
 	Amount        whereHelperfloat64
 	PaymentMethod whereHelperstring
 	SalesRepID    whereHelperstring
-	CreatedAt     whereHelpertime_Time
-	UpdatedAt     whereHelpernull_Time
-	ArchivedAt    whereHelpernull_Time
+	CreatedAt     whereHelperint64
+	UpdatedAt     whereHelperint64
+	ArchivedAt    whereHelpernull_Int64
 }{
 	ID:            whereHelperstring{field: "\"payment\".\"id\""},
 	SaleID:        whereHelperstring{field: "\"payment\".\"sale_id\""},
 	Amount:        whereHelperfloat64{field: "\"payment\".\"amount\""},
 	PaymentMethod: whereHelperstring{field: "\"payment\".\"payment_method\""},
 	SalesRepID:    whereHelperstring{field: "\"payment\".\"sales_rep_id\""},
-	CreatedAt:     whereHelpertime_Time{field: "\"payment\".\"created_at\""},
-	UpdatedAt:     whereHelpernull_Time{field: "\"payment\".\"updated_at\""},
-	ArchivedAt:    whereHelpernull_Time{field: "\"payment\".\"archived_at\""},
+	CreatedAt:     whereHelperint64{field: "\"payment\".\"created_at\""},
+	UpdatedAt:     whereHelperint64{field: "\"payment\".\"updated_at\""},
+	ArchivedAt:    whereHelpernull_Int64{field: "\"payment\".\"archived_at\""},
 }
 
 // PaymentRels is where relationship names are stored.

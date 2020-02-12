@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/geeks-accelerator/sqlxmigrate"
-	"github.com/huandu/go-sqlbuilder"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -26,12 +25,46 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 	geoRepo := geonames.NewRepository(db)
 
 	return []*sqlxmigrate.Migration{
+
+		// Create new branch
+		{
+			ID: "20190521-01b",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS branch (
+					  id char(36) NOT NULL,
+					  name varchar(200) NOT NULL DEFAULT '',
+					  created_at INT8 NOT NULL,
+					  updated_at INT8 NOT NULL,
+					  archived_at INT8 DEFAULT NULL,
+					  PRIMARY KEY (id),
+					  CONSTRAINT branch_name UNIQUE  (name)
+					);`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+
+				now := time.Now().UTC().Truncate(time.Millisecond).Unix()
+				format := "INSERT INTO branch VALUES('%s', '%s', %d, %d)"
+				if _, err := tx.Exec(fmt.Sprintf(format, "717cbfd4-b228-48f6-92bc-cc054a4e13f6", "HQ", now, now)); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS branch`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
 		// Create table users.
 		{
 			ID: "20190522-01b",
 			Migrate: func(tx *sql.Tx) error {
 				q1 := `CREATE TABLE IF NOT EXISTS users (
 					  id char(36) NOT NULL,
+					  branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id),
 					  email varchar(200) NOT NULL,
 					  name varchar(200) NOT NULL DEFAULT '',
 					  password_hash varchar(256) NOT NULL,
@@ -688,6 +721,7 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				q1 := `CREATE TABLE IF NOT EXISTS brand (
 						id char(36) NOT NULL,
 						name VARCHAR(256) NOT NULL,
+						code CHAR(4) NOT NULL,
 						logo VARCHAR(128) NOT NULL,
 						PRIMARY KEY(id),
 						CONSTRAINT UNIQUE_brand_name UNIQUE (name)
@@ -737,6 +771,7 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				q1 := `CREATE TABLE IF NOT EXISTS product (
 						id char(36) NOT NULL,
 						brand_id CHAR(36) REFERENCES brand(id),
+						category_id char(36) NOT NULL REFERENCES category(id),
 						name VARCHAR(256) NOT NULL,
 						description VARCHAR(512) NOT NULL,
 						sku VARCHAR(128) NOT NULL,
@@ -797,6 +832,7 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 			Migrate: func(tx *sql.Tx) error {
 				q1 := `CREATE TABLE IF NOT EXISTS stock (
 						id char(36) NOT NULL,
+						branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id),
 						batch_number VARCHAR(128) NOT NULL,
 						product_id CHAR(36) NOT NULL REFERENCES product(id),
 						unit_cost_price FLOAT8 NOT NULL,
@@ -804,9 +840,9 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 						deducted_quantity INT NOT NULL,
 						manufacture_date TIMESTAMP,
 						expiry_date TIMESTAMP,
-						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-					  	updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
-					  	archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+						created_at INT8 NOT NULL,
+					  	updated_at INT8 NOT NULL,
+					  	archived_at INT8 DEFAULT NULL,
 					  	created_by_id char(36) NOT NULL REFERENCES users(id),
 					  	updated_by_id char(36) NOT NULL REFERENCES users(id),
 					  	archived_by_id char(36) REFERENCES users(id),
@@ -832,15 +868,16 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 			Migrate: func(tx *sql.Tx) error {
 				q1 := `CREATE TABLE IF NOT EXISTS sale (
 						id char(36) NOT NULL,
-						receipt_number VARCHAR(128),
+						branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id),
+						receipt_number VARCHAR(128) NOT NULL,
 						amount FLOAT NOT NULL,
 						amount_tender FLOAT NOT NULL,
 						balance FLOAT NOT NULL,
 						customer_name VARCHAR(256),
 						phone_number VARCHAR(28),
-						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-					  	updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-					  	archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+						created_at INT8 NOT NULL,
+					  	updated_at INT8 NOT NULL,
+					  	archived_at INT8 DEFAULT NULL,
 					  	created_by_id char(36) NOT NULL REFERENCES users(id),
 					  	updated_by_id char(36) REFERENCES users(id),
 					  	archived_by_id char(36) REFERENCES users(id),
@@ -868,6 +905,7 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 						id char(36) NOT NULL,
 						sale_id CHAR(36) NOT NULL REFERENCES sale(id),
 						product_id CHAR(36) NOT NULL REFERENCES product(id),
+						quantity INT NOT NULL,
 						unit_price FLOAT8 NOT NULL,
 						unit_cost_price FLOAT8 NOT NULL,
 						stock_ids VARCHAR(512) NOT NULL,
@@ -895,14 +933,15 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 			Migrate: func(tx *sql.Tx) error {
 				q1 := `CREATE TABLE IF NOT EXISTS customer (
 					  id char(36) NOT NULL,
+					  branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id),
 					  email varchar(200) NOT NULL,
 					  name varchar(200) NOT NULL DEFAULT '',
 					  phone_number varchar(200) NOT NULL,
 					  address varchar(256) NOT NULL,
 					  sales_rep_id char(36) NOT NULL REFERENCES users(id),
-					  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-					  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-					  archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  created_at INT8 NOT NULL,
+					  updated_at INT8 NOT NULL,
+					  archived_at INT8 DEFAULT NULL,
 					  PRIMARY KEY (id),
 					  CONSTRAINT customer_phone_number UNIQUE  (phone_number)
 					) ;`
@@ -929,15 +968,17 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 
 				q1 := `CREATE TABLE IF NOT EXISTS account (
 					  id char(36) NOT NULL,
+					  branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id),
 					  number varchar(200) NOT NULL,
 					  customer_id char(36) NOT NULL DEFAULT '' REFERENCES customer(id),
-					  account_type account_type not null,
+					  account_type account_type NOT NULL,
 					  target FLOAT NOT NULL DEFAULT 0,
 					  target_info varchar(200) NOT NULL DEFAULT '',
 					  sales_rep_id char(36) NOT NULL REFERENCES users(id),
-					  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-					  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-					  archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  created_at INT8 NOT NULL,
+					  updated_at INT8 NOT NULL,
+					  archived_at INT8 DEFAULT NULL,
+					  balance FLOAT8 NOT NULL DEFAULT 0,
 					  PRIMARY KEY (id),
 					  CONSTRAINT account_number UNIQUE  (number)
 					) ;`
@@ -954,19 +995,21 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
-		// Create table deposit
+		// Create table transaction
 		{
 			ID: "20200122-03",
 			Migrate: func(tx *sql.Tx) error {
-				q1 := `CREATE TABLE IF NOT EXISTS deposit (
+				q1 := `CREATE TABLE IF NOT EXISTS transaction (
 					  id char(36) NOT NULL,
 					  account_id char(36) NOT NULL DEFAULT '' REFERENCES account(id),
+					  tx_type VARCHAR(33) NOT NULL,
+					  opening_balance FLOAT8 NOT NULL,
 					  amount FLOAT NOT NULL DEFAULT 0,
 					  narration varchar(200) NOT NULL DEFAULT '',
 					  sales_rep_id char(36) NOT NULL REFERENCES users(id),
-					  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-					  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-					  archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+					  created_at INT8 NOT NULL,
+					  updated_at INT8 NOT NULL,
+					  archived_at INT8 DEFAULT NULL,
 					  PRIMARY KEY (id)
 					) ;`
 				if _, err := tx.Exec(q1); err != nil {
@@ -975,35 +1018,7 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 			Rollback: func(tx *sql.Tx) error {
-				q1 := `DROP TABLE IF EXISTS deposit`
-				if _, err := tx.Exec(q1); err != nil {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-				return nil
-			},
-		},
-		// Create table withdrawal
-		{
-			ID: "20200122-04",
-			Migrate: func(tx *sql.Tx) error {
-				q1 := `CREATE TABLE IF NOT EXISTS withdrawal (
-					  id char(36) NOT NULL,
-					  account_id char(36) NOT NULL DEFAULT '' REFERENCES account(id),
-					  amount FLOAT NOT NULL DEFAULT 0,
-					  narration varchar(200) NOT NULL DEFAULT '',
-					  sales_rep_id char(36) NOT NULL REFERENCES users(id),
-					  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-					  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-					  archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-					  PRIMARY KEY (id)
-					) ;`
-				if _, err := tx.Exec(q1); err != nil {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-				q1 := `DROP TABLE IF EXISTS withdrawal`
+				q1 := `DROP TABLE IF EXISTS transaction`
 				if _, err := tx.Exec(q1); err != nil {
 					return errors.Wrapf(err, "Query failed %s", q1)
 				}
@@ -1024,9 +1039,9 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 						amount FLOAT8 NOT NULL,
 						payment_method payment_method NOT NULL,
 						sales_rep_id char(36) NOT NULL REFERENCES users(id),
-						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-						updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-						archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+						created_at INT8 NOT NULL,
+						updated_at INT8 NOT NULL,
+						archived_at INT8 DEFAULT NULL,
 						PRIMARY KEY(id)
 				);`
 
@@ -1048,279 +1063,45 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
-		// Create new branch
+		// Create table inventory
 		{
-			ID: "20200122-06",
+			ID: "20200207-01",
 			Migrate: func(tx *sql.Tx) error {
-				q1 := `CREATE TABLE IF NOT EXISTS branch (
+				q1 := `CREATE TABLE IF NOT EXISTS inventory (
 					  id char(36) NOT NULL,
-					  name varchar(200) NOT NULL DEFAULT '',
-					  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-					  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
-					  archived_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-					  PRIMARY KEY (id),
-					  CONSTRAINT branch_name UNIQUE  (name)
+					  product_id char(36) NOT NULL DEFAULT '' REFERENCES product(id),
+					  branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id),
+					  tx_type VARCHAR(33) NOT NULL,
+					  opening_balance FLOAT8 NOT NULL,
+					  quantity FLOAT NOT NULL DEFAULT 0,
+					  narration varchar(200) NOT NULL DEFAULT '',
+					  sales_rep_id char(36) NOT NULL REFERENCES users(id),
+					  created_at INT8 NOT NULL,
+					  updated_at INT8 NOT NULL,
+					  archived_at INT8 DEFAULT NULL,
+					  PRIMARY KEY (id)
 					) ;`
 				if _, err := tx.Exec(q1); err != nil {
 					return errors.Wrapf(err, "Query failed %s", q1)
 				}
-				q2 := `ALTER TABLE users 
-					  ADD branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id);`
-				if _, err := tx.Exec(q2); err != nil {
-					return errors.Wrapf(err, "Query failed %s", q2)
-				}
-
-				q3 := `ALTER TABLE customer 
-					  ADD branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id);`
-				if _, err := tx.Exec(q3); err != nil {
-					return errors.Wrapf(err, "Query failed %s", q2)
-				}
-
-				q4 := `ALTER TABLE account 
-					  ADD branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id);`
-				if _, err := tx.Exec(q4); err != nil {
-					return errors.Wrapf(err, "Query failed %s", q2)
-				}
-
-				q5 := `ALTER TABLE stock 
-					  ADD branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id);`
-				if _, err := tx.Exec(q5); err != nil {
-					return errors.Wrapf(err, "Query failed %s", q2)
-				}
-
-				q6 := `ALTER TABLE sale 
-					  ADD branch_id char(36) NOT NULL DEFAULT '' REFERENCES branch(id);`
-				if _, err := tx.Exec(q6); err != nil {
-					return errors.Wrapf(err, "Query failed %s", q2)
-				}
-
 				return nil
 			},
 			Rollback: func(tx *sql.Tx) error {
-				q1 := `DROP TABLE IF EXISTS branch`
+				q1 := `DROP TABLE IF EXISTS inventory`
 				if _, err := tx.Exec(q1); err != nil {
 					return errors.Wrapf(err, "Query failed %s", q1)
 				}
 				return nil
 			},
 		},
-		// Insert HQ brand
+		// Add stock balance to product
 		{
-			ID: "20200122-07",
+			ID: "20200210-01",
 			Migrate: func(tx *sql.Tx) error {
-
-				now := time.Now().UTC().Truncate(time.Millisecond)
-				// Build the insert SQL statement.
-				query := sqlbuilder.NewInsertBuilder()
-				query.InsertInto("branch")
-				query.Cols("id", "name", "created_at", "updated_at")
-				query.Values("717cbfd4-b228-48f6-92bc-cc054a4e13f6", "HQ", now, now)
-
-				// Execute the query with the provided context.
-				sql, args := query.Build()
-				sql = db.Rebind(sql)
-
-				if _, err := db.ExecContext(ctx, sql, args...); err != nil {
-					return err
-				}
-
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-				q1 := `DELETE FROM branch WHERE name = 'HQ'`
+				q1 := `ALTER TABLE product ADD stock_balance int NOT NULL;`
 				if _, err := tx.Exec(q1); err != nil {
 					return errors.Wrapf(err, "Query failed %s", q1)
 				}
-				return nil
-			},
-		},
-		// Add category ID to the product table
-		{
-			ID:       "20200123-01",
-			Migrate: func(tx *sql.Tx) error {
-				q1 := `ALTER TABLE product ADD category_id char(36) NOT NULL REFERENCES category(id);`
-
-				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-
-				return nil
-			},
-		},
-		// Customer UpdatedAt NOT NULL
-		{
-			ID:       "20200125-01",
-			Migrate: func(tx *sql.Tx) error {
-				q1 := `ALTER TABLE customer DROP COLUMN updated_at;`
-
-				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				q2 := `ALTER TABLE customer ADD updated_at TIMESTAMP WITH TIME ZONE NOT NULL;`
-
-				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-				return nil
-			},
-		},
-		// Account UpdatedAt NOT NULL
-		{
-			ID:       "20200125-02",
-			Migrate: func(tx *sql.Tx) error {
-				q1 := `ALTER TABLE account DROP COLUMN updated_at;`
-
-				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				q2 := `ALTER TABLE account ADD updated_at TIMESTAMP WITH TIME ZONE NOT NULL;`
-
-				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-				return nil
-			},
-		},
-		// Deposit UpdatedAt NOT NULL
-		{
-			ID:       "20200127-01",
-			Migrate: func(tx *sql.Tx) error {
-				q1 := `ALTER TABLE deposit DROP COLUMN updated_at;`
-
-				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				q2 := `ALTER TABLE deposit ADD updated_at TIMESTAMP WITH TIME ZONE NOT NULL;`
-
-				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-				return nil
-			},
-		},
-		// Withdrawal UpdatedAt NOT NULL
-		{
-			ID:       "20200127-02",
-			Migrate: func(tx *sql.Tx) error {
-				q1 := `ALTER TABLE withdrawal DROP COLUMN updated_at;`
-
-				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				q2 := `ALTER TABLE withdrawal ADD updated_at TIMESTAMP WITH TIME ZONE NOT NULL;`
-
-				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-				return nil
-			},
-		},
-		// Add balance to account
-		{
-			ID:       "20200127-03",
-			Migrate: func(tx *sql.Tx) error {
-				q1 := `ALTER TABLE account ADD balance FLOAT8 NOT NULL DEFAULT 0;`
-
-				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-				return nil
-			},
-		},
-		// Rename deposit to transaction
-		{
-			ID:       "20200127-04",
-			Migrate: func(tx *sql.Tx) error {
-				q1 := `ALTER TABLE deposit RENAME TO transaction;`
-				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				q2 := `ALTER TABLE transaction ADD tx_type VARCHAR(36) NOT NULL;`
-				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q2)
-				}
-
-				q3 := `DROP TABLE withdrawal;`
-				if _, err := tx.Exec(q3); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q2)
-				}
-
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-				return nil
-			},
-		},
-		// Add opening balance to transaction
-		{
-			ID:       "20200127-05",
-			Migrate: func(tx *sql.Tx) error {
-
-				q2 := `ALTER TABLE transaction ADD opening_balance FLOAT8 NOT NULL;`
-				if _, err := tx.Exec(q2); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q2)
-				}
-
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-				return nil
-			},
-		},
-		// Drop balance from account
-		{
-			ID:       "20200127-06",
-			Migrate: func(tx *sql.Tx) error {
-				q1 := `ALTER TABLE account DROP COLUMN balance;`
-
-				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
-				return nil
-			},
-			Rollback: func(tx *sql.Tx) error {
-				return nil
-			},
-		},
-		// Add balance to account
-		{
-			ID:       "20200127-07",
-			Migrate: func(tx *sql.Tx) error {
-				q1 := `ALTER TABLE account ADD balance FLOAT8 NOT NULL DEFAULT 0;`
-
-				if _, err := tx.Exec(q1); err != nil && !errorIsAlreadyExists(err) {
-					return errors.Wrapf(err, "Query failed %s", q1)
-				}
-
 				return nil
 			},
 			Rollback: func(tx *sql.Tx) error {

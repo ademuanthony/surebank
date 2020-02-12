@@ -24,16 +24,16 @@ import (
 
 // Transaction is an object representing the database table.
 type Transaction struct {
-	ID             string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	AccountID      string    `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
-	Amount         float64   `boil:"amount" json:"amount" toml:"amount" yaml:"amount"`
-	Narration      string    `boil:"narration" json:"narration" toml:"narration" yaml:"narration"`
-	SalesRepID     string    `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
-	CreatedAt      time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ArchivedAt     null.Time `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
-	UpdatedAt      time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	TXType         string    `boil:"tx_type" json:"tx_type" toml:"tx_type" yaml:"tx_type"`
-	OpeningBalance float64   `boil:"opening_balance" json:"opening_balance" toml:"opening_balance" yaml:"opening_balance"`
+	ID             string     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	AccountID      string     `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
+	TXType         string     `boil:"tx_type" json:"tx_type" toml:"tx_type" yaml:"tx_type"`
+	OpeningBalance float64    `boil:"opening_balance" json:"opening_balance" toml:"opening_balance" yaml:"opening_balance"`
+	Amount         float64    `boil:"amount" json:"amount" toml:"amount" yaml:"amount"`
+	Narration      string     `boil:"narration" json:"narration" toml:"narration" yaml:"narration"`
+	SalesRepID     string     `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
+	CreatedAt      int64      `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt      int64      `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ArchivedAt     null.Int64 `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
 
 	R *transactionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L transactionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -42,25 +42,25 @@ type Transaction struct {
 var TransactionColumns = struct {
 	ID             string
 	AccountID      string
+	TXType         string
+	OpeningBalance string
 	Amount         string
 	Narration      string
 	SalesRepID     string
 	CreatedAt      string
-	ArchivedAt     string
 	UpdatedAt      string
-	TXType         string
-	OpeningBalance string
+	ArchivedAt     string
 }{
 	ID:             "id",
 	AccountID:      "account_id",
+	TXType:         "tx_type",
+	OpeningBalance: "opening_balance",
 	Amount:         "amount",
 	Narration:      "narration",
 	SalesRepID:     "sales_rep_id",
 	CreatedAt:      "created_at",
-	ArchivedAt:     "archived_at",
 	UpdatedAt:      "updated_at",
-	TXType:         "tx_type",
-	OpeningBalance: "opening_balance",
+	ArchivedAt:     "archived_at",
 }
 
 // Generated where
@@ -68,25 +68,25 @@ var TransactionColumns = struct {
 var TransactionWhere = struct {
 	ID             whereHelperstring
 	AccountID      whereHelperstring
+	TXType         whereHelperstring
+	OpeningBalance whereHelperfloat64
 	Amount         whereHelperfloat64
 	Narration      whereHelperstring
 	SalesRepID     whereHelperstring
-	CreatedAt      whereHelpertime_Time
-	ArchivedAt     whereHelpernull_Time
-	UpdatedAt      whereHelpertime_Time
-	TXType         whereHelperstring
-	OpeningBalance whereHelperfloat64
+	CreatedAt      whereHelperint64
+	UpdatedAt      whereHelperint64
+	ArchivedAt     whereHelpernull_Int64
 }{
 	ID:             whereHelperstring{field: "\"transaction\".\"id\""},
 	AccountID:      whereHelperstring{field: "\"transaction\".\"account_id\""},
+	TXType:         whereHelperstring{field: "\"transaction\".\"tx_type\""},
+	OpeningBalance: whereHelperfloat64{field: "\"transaction\".\"opening_balance\""},
 	Amount:         whereHelperfloat64{field: "\"transaction\".\"amount\""},
 	Narration:      whereHelperstring{field: "\"transaction\".\"narration\""},
 	SalesRepID:     whereHelperstring{field: "\"transaction\".\"sales_rep_id\""},
-	CreatedAt:      whereHelpertime_Time{field: "\"transaction\".\"created_at\""},
-	ArchivedAt:     whereHelpernull_Time{field: "\"transaction\".\"archived_at\""},
-	UpdatedAt:      whereHelpertime_Time{field: "\"transaction\".\"updated_at\""},
-	TXType:         whereHelperstring{field: "\"transaction\".\"tx_type\""},
-	OpeningBalance: whereHelperfloat64{field: "\"transaction\".\"opening_balance\""},
+	CreatedAt:      whereHelperint64{field: "\"transaction\".\"created_at\""},
+	UpdatedAt:      whereHelperint64{field: "\"transaction\".\"updated_at\""},
+	ArchivedAt:     whereHelpernull_Int64{field: "\"transaction\".\"archived_at\""},
 }
 
 // TransactionRels is where relationship names are stored.
@@ -113,8 +113,8 @@ func (*transactionR) NewStruct() *transactionR {
 type transactionL struct{}
 
 var (
-	transactionAllColumns            = []string{"id", "account_id", "amount", "narration", "sales_rep_id", "created_at", "archived_at", "updated_at", "tx_type", "opening_balance"}
-	transactionColumnsWithoutDefault = []string{"id", "sales_rep_id", "created_at", "archived_at", "updated_at", "tx_type", "opening_balance"}
+	transactionAllColumns            = []string{"id", "account_id", "tx_type", "opening_balance", "amount", "narration", "sales_rep_id", "created_at", "updated_at", "archived_at"}
+	transactionColumnsWithoutDefault = []string{"id", "tx_type", "opening_balance", "sales_rep_id", "created_at", "updated_at", "archived_at"}
 	transactionColumnsWithDefault    = []string{"account_id", "amount", "narration"}
 	transactionPrimaryKeyColumns     = []string{"id"}
 )

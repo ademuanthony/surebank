@@ -509,6 +509,84 @@ func testBranchToManyCustomers(t *testing.T) {
 	}
 }
 
+func testBranchToManyInventories(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Branch
+	var b, c Inventory
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, branchDBTypes, true, branchColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Branch struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, inventoryDBTypes, false, inventoryColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, inventoryDBTypes, false, inventoryColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.BranchID = a.ID
+	c.BranchID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Inventories().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.BranchID == b.BranchID {
+			bFound = true
+		}
+		if v.BranchID == c.BranchID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := BranchSlice{&a}
+	if err = a.L.LoadInventories(ctx, tx, false, (*[]*Branch)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Inventories); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Inventories = nil
+	if err = a.L.LoadInventories(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Inventories); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testBranchToManySales(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -579,84 +657,6 @@ func testBranchToManySales(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := len(a.R.Sales); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testBranchToManyStocks(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Branch
-	var b, c Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, branchDBTypes, true, branchColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Branch struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, stockDBTypes, false, stockColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, stockDBTypes, false, stockColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.BranchID = a.ID
-	c.BranchID = a.ID
-
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.Stocks().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if v.BranchID == b.BranchID {
-			bFound = true
-		}
-		if v.BranchID == c.BranchID {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := BranchSlice{&a}
-	if err = a.L.LoadStocks(ctx, tx, false, (*[]*Branch)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.Stocks); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.Stocks = nil
-	if err = a.L.LoadStocks(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.Stocks); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -893,6 +893,81 @@ func testBranchToManyAddOpCustomers(t *testing.T) {
 		}
 	}
 }
+func testBranchToManyAddOpInventories(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Branch
+	var b, c, d, e Inventory
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, branchDBTypes, false, strmangle.SetComplement(branchPrimaryKeyColumns, branchColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Inventory{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, inventoryDBTypes, false, strmangle.SetComplement(inventoryPrimaryKeyColumns, inventoryColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Inventory{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddInventories(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.BranchID {
+			t.Error("foreign key was wrong value", a.ID, first.BranchID)
+		}
+		if a.ID != second.BranchID {
+			t.Error("foreign key was wrong value", a.ID, second.BranchID)
+		}
+
+		if first.R.Branch != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Branch != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Inventories[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Inventories[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Inventories().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testBranchToManyAddOpSales(t *testing.T) {
 	var err error
 
@@ -960,81 +1035,6 @@ func testBranchToManyAddOpSales(t *testing.T) {
 		}
 
 		count, err := a.Sales().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-func testBranchToManyAddOpStocks(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Branch
-	var b, c, d, e Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, branchDBTypes, false, strmangle.SetComplement(branchPrimaryKeyColumns, branchColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Stock{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, stockDBTypes, false, strmangle.SetComplement(stockPrimaryKeyColumns, stockColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*Stock{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddStocks(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if a.ID != first.BranchID {
-			t.Error("foreign key was wrong value", a.ID, first.BranchID)
-		}
-		if a.ID != second.BranchID {
-			t.Error("foreign key was wrong value", a.ID, second.BranchID)
-		}
-
-		if first.R.Branch != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Branch != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.Stocks[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.Stocks[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.Stocks().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1193,7 +1193,7 @@ func testBranchesSelect(t *testing.T) {
 }
 
 var (
-	branchDBTypes = map[string]string{`ID`: `character`, `Name`: `character varying`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`}
+	branchDBTypes = map[string]string{`ID`: `character`, `Name`: `character varying`, `CreatedAt`: `bigint`, `UpdatedAt`: `bigint`, `ArchivedAt`: `bigint`}
 	_             = bytes.MinRead
 )
 

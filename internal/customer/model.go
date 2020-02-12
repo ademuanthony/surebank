@@ -30,8 +30,8 @@ type Customer struct {
 	Address     string     `json:"address" truss:"api-read"`
 	SalesRepID  string     `json:"sales_rep_id" truss:"api-read"`
 	BranchID    string     `json:"branch_id" truss:"api-read"`
-	SalesRep    string            `json:"sales_rep" truss:"api-read"`
-	Branch      string            `json:"branch" truss:"api-read"`
+	SalesRep    string     `json:"sales_rep" truss:"api-read"`
+	Branch      string     `json:"branch" truss:"api-read"`
 	CreatedAt   time.Time  `json:"created_at" truss:"api-read"`
 	UpdatedAt   time.Time  `json:"updated_at" truss:"api-read"`
 	ArchivedAt  *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
@@ -46,8 +46,8 @@ func FromModel(rec *models.Customer) *Customer {
 		Address:     rec.Address,
 		BranchID:    rec.BranchID,
 		SalesRepID:  rec.SalesRepID,
-		CreatedAt:   rec.CreatedAt,
-		UpdatedAt:   rec.UpdatedAt,
+		CreatedAt:   time.Unix(rec.CreatedAt, 0),
+		UpdatedAt:   time.Unix(rec.UpdatedAt, 0),
 	}
 
 	if rec.R != nil {
@@ -61,7 +61,8 @@ func FromModel(rec *models.Customer) *Customer {
 	}
 
 	if rec.ArchivedAt.Valid {
-		c.ArchivedAt = &rec.ArchivedAt.Time
+		archivedAt := time.Unix(rec.ArchivedAt.Int64, 0)
+		c.ArchivedAt = &archivedAt
 	}
 
 	return c
@@ -147,7 +148,7 @@ type CreateRequest struct {
 	TargetInfo string  `json:"target_info"`
 }
 
-// ReadRequest defines the information needed to read a checklist.
+// ReadRequest defines the information needed to read a customer.
 type ReadRequest struct {
 	ID              string `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
 	IncludeArchived bool   `json:"include-archived" example:"false"`
@@ -167,18 +168,18 @@ type UpdateRequest struct {
 	BranchID    *string `json:"branch_id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
 }
 
-// ArchiveRequest defines the information needed to archive a checklist. This will archive (soft-delete) the
+// ArchiveRequest defines the information needed to archive a customer. This will archive (soft-delete) the
 // existing database entry.
 type ArchiveRequest struct {
 	ID string `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
 }
 
-// DeleteRequest defines the information needed to delete a branch.
+// DeleteRequest defines the information needed to delete a customer.
 type DeleteRequest struct {
 	ID string `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
 }
 
-// FindRequest defines the possible options to search for branches. By default
+// FindRequest defines the possible options to search for customers. By default
 // archived checklist will be excluded from response.
 type FindRequest struct {
 	Where           string        `json:"where" example:"name = ? and status = ?"`

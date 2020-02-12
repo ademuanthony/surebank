@@ -905,7 +905,7 @@ func testAccountsSelect(t *testing.T) {
 }
 
 var (
-	accountDBTypes = map[string]string{`ID`: `character`, `Number`: `character varying`, `CustomerID`: `character`, `AccountType`: `enum.account_type('DS','SB')`, `Target`: `double precision`, `TargetInfo`: `character varying`, `SalesRepID`: `character`, `CreatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `BranchID`: `character`, `UpdatedAt`: `timestamp with time zone`, `Balance`: `double precision`}
+	accountDBTypes = map[string]string{`ID`: `character`, `BranchID`: `character`, `Number`: `character varying`, `CustomerID`: `character`, `AccountType`: `enum.account_type('DS','SB')`, `Target`: `double precision`, `TargetInfo`: `character varying`, `SalesRepID`: `character`, `CreatedAt`: `bigint`, `UpdatedAt`: `bigint`, `ArchivedAt`: `bigint`, `Balance`: `double precision`}
 	_              = bytes.MinRead
 )
 

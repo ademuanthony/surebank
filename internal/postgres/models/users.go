@@ -25,6 +25,7 @@ import (
 // User is an object representing the database table.
 type User struct {
 	ID            string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	BranchID      string      `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
 	Email         string      `boil:"email" json:"email" toml:"email" yaml:"email"`
 	FirstName     string      `boil:"first_name" json:"first_name" toml:"first_name" yaml:"first_name"`
 	PasswordHash  string      `boil:"password_hash" json:"password_hash" toml:"password_hash" yaml:"password_hash"`
@@ -35,7 +36,6 @@ type User struct {
 	UpdatedAt     null.Time   `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
 	ArchivedAt    null.Time   `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
 	LastName      string      `boil:"last_name" json:"last_name" toml:"last_name" yaml:"last_name"`
-	BranchID      string      `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
 
 	R *userR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L userL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,6 +43,7 @@ type User struct {
 
 var UserColumns = struct {
 	ID            string
+	BranchID      string
 	Email         string
 	FirstName     string
 	PasswordHash  string
@@ -53,9 +54,9 @@ var UserColumns = struct {
 	UpdatedAt     string
 	ArchivedAt    string
 	LastName      string
-	BranchID      string
 }{
 	ID:            "id",
+	BranchID:      "branch_id",
 	Email:         "email",
 	FirstName:     "first_name",
 	PasswordHash:  "password_hash",
@@ -66,13 +67,13 @@ var UserColumns = struct {
 	UpdatedAt:     "updated_at",
 	ArchivedAt:    "archived_at",
 	LastName:      "last_name",
-	BranchID:      "branch_id",
 }
 
 // Generated where
 
 var UserWhere = struct {
 	ID            whereHelperstring
+	BranchID      whereHelperstring
 	Email         whereHelperstring
 	FirstName     whereHelperstring
 	PasswordHash  whereHelperstring
@@ -83,9 +84,9 @@ var UserWhere = struct {
 	UpdatedAt     whereHelpernull_Time
 	ArchivedAt    whereHelpernull_Time
 	LastName      whereHelperstring
-	BranchID      whereHelperstring
 }{
 	ID:            whereHelperstring{field: "\"users\".\"id\""},
+	BranchID:      whereHelperstring{field: "\"users\".\"branch_id\""},
 	Email:         whereHelperstring{field: "\"users\".\"email\""},
 	FirstName:     whereHelperstring{field: "\"users\".\"first_name\""},
 	PasswordHash:  whereHelperstring{field: "\"users\".\"password_hash\""},
@@ -96,7 +97,6 @@ var UserWhere = struct {
 	UpdatedAt:     whereHelpernull_Time{field: "\"users\".\"updated_at\""},
 	ArchivedAt:    whereHelpernull_Time{field: "\"users\".\"archived_at\""},
 	LastName:      whereHelperstring{field: "\"users\".\"last_name\""},
-	BranchID:      whereHelperstring{field: "\"users\".\"branch_id\""},
 }
 
 // UserRels is where relationship names are stored.
@@ -104,6 +104,7 @@ var UserRels = struct {
 	Branch               string
 	SalesRepAccounts     string
 	SalesRepCustomers    string
+	SalesRepInventories  string
 	SalesRepPayments     string
 	ArchivedByProducts   string
 	CreatedByProducts    string
@@ -111,14 +112,12 @@ var UserRels = struct {
 	ArchivedBySales      string
 	CreatedBySales       string
 	UpdatedBySales       string
-	ArchivedByStocks     string
-	CreatedByStocks      string
-	UpdatedByStocks      string
 	SalesRepTransactions string
 }{
 	Branch:               "Branch",
 	SalesRepAccounts:     "SalesRepAccounts",
 	SalesRepCustomers:    "SalesRepCustomers",
+	SalesRepInventories:  "SalesRepInventories",
 	SalesRepPayments:     "SalesRepPayments",
 	ArchivedByProducts:   "ArchivedByProducts",
 	CreatedByProducts:    "CreatedByProducts",
@@ -126,9 +125,6 @@ var UserRels = struct {
 	ArchivedBySales:      "ArchivedBySales",
 	CreatedBySales:       "CreatedBySales",
 	UpdatedBySales:       "UpdatedBySales",
-	ArchivedByStocks:     "ArchivedByStocks",
-	CreatedByStocks:      "CreatedByStocks",
-	UpdatedByStocks:      "UpdatedByStocks",
 	SalesRepTransactions: "SalesRepTransactions",
 }
 
@@ -137,6 +133,7 @@ type userR struct {
 	Branch               *Branch
 	SalesRepAccounts     AccountSlice
 	SalesRepCustomers    CustomerSlice
+	SalesRepInventories  InventorySlice
 	SalesRepPayments     PaymentSlice
 	ArchivedByProducts   ProductSlice
 	CreatedByProducts    ProductSlice
@@ -144,9 +141,6 @@ type userR struct {
 	ArchivedBySales      SaleSlice
 	CreatedBySales       SaleSlice
 	UpdatedBySales       SaleSlice
-	ArchivedByStocks     StockSlice
-	CreatedByStocks      StockSlice
-	UpdatedByStocks      StockSlice
 	SalesRepTransactions TransactionSlice
 }
 
@@ -159,9 +153,9 @@ func (*userR) NewStruct() *userR {
 type userL struct{}
 
 var (
-	userAllColumns            = []string{"id", "email", "first_name", "password_hash", "password_salt", "password_reset", "timezone", "created_at", "updated_at", "archived_at", "last_name", "branch_id"}
+	userAllColumns            = []string{"id", "branch_id", "email", "first_name", "password_hash", "password_salt", "password_reset", "timezone", "created_at", "updated_at", "archived_at", "last_name"}
 	userColumnsWithoutDefault = []string{"id", "email", "password_hash", "password_salt", "timezone", "created_at", "updated_at", "archived_at"}
-	userColumnsWithDefault    = []string{"first_name", "password_reset", "last_name", "branch_id"}
+	userColumnsWithDefault    = []string{"branch_id", "first_name", "password_reset", "last_name"}
 	userPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -312,6 +306,27 @@ func (o *User) SalesRepCustomers(mods ...qm.QueryMod) customerQuery {
 	return query
 }
 
+// SalesRepInventories retrieves all the inventory's Inventories with an executor via sales_rep_id column.
+func (o *User) SalesRepInventories(mods ...qm.QueryMod) inventoryQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"inventory\".\"sales_rep_id\"=?", o.ID),
+	)
+
+	query := Inventories(queryMods...)
+	queries.SetFrom(query.Query, "\"inventory\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"inventory\".*"})
+	}
+
+	return query
+}
+
 // SalesRepPayments retrieves all the payment's Payments with an executor via sales_rep_id column.
 func (o *User) SalesRepPayments(mods ...qm.QueryMod) paymentQuery {
 	var queryMods []qm.QueryMod
@@ -454,69 +469,6 @@ func (o *User) UpdatedBySales(mods ...qm.QueryMod) saleQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"sale\".*"})
-	}
-
-	return query
-}
-
-// ArchivedByStocks retrieves all the stock's Stocks with an executor via archived_by_id column.
-func (o *User) ArchivedByStocks(mods ...qm.QueryMod) stockQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"stock\".\"archived_by_id\"=?", o.ID),
-	)
-
-	query := Stocks(queryMods...)
-	queries.SetFrom(query.Query, "\"stock\"")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"stock\".*"})
-	}
-
-	return query
-}
-
-// CreatedByStocks retrieves all the stock's Stocks with an executor via created_by_id column.
-func (o *User) CreatedByStocks(mods ...qm.QueryMod) stockQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"stock\".\"created_by_id\"=?", o.ID),
-	)
-
-	query := Stocks(queryMods...)
-	queries.SetFrom(query.Query, "\"stock\"")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"stock\".*"})
-	}
-
-	return query
-}
-
-// UpdatedByStocks retrieves all the stock's Stocks with an executor via updated_by_id column.
-func (o *User) UpdatedByStocks(mods ...qm.QueryMod) stockQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"stock\".\"updated_by_id\"=?", o.ID),
-	)
-
-	query := Stocks(queryMods...)
-	queries.SetFrom(query.Query, "\"stock\"")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"stock\".*"})
 	}
 
 	return query
@@ -802,6 +754,94 @@ func (userL) LoadSalesRepCustomers(ctx context.Context, e boil.ContextExecutor, 
 				local.R.SalesRepCustomers = append(local.R.SalesRepCustomers, foreign)
 				if foreign.R == nil {
 					foreign.R = &customerR{}
+				}
+				foreign.R.SalesRep = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadSalesRepInventories allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadSalesRepInventories(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		object = maybeUser.(*User)
+	} else {
+		slice = *maybeUser.(*[]*User)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`inventory`), qm.WhereIn(`inventory.sales_rep_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load inventory")
+	}
+
+	var resultSlice []*Inventory
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice inventory")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on inventory")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for inventory")
+	}
+
+	if singular {
+		object.R.SalesRepInventories = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &inventoryR{}
+			}
+			foreign.R.SalesRep = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.SalesRepID {
+				local.R.SalesRepInventories = append(local.R.SalesRepInventories, foreign)
+				if foreign.R == nil {
+					foreign.R = &inventoryR{}
 				}
 				foreign.R.SalesRep = local
 				break
@@ -1428,270 +1468,6 @@ func (userL) LoadUpdatedBySales(ctx context.Context, e boil.ContextExecutor, sin
 	return nil
 }
 
-// LoadArchivedByStocks allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (userL) LoadArchivedByStocks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
-	var slice []*User
-	var object *User
-
-	if singular {
-		object = maybeUser.(*User)
-	} else {
-		slice = *maybeUser.(*[]*User)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &userR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &userR{}
-			}
-
-			for _, a := range args {
-				if queries.Equal(a, obj.ID) {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(qm.From(`stock`), qm.WhereIn(`stock.archived_by_id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load stock")
-	}
-
-	var resultSlice []*Stock
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice stock")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on stock")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for stock")
-	}
-
-	if singular {
-		object.R.ArchivedByStocks = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &stockR{}
-			}
-			foreign.R.ArchivedBy = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if queries.Equal(local.ID, foreign.ArchivedByID) {
-				local.R.ArchivedByStocks = append(local.R.ArchivedByStocks, foreign)
-				if foreign.R == nil {
-					foreign.R = &stockR{}
-				}
-				foreign.R.ArchivedBy = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadCreatedByStocks allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (userL) LoadCreatedByStocks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
-	var slice []*User
-	var object *User
-
-	if singular {
-		object = maybeUser.(*User)
-	} else {
-		slice = *maybeUser.(*[]*User)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &userR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &userR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(qm.From(`stock`), qm.WhereIn(`stock.created_by_id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load stock")
-	}
-
-	var resultSlice []*Stock
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice stock")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on stock")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for stock")
-	}
-
-	if singular {
-		object.R.CreatedByStocks = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &stockR{}
-			}
-			foreign.R.CreatedBy = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.CreatedByID {
-				local.R.CreatedByStocks = append(local.R.CreatedByStocks, foreign)
-				if foreign.R == nil {
-					foreign.R = &stockR{}
-				}
-				foreign.R.CreatedBy = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadUpdatedByStocks allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (userL) LoadUpdatedByStocks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
-	var slice []*User
-	var object *User
-
-	if singular {
-		object = maybeUser.(*User)
-	} else {
-		slice = *maybeUser.(*[]*User)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &userR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &userR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(qm.From(`stock`), qm.WhereIn(`stock.updated_by_id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load stock")
-	}
-
-	var resultSlice []*Stock
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice stock")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on stock")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for stock")
-	}
-
-	if singular {
-		object.R.UpdatedByStocks = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &stockR{}
-			}
-			foreign.R.UpdatedBy = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.UpdatedByID {
-				local.R.UpdatedByStocks = append(local.R.UpdatedByStocks, foreign)
-				if foreign.R == nil {
-					foreign.R = &stockR{}
-				}
-				foreign.R.UpdatedBy = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // LoadSalesRepTransactions allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (userL) LoadSalesRepTransactions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
@@ -1924,6 +1700,59 @@ func (o *User) AddSalesRepCustomers(ctx context.Context, exec boil.ContextExecut
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &customerR{
+				SalesRep: o,
+			}
+		} else {
+			rel.R.SalesRep = o
+		}
+	}
+	return nil
+}
+
+// AddSalesRepInventories adds the given related objects to the existing relationships
+// of the user, optionally inserting them as new records.
+// Appends related to o.R.SalesRepInventories.
+// Sets related.R.SalesRep appropriately.
+func (o *User) AddSalesRepInventories(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Inventory) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.SalesRepID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"inventory\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"sales_rep_id"}),
+				strmangle.WhereClause("\"", "\"", 2, inventoryPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.SalesRepID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			SalesRepInventories: related,
+		}
+	} else {
+		o.R.SalesRepInventories = append(o.R.SalesRepInventories, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &inventoryR{
 				SalesRep: o,
 			}
 		} else {
@@ -2511,235 +2340,6 @@ func (o *User) RemoveUpdatedBySales(ctx context.Context, exec boil.ContextExecut
 		}
 	}
 
-	return nil
-}
-
-// AddArchivedByStocks adds the given related objects to the existing relationships
-// of the user, optionally inserting them as new records.
-// Appends related to o.R.ArchivedByStocks.
-// Sets related.R.ArchivedBy appropriately.
-func (o *User) AddArchivedByStocks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Stock) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			queries.Assign(&rel.ArchivedByID, o.ID)
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"stock\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"archived_by_id"}),
-				strmangle.WhereClause("\"", "\"", 2, stockPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			queries.Assign(&rel.ArchivedByID, o.ID)
-		}
-	}
-
-	if o.R == nil {
-		o.R = &userR{
-			ArchivedByStocks: related,
-		}
-	} else {
-		o.R.ArchivedByStocks = append(o.R.ArchivedByStocks, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &stockR{
-				ArchivedBy: o,
-			}
-		} else {
-			rel.R.ArchivedBy = o
-		}
-	}
-	return nil
-}
-
-// SetArchivedByStocks removes all previously related items of the
-// user replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.ArchivedBy's ArchivedByStocks accordingly.
-// Replaces o.R.ArchivedByStocks with related.
-// Sets related.R.ArchivedBy's ArchivedByStocks accordingly.
-func (o *User) SetArchivedByStocks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Stock) error {
-	query := "update \"stock\" set \"archived_by_id\" = null where \"archived_by_id\" = $1"
-	values := []interface{}{o.ID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.ArchivedByStocks {
-			queries.SetScanner(&rel.ArchivedByID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.ArchivedBy = nil
-		}
-
-		o.R.ArchivedByStocks = nil
-	}
-	return o.AddArchivedByStocks(ctx, exec, insert, related...)
-}
-
-// RemoveArchivedByStocks relationships from objects passed in.
-// Removes related items from R.ArchivedByStocks (uses pointer comparison, removal does not keep order)
-// Sets related.R.ArchivedBy.
-func (o *User) RemoveArchivedByStocks(ctx context.Context, exec boil.ContextExecutor, related ...*Stock) error {
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.ArchivedByID, nil)
-		if rel.R != nil {
-			rel.R.ArchivedBy = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("archived_by_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.ArchivedByStocks {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.ArchivedByStocks)
-			if ln > 1 && i < ln-1 {
-				o.R.ArchivedByStocks[i] = o.R.ArchivedByStocks[ln-1]
-			}
-			o.R.ArchivedByStocks = o.R.ArchivedByStocks[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
-// AddCreatedByStocks adds the given related objects to the existing relationships
-// of the user, optionally inserting them as new records.
-// Appends related to o.R.CreatedByStocks.
-// Sets related.R.CreatedBy appropriately.
-func (o *User) AddCreatedByStocks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Stock) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.CreatedByID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"stock\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"created_by_id"}),
-				strmangle.WhereClause("\"", "\"", 2, stockPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.CreatedByID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &userR{
-			CreatedByStocks: related,
-		}
-	} else {
-		o.R.CreatedByStocks = append(o.R.CreatedByStocks, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &stockR{
-				CreatedBy: o,
-			}
-		} else {
-			rel.R.CreatedBy = o
-		}
-	}
-	return nil
-}
-
-// AddUpdatedByStocks adds the given related objects to the existing relationships
-// of the user, optionally inserting them as new records.
-// Appends related to o.R.UpdatedByStocks.
-// Sets related.R.UpdatedBy appropriately.
-func (o *User) AddUpdatedByStocks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Stock) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.UpdatedByID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"stock\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"updated_by_id"}),
-				strmangle.WhereClause("\"", "\"", 2, stockPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.UpdatedByID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &userR{
-			UpdatedByStocks: related,
-		}
-	} else {
-		o.R.UpdatedByStocks = append(o.R.UpdatedByStocks, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &stockR{
-				UpdatedBy: o,
-			}
-		} else {
-			rel.R.UpdatedBy = o
-		}
-	}
 	return nil
 }
 

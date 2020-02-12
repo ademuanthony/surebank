@@ -26,6 +26,7 @@ type SaleItem struct {
 	ID            string  `boil:"id" json:"id" toml:"id" yaml:"id"`
 	SaleID        string  `boil:"sale_id" json:"sale_id" toml:"sale_id" yaml:"sale_id"`
 	ProductID     string  `boil:"product_id" json:"product_id" toml:"product_id" yaml:"product_id"`
+	Quantity      int     `boil:"quantity" json:"quantity" toml:"quantity" yaml:"quantity"`
 	UnitPrice     float64 `boil:"unit_price" json:"unit_price" toml:"unit_price" yaml:"unit_price"`
 	UnitCostPrice float64 `boil:"unit_cost_price" json:"unit_cost_price" toml:"unit_cost_price" yaml:"unit_cost_price"`
 	StockIds      string  `boil:"stock_ids" json:"stock_ids" toml:"stock_ids" yaml:"stock_ids"`
@@ -38,6 +39,7 @@ var SaleItemColumns = struct {
 	ID            string
 	SaleID        string
 	ProductID     string
+	Quantity      string
 	UnitPrice     string
 	UnitCostPrice string
 	StockIds      string
@@ -45,6 +47,7 @@ var SaleItemColumns = struct {
 	ID:            "id",
 	SaleID:        "sale_id",
 	ProductID:     "product_id",
+	Quantity:      "quantity",
 	UnitPrice:     "unit_price",
 	UnitCostPrice: "unit_cost_price",
 	StockIds:      "stock_ids",
@@ -56,6 +59,7 @@ var SaleItemWhere = struct {
 	ID            whereHelperstring
 	SaleID        whereHelperstring
 	ProductID     whereHelperstring
+	Quantity      whereHelperint
 	UnitPrice     whereHelperfloat64
 	UnitCostPrice whereHelperfloat64
 	StockIds      whereHelperstring
@@ -63,6 +67,7 @@ var SaleItemWhere = struct {
 	ID:            whereHelperstring{field: "\"sale_item\".\"id\""},
 	SaleID:        whereHelperstring{field: "\"sale_item\".\"sale_id\""},
 	ProductID:     whereHelperstring{field: "\"sale_item\".\"product_id\""},
+	Quantity:      whereHelperint{field: "\"sale_item\".\"quantity\""},
 	UnitPrice:     whereHelperfloat64{field: "\"sale_item\".\"unit_price\""},
 	UnitCostPrice: whereHelperfloat64{field: "\"sale_item\".\"unit_cost_price\""},
 	StockIds:      whereHelperstring{field: "\"sale_item\".\"stock_ids\""},
@@ -92,8 +97,8 @@ func (*saleItemR) NewStruct() *saleItemR {
 type saleItemL struct{}
 
 var (
-	saleItemAllColumns            = []string{"id", "sale_id", "product_id", "unit_price", "unit_cost_price", "stock_ids"}
-	saleItemColumnsWithoutDefault = []string{"id", "sale_id", "product_id", "unit_price", "unit_cost_price", "stock_ids"}
+	saleItemAllColumns            = []string{"id", "sale_id", "product_id", "quantity", "unit_price", "unit_cost_price", "stock_ids"}
+	saleItemColumnsWithoutDefault = []string{"id", "sale_id", "product_id", "quantity", "unit_price", "unit_cost_price", "stock_ids"}
 	saleItemColumnsWithDefault    = []string{}
 	saleItemPrimaryKeyColumns     = []string{"id"}
 )

@@ -24,18 +24,18 @@ import (
 
 // Account is an object representing the database table.
 type Account struct {
-	ID          string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Number      string    `boil:"number" json:"number" toml:"number" yaml:"number"`
-	CustomerID  string    `boil:"customer_id" json:"customer_id" toml:"customer_id" yaml:"customer_id"`
-	AccountType string    `boil:"account_type" json:"account_type" toml:"account_type" yaml:"account_type"`
-	Target      float64   `boil:"target" json:"target" toml:"target" yaml:"target"`
-	TargetInfo  string    `boil:"target_info" json:"target_info" toml:"target_info" yaml:"target_info"`
-	SalesRepID  string    `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
-	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ArchivedAt  null.Time `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
-	BranchID    string    `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
-	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	Balance     float64   `boil:"balance" json:"balance" toml:"balance" yaml:"balance"`
+	ID          string     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	BranchID    string     `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
+	Number      string     `boil:"number" json:"number" toml:"number" yaml:"number"`
+	CustomerID  string     `boil:"customer_id" json:"customer_id" toml:"customer_id" yaml:"customer_id"`
+	AccountType string     `boil:"account_type" json:"account_type" toml:"account_type" yaml:"account_type"`
+	Target      float64    `boil:"target" json:"target" toml:"target" yaml:"target"`
+	TargetInfo  string     `boil:"target_info" json:"target_info" toml:"target_info" yaml:"target_info"`
+	SalesRepID  string     `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
+	CreatedAt   int64      `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt   int64      `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ArchivedAt  null.Int64 `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
+	Balance     float64    `boil:"balance" json:"balance" toml:"balance" yaml:"balance"`
 
 	R *accountR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L accountL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,6 +43,7 @@ type Account struct {
 
 var AccountColumns = struct {
 	ID          string
+	BranchID    string
 	Number      string
 	CustomerID  string
 	AccountType string
@@ -50,12 +51,12 @@ var AccountColumns = struct {
 	TargetInfo  string
 	SalesRepID  string
 	CreatedAt   string
-	ArchivedAt  string
-	BranchID    string
 	UpdatedAt   string
+	ArchivedAt  string
 	Balance     string
 }{
 	ID:          "id",
+	BranchID:    "branch_id",
 	Number:      "number",
 	CustomerID:  "customer_id",
 	AccountType: "account_type",
@@ -63,9 +64,8 @@ var AccountColumns = struct {
 	TargetInfo:  "target_info",
 	SalesRepID:  "sales_rep_id",
 	CreatedAt:   "created_at",
-	ArchivedAt:  "archived_at",
-	BranchID:    "branch_id",
 	UpdatedAt:   "updated_at",
+	ArchivedAt:  "archived_at",
 	Balance:     "balance",
 }
 
@@ -102,75 +102,70 @@ func (w whereHelperfloat64) GTE(x float64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
-type whereHelpertime_Time struct{ field string }
+type whereHelperint64 struct{ field string }
 
-func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.EQ, x)
-}
-func (w whereHelpertime_Time) NEQ(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.NEQ, x)
-}
-func (w whereHelpertime_Time) LT(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpertime_Time) LTE(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpertime_Time) GT(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
+func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperint64) IN(slice []int64) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
 }
 
-type whereHelpernull_Time struct{ field string }
+type whereHelpernull_Int64 struct{ field string }
 
-func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
+func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
 	return qmhelper.WhereNullEQ(w.field, false, x)
 }
-func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
+func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
 	return qmhelper.WhereNullEQ(w.field, true, x)
 }
-func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
+func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LT, x)
 }
-func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
+func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LTE, x)
 }
-func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
+func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GT, x)
 }
-func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
+func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
 var AccountWhere = struct {
 	ID          whereHelperstring
+	BranchID    whereHelperstring
 	Number      whereHelperstring
 	CustomerID  whereHelperstring
 	AccountType whereHelperstring
 	Target      whereHelperfloat64
 	TargetInfo  whereHelperstring
 	SalesRepID  whereHelperstring
-	CreatedAt   whereHelpertime_Time
-	ArchivedAt  whereHelpernull_Time
-	BranchID    whereHelperstring
-	UpdatedAt   whereHelpertime_Time
+	CreatedAt   whereHelperint64
+	UpdatedAt   whereHelperint64
+	ArchivedAt  whereHelpernull_Int64
 	Balance     whereHelperfloat64
 }{
 	ID:          whereHelperstring{field: "\"account\".\"id\""},
+	BranchID:    whereHelperstring{field: "\"account\".\"branch_id\""},
 	Number:      whereHelperstring{field: "\"account\".\"number\""},
 	CustomerID:  whereHelperstring{field: "\"account\".\"customer_id\""},
 	AccountType: whereHelperstring{field: "\"account\".\"account_type\""},
 	Target:      whereHelperfloat64{field: "\"account\".\"target\""},
 	TargetInfo:  whereHelperstring{field: "\"account\".\"target_info\""},
 	SalesRepID:  whereHelperstring{field: "\"account\".\"sales_rep_id\""},
-	CreatedAt:   whereHelpertime_Time{field: "\"account\".\"created_at\""},
-	ArchivedAt:  whereHelpernull_Time{field: "\"account\".\"archived_at\""},
-	BranchID:    whereHelperstring{field: "\"account\".\"branch_id\""},
-	UpdatedAt:   whereHelpertime_Time{field: "\"account\".\"updated_at\""},
+	CreatedAt:   whereHelperint64{field: "\"account\".\"created_at\""},
+	UpdatedAt:   whereHelperint64{field: "\"account\".\"updated_at\""},
+	ArchivedAt:  whereHelpernull_Int64{field: "\"account\".\"archived_at\""},
 	Balance:     whereHelperfloat64{field: "\"account\".\"balance\""},
 }
 
@@ -204,9 +199,9 @@ func (*accountR) NewStruct() *accountR {
 type accountL struct{}
 
 var (
-	accountAllColumns            = []string{"id", "number", "customer_id", "account_type", "target", "target_info", "sales_rep_id", "created_at", "archived_at", "branch_id", "updated_at", "balance"}
-	accountColumnsWithoutDefault = []string{"id", "number", "account_type", "sales_rep_id", "created_at", "archived_at", "updated_at"}
-	accountColumnsWithDefault    = []string{"customer_id", "target", "target_info", "branch_id", "balance"}
+	accountAllColumns            = []string{"id", "branch_id", "number", "customer_id", "account_type", "target", "target_info", "sales_rep_id", "created_at", "updated_at", "archived_at", "balance"}
+	accountColumnsWithoutDefault = []string{"id", "number", "account_type", "sales_rep_id", "created_at", "updated_at", "archived_at"}
+	accountColumnsWithDefault    = []string{"branch_id", "customer_id", "target", "target_info", "balance"}
 	accountPrimaryKeyColumns     = []string{"id"}
 )
 

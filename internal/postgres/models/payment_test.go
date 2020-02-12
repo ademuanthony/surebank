@@ -644,7 +644,7 @@ func testPaymentsSelect(t *testing.T) {
 }
 
 var (
-	paymentDBTypes = map[string]string{`ID`: `character`, `SaleID`: `character`, `Amount`: `double precision`, `PaymentMethod`: `enum.payment_method('Cash','Card','Transfer','Wallet')`, `SalesRepID`: `character`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`}
+	paymentDBTypes = map[string]string{`ID`: `character`, `SaleID`: `character`, `Amount`: `double precision`, `PaymentMethod`: `enum.payment_method('Cash','Card','Transfer','Wallet')`, `SalesRepID`: `character`, `CreatedAt`: `bigint`, `UpdatedAt`: `bigint`, `ArchivedAt`: `bigint`}
 	_              = bytes.MinRead
 )
 

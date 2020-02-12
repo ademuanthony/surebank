@@ -509,6 +509,84 @@ func testUserToManySalesRepCustomers(t *testing.T) {
 	}
 }
 
+func testUserToManySalesRepInventories(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c Inventory
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, true, userColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize User struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, inventoryDBTypes, false, inventoryColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, inventoryDBTypes, false, inventoryColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.SalesRepID = a.ID
+	c.SalesRepID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.SalesRepInventories().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.SalesRepID == b.SalesRepID {
+			bFound = true
+		}
+		if v.SalesRepID == c.SalesRepID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := UserSlice{&a}
+	if err = a.L.LoadSalesRepInventories(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.SalesRepInventories); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.SalesRepInventories = nil
+	if err = a.L.LoadSalesRepInventories(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.SalesRepInventories); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testUserToManySalesRepPayments(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -1052,239 +1130,6 @@ func testUserToManyUpdatedBySales(t *testing.T) {
 	}
 }
 
-func testUserToManyArchivedByStocks(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a User
-	var b, c Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, userDBTypes, true, userColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize User struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, stockDBTypes, false, stockColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, stockDBTypes, false, stockColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&b.ArchivedByID, a.ID)
-	queries.Assign(&c.ArchivedByID, a.ID)
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.ArchivedByStocks().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if queries.Equal(v.ArchivedByID, b.ArchivedByID) {
-			bFound = true
-		}
-		if queries.Equal(v.ArchivedByID, c.ArchivedByID) {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := UserSlice{&a}
-	if err = a.L.LoadArchivedByStocks(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.ArchivedByStocks); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.ArchivedByStocks = nil
-	if err = a.L.LoadArchivedByStocks(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.ArchivedByStocks); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testUserToManyCreatedByStocks(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a User
-	var b, c Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, userDBTypes, true, userColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize User struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, stockDBTypes, false, stockColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, stockDBTypes, false, stockColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.CreatedByID = a.ID
-	c.CreatedByID = a.ID
-
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.CreatedByStocks().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if v.CreatedByID == b.CreatedByID {
-			bFound = true
-		}
-		if v.CreatedByID == c.CreatedByID {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := UserSlice{&a}
-	if err = a.L.LoadCreatedByStocks(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.CreatedByStocks); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.CreatedByStocks = nil
-	if err = a.L.LoadCreatedByStocks(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.CreatedByStocks); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testUserToManyUpdatedByStocks(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a User
-	var b, c Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, userDBTypes, true, userColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize User struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, stockDBTypes, false, stockColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, stockDBTypes, false, stockColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.UpdatedByID = a.ID
-	c.UpdatedByID = a.ID
-
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.UpdatedByStocks().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if v.UpdatedByID == b.UpdatedByID {
-			bFound = true
-		}
-		if v.UpdatedByID == c.UpdatedByID {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := UserSlice{&a}
-	if err = a.L.LoadUpdatedByStocks(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.UpdatedByStocks); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.UpdatedByStocks = nil
-	if err = a.L.LoadUpdatedByStocks(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.UpdatedByStocks); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
 func testUserToManySalesRepTransactions(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -1505,6 +1350,81 @@ func testUserToManyAddOpSalesRepCustomers(t *testing.T) {
 		}
 
 		count, err := a.SalesRepCustomers().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testUserToManyAddOpSalesRepInventories(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c, d, e Inventory
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Inventory{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, inventoryDBTypes, false, strmangle.SetComplement(inventoryPrimaryKeyColumns, inventoryColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Inventory{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddSalesRepInventories(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.SalesRepID {
+			t.Error("foreign key was wrong value", a.ID, first.SalesRepID)
+		}
+		if a.ID != second.SalesRepID {
+			t.Error("foreign key was wrong value", a.ID, second.SalesRepID)
+		}
+
+		if first.R.SalesRep != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.SalesRep != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.SalesRepInventories[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.SalesRepInventories[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.SalesRepInventories().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2566,407 +2486,6 @@ func testUserToManyRemoveOpUpdatedBySales(t *testing.T) {
 	}
 }
 
-func testUserToManyAddOpArchivedByStocks(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a User
-	var b, c, d, e Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Stock{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, stockDBTypes, false, strmangle.SetComplement(stockPrimaryKeyColumns, stockColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*Stock{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddArchivedByStocks(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if !queries.Equal(a.ID, first.ArchivedByID) {
-			t.Error("foreign key was wrong value", a.ID, first.ArchivedByID)
-		}
-		if !queries.Equal(a.ID, second.ArchivedByID) {
-			t.Error("foreign key was wrong value", a.ID, second.ArchivedByID)
-		}
-
-		if first.R.ArchivedBy != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.ArchivedBy != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.ArchivedByStocks[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.ArchivedByStocks[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.ArchivedByStocks().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-
-func testUserToManySetOpArchivedByStocks(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a User
-	var b, c, d, e Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Stock{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, stockDBTypes, false, strmangle.SetComplement(stockPrimaryKeyColumns, stockColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetArchivedByStocks(ctx, tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.ArchivedByStocks().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetArchivedByStocks(ctx, tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.ArchivedByStocks().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ArchivedByID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ArchivedByID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ID, d.ArchivedByID) {
-		t.Error("foreign key was wrong value", a.ID, d.ArchivedByID)
-	}
-	if !queries.Equal(a.ID, e.ArchivedByID) {
-		t.Error("foreign key was wrong value", a.ID, e.ArchivedByID)
-	}
-
-	if b.R.ArchivedBy != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.ArchivedBy != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.ArchivedBy != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.ArchivedBy != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.ArchivedByStocks[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.ArchivedByStocks[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testUserToManyRemoveOpArchivedByStocks(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a User
-	var b, c, d, e Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Stock{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, stockDBTypes, false, strmangle.SetComplement(stockPrimaryKeyColumns, stockColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddArchivedByStocks(ctx, tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.ArchivedByStocks().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveArchivedByStocks(ctx, tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.ArchivedByStocks().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ArchivedByID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ArchivedByID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.ArchivedBy != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.ArchivedBy != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.ArchivedBy != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.ArchivedBy != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.ArchivedByStocks) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.ArchivedByStocks[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.ArchivedByStocks[0] != &e {
-		t.Error("relationship to e should have been preserved")
-	}
-}
-
-func testUserToManyAddOpCreatedByStocks(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a User
-	var b, c, d, e Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Stock{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, stockDBTypes, false, strmangle.SetComplement(stockPrimaryKeyColumns, stockColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*Stock{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddCreatedByStocks(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if a.ID != first.CreatedByID {
-			t.Error("foreign key was wrong value", a.ID, first.CreatedByID)
-		}
-		if a.ID != second.CreatedByID {
-			t.Error("foreign key was wrong value", a.ID, second.CreatedByID)
-		}
-
-		if first.R.CreatedBy != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.CreatedBy != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.CreatedByStocks[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.CreatedByStocks[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.CreatedByStocks().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-func testUserToManyAddOpUpdatedByStocks(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a User
-	var b, c, d, e Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Stock{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, stockDBTypes, false, strmangle.SetComplement(stockPrimaryKeyColumns, stockColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*Stock{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddUpdatedByStocks(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if a.ID != first.UpdatedByID {
-			t.Error("foreign key was wrong value", a.ID, first.UpdatedByID)
-		}
-		if a.ID != second.UpdatedByID {
-			t.Error("foreign key was wrong value", a.ID, second.UpdatedByID)
-		}
-
-		if first.R.UpdatedBy != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.UpdatedBy != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.UpdatedByStocks[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.UpdatedByStocks[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.UpdatedByStocks().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
 func testUserToManyAddOpSalesRepTransactions(t *testing.T) {
 	var err error
 
@@ -3225,7 +2744,7 @@ func testUsersSelect(t *testing.T) {
 }
 
 var (
-	userDBTypes = map[string]string{`ID`: `character`, `Email`: `character varying`, `FirstName`: `character varying`, `PasswordHash`: `character varying`, `PasswordSalt`: `character varying`, `PasswordReset`: `character varying`, `Timezone`: `character varying`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `LastName`: `character varying`, `BranchID`: `character`}
+	userDBTypes = map[string]string{`ID`: `character`, `BranchID`: `character`, `Email`: `character varying`, `FirstName`: `character varying`, `PasswordHash`: `character varying`, `PasswordSalt`: `character varying`, `PasswordReset`: `character varying`, `Timezone`: `character varying`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `LastName`: `character varying`}
 	_           = bytes.MinRead
 )
 

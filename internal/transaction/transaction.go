@@ -179,8 +179,8 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		Narration:      req.Narration,
 		TXType:         req.Type.String(),
 		SalesRepID:     claims.Subject,
-		CreatedAt:      now,
-		UpdatedAt:      now,
+		CreatedAt:      now.Unix(),
+		UpdatedAt:      now.Unix(),
 	}
 
 	if err := m.Insert(ctx, tx, boil.Infer()); err != nil {
@@ -207,8 +207,8 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		Narration:      m.Narration,
 		Type:           TransactionType(m.TXType),
 		SalesRepID:     m.SalesRepID,
-		CreatedAt:      m.CreatedAt,
-		UpdatedAt:      m.UpdatedAt,
+		CreatedAt:      time.Unix(m.CreatedAt, 0),
+		UpdatedAt:      time.Unix(m.UpdatedAt, 0),
 	}, nil
 }
 
@@ -362,12 +362,12 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return err
 	}
 
-	tranx, err := models.Transactions(models.AccountWhere.ID.EQ(req.ID)).One(ctx, tx)
+	tranx, err := models.Transactions(models.TransactionWhere.ID.EQ(req.ID)).One(ctx, tx)
 	if err != nil {
 		return err
 	}
 
-	_,err = models.Transactions(models.AccountWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, models.M{models.AccountColumns.ArchivedAt: now})
+	_,err = models.Transactions(models.TransactionWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, models.M{models.TransactionColumns.ArchivedAt: now})
 
 	var txAmount = tranx.Amount
 	if tranx.TXType == TransactionType_Withdrawal.String() {

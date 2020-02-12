@@ -35,8 +35,8 @@ func urlProductsCreate() string {
 	return fmt.Sprintf("/shop/products/create")
 }
 
-func urlProductsView(categoryID string) string {
-	return fmt.Sprintf("/shop/products/%s", categoryID)
+func urlProductsView(productID string) string {
+	return fmt.Sprintf("/shop/products/%s", productID)
 }
 
 func urlProductsUpdate(categoryID string) string {
@@ -357,7 +357,7 @@ func (h *Products) Update(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	data["form"] = req
 
-	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(shop.StockCreateRequest{})); ok {
+	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(shop.ProductUpdateRequest{})); ok {
 		data["validationDefaults"] = verr.(*weberror.Error)
 	}
 

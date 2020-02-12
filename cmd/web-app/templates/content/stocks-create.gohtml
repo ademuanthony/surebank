@@ -22,20 +22,6 @@
                     <div class="col-md-6">
 
                         <div class="form-group">
-                            <label for="selectBranch">Branch</label>
-                            <div class="form-control-select-wrapper">
-                                <select id="selectBranch" name="BranchID" placeholder="Branch" required
-                                        class="form-control form-control-select-box {{ ValidationFieldClass $.validationErrors "BranchID" }}">
-                                        <option></option>
-                                    {{ range $i := $.branches }}
-                                        <option value="{{ $i.ID }}" {{ if eq $.form.BranchID $i.ID }}selected="selected"{{ end }}>{{ $i.Name }}</option>
-                                    {{ end }}
-                                </select>
-                                {{template "invalid-feedback" dict "fieldName" "BranchID" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
-                            </div>
-                        </div>
-
-                        <div class="form-group">
                             <label for="selectProduct">Product</label>
                             <div class="form-control-select-wrapper">
                                 <select id="selectProduct" name="ProductID" placeholder="Product" required
@@ -50,43 +36,11 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="inputBatchNumber">Batch Number</label>
-                            <input type="text" id="inputBatchNumber"
-                                   class="form-control {{ ValidationFieldClass $.validationErrors "BatchNumber" }}"
-                                   placeholder="enter name" name="BatchNumber" value="{{ .form.BatchNumber }}" required>
-                            {{template "invalid-feedback" dict "fieldName" "BatchNumber" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
-                        </div>
-
-                        <div class="form-group">
                             <label for="inputQuantity">Quantity</label>
                             <input type="text" id="inputQuantity"
                                    class="form-control {{ ValidationFieldClass $.validationErrors "Quantity" }}"
                                    placeholder="enter SKU" name="Quantity" value="{{ .form.Quantity }}" required>
                             {{template "invalid-feedback" dict "fieldName" "Quantity" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
-                        </div>
-
-                        <div class="form-group">
-                            <label for="inputPrice">Unit Cost Price</label>
-                            <input type="text" id="inputPrice"
-                                   class="form-control {{ ValidationFieldClass $.validationErrors "Price" }}"
-                                   placeholder="enter name" name="UnitCostPrice" value="{{ .form.UnitCostPrice }}" required>
-                            {{template "invalid-feedback" dict "fieldName" "UnitCostPrice" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
-                        </div>
-
-                        <div class="form-group">
-                            <label for="inputManufactureDate">Manutacture Date</label>
-                            <input type="datetime-local" id="inputManufactureDate"
-                                   class="form-control {{ ValidationFieldClass $.validationErrors "ManufactureDate" }}"
-                                   placeholder="Manufacture Date" name="ManufactureDate" value="{{ .form.UnitCostPrice }}" required>
-                            {{template "invalid-feedback" dict "fieldName" "ManufactureDate" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
-                        </div>
-
-                        <div class="form-group">
-                            <label for="inputExpiryDate">Expiry Date</label>
-                            <input type="datetime-local" id="inputExpiryDate"
-                                   class="form-control {{ ValidationFieldClass $.validationErrors "ExpiryDate" }}"
-                                   placeholder="Expiry Date" name="ExpiryDate" value="{{ .form.ExpiryDate }}" required>
-                            {{template "invalid-feedback" dict "fieldName" "ExpiryDate" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
                         </div>
 
                     </div>

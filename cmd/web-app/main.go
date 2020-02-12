@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"merryworld/surebank/internal/inventory"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -471,6 +472,7 @@ func main() {
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
 	transactionRepo := transaction.NewRepository(masterDb)
+	inventoryRepo := inventory.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -497,6 +499,7 @@ func main() {
 		AwsSession:      awsSession,
 		ShopRepo:        shopRepo,
 		BranchRepo:      branchRepo,
+		InventoryRepo:   inventoryRepo,
 	}
 
 	// =========================================================================

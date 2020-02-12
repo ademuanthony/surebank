@@ -36,8 +36,8 @@ func CanReadAccount(ctx context.Context, claims auth.Claims, dbConn *sqlx.DB, ac
 	// If the request has claims from a specific account, ensure that the claims
 	// has the correct access to the account.
 	if claims.Audience != "" && claims.Audience != accountID {
-		// When the claims Audience/AccountID does not match the requested account, the
-		// claims Audience/AccountID - should have a record for the claims user.
+		// When the claims Audience/ProductID does not match the requested account, the
+		// claims Audience/ProductID - should have a record for the claims user.
 		// select id from users_accounts where account_id = [accountID] and user_id = [claims.Subject]
 		query := sqlbuilder.NewSelectBuilder().Select("id").From(userAccountTableName)
 		query.Where(query.And(
@@ -80,8 +80,8 @@ func CanModifyAccount(ctx context.Context, claims auth.Claims, dbConn *sqlx.DB, 
 				return errors.WithStack(ErrForbidden)
 			}
 		} else {
-			// When the claims Audience/AccountID does not match the requested account, the
-			// claims Audience/AccountID should have a record with an admin role.
+			// When the claims Audience/ProductID does not match the requested account, the
+			// claims Audience/ProductID should have a record with an admin role.
 			// select id from users_accounts where account_id = [accountID] and user_id = [claims.Subject] and any (roles) = 'admin'
 			query := sqlbuilder.NewSelectBuilder().Select("id").From(userAccountTableName)
 			query.Where(query.And(

@@ -24,16 +24,16 @@ import (
 
 // Customer is an object representing the database table.
 type Customer struct {
-	ID          string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Email       string    `boil:"email" json:"email" toml:"email" yaml:"email"`
-	Name        string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	PhoneNumber string    `boil:"phone_number" json:"phone_number" toml:"phone_number" yaml:"phone_number"`
-	Address     string    `boil:"address" json:"address" toml:"address" yaml:"address"`
-	SalesRepID  string    `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
-	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ArchivedAt  null.Time `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
-	BranchID    string    `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
-	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID          string     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	BranchID    string     `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
+	Email       string     `boil:"email" json:"email" toml:"email" yaml:"email"`
+	Name        string     `boil:"name" json:"name" toml:"name" yaml:"name"`
+	PhoneNumber string     `boil:"phone_number" json:"phone_number" toml:"phone_number" yaml:"phone_number"`
+	Address     string     `boil:"address" json:"address" toml:"address" yaml:"address"`
+	SalesRepID  string     `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
+	CreatedAt   int64      `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt   int64      `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ArchivedAt  null.Int64 `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
 
 	R *customerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L customerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -41,52 +41,52 @@ type Customer struct {
 
 var CustomerColumns = struct {
 	ID          string
+	BranchID    string
 	Email       string
 	Name        string
 	PhoneNumber string
 	Address     string
 	SalesRepID  string
 	CreatedAt   string
-	ArchivedAt  string
-	BranchID    string
 	UpdatedAt   string
+	ArchivedAt  string
 }{
 	ID:          "id",
+	BranchID:    "branch_id",
 	Email:       "email",
 	Name:        "name",
 	PhoneNumber: "phone_number",
 	Address:     "address",
 	SalesRepID:  "sales_rep_id",
 	CreatedAt:   "created_at",
-	ArchivedAt:  "archived_at",
-	BranchID:    "branch_id",
 	UpdatedAt:   "updated_at",
+	ArchivedAt:  "archived_at",
 }
 
 // Generated where
 
 var CustomerWhere = struct {
 	ID          whereHelperstring
+	BranchID    whereHelperstring
 	Email       whereHelperstring
 	Name        whereHelperstring
 	PhoneNumber whereHelperstring
 	Address     whereHelperstring
 	SalesRepID  whereHelperstring
-	CreatedAt   whereHelpertime_Time
-	ArchivedAt  whereHelpernull_Time
-	BranchID    whereHelperstring
-	UpdatedAt   whereHelpertime_Time
+	CreatedAt   whereHelperint64
+	UpdatedAt   whereHelperint64
+	ArchivedAt  whereHelpernull_Int64
 }{
 	ID:          whereHelperstring{field: "\"customer\".\"id\""},
+	BranchID:    whereHelperstring{field: "\"customer\".\"branch_id\""},
 	Email:       whereHelperstring{field: "\"customer\".\"email\""},
 	Name:        whereHelperstring{field: "\"customer\".\"name\""},
 	PhoneNumber: whereHelperstring{field: "\"customer\".\"phone_number\""},
 	Address:     whereHelperstring{field: "\"customer\".\"address\""},
 	SalesRepID:  whereHelperstring{field: "\"customer\".\"sales_rep_id\""},
-	CreatedAt:   whereHelpertime_Time{field: "\"customer\".\"created_at\""},
-	ArchivedAt:  whereHelpernull_Time{field: "\"customer\".\"archived_at\""},
-	BranchID:    whereHelperstring{field: "\"customer\".\"branch_id\""},
-	UpdatedAt:   whereHelpertime_Time{field: "\"customer\".\"updated_at\""},
+	CreatedAt:   whereHelperint64{field: "\"customer\".\"created_at\""},
+	UpdatedAt:   whereHelperint64{field: "\"customer\".\"updated_at\""},
+	ArchivedAt:  whereHelpernull_Int64{field: "\"customer\".\"archived_at\""},
 }
 
 // CustomerRels is where relationship names are stored.
@@ -116,9 +116,9 @@ func (*customerR) NewStruct() *customerR {
 type customerL struct{}
 
 var (
-	customerAllColumns            = []string{"id", "email", "name", "phone_number", "address", "sales_rep_id", "created_at", "archived_at", "branch_id", "updated_at"}
-	customerColumnsWithoutDefault = []string{"id", "email", "phone_number", "address", "sales_rep_id", "created_at", "archived_at", "updated_at"}
-	customerColumnsWithDefault    = []string{"name", "branch_id"}
+	customerAllColumns            = []string{"id", "branch_id", "email", "name", "phone_number", "address", "sales_rep_id", "created_at", "updated_at", "archived_at"}
+	customerColumnsWithoutDefault = []string{"id", "email", "phone_number", "address", "sales_rep_id", "created_at", "updated_at", "archived_at"}
+	customerColumnsWithDefault    = []string{"branch_id", "name"}
 	customerPrimaryKeyColumns     = []string{"id"}
 )
 

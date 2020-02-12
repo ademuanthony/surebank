@@ -25,6 +25,7 @@ import (
 type Brand struct {
 	ID   string `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name string `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Code string `boil:"code" json:"code" toml:"code" yaml:"code"`
 	Logo string `boil:"logo" json:"logo" toml:"logo" yaml:"logo"`
 
 	R *brandR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -34,10 +35,12 @@ type Brand struct {
 var BrandColumns = struct {
 	ID   string
 	Name string
+	Code string
 	Logo string
 }{
 	ID:   "id",
 	Name: "name",
+	Code: "code",
 	Logo: "logo",
 }
 
@@ -46,10 +49,12 @@ var BrandColumns = struct {
 var BrandWhere = struct {
 	ID   whereHelperstring
 	Name whereHelperstring
+	Code whereHelperstring
 	Logo whereHelperstring
 }{
 	ID:   whereHelperstring{field: "\"brand\".\"id\""},
 	Name: whereHelperstring{field: "\"brand\".\"name\""},
+	Code: whereHelperstring{field: "\"brand\".\"code\""},
 	Logo: whereHelperstring{field: "\"brand\".\"logo\""},
 }
 
@@ -74,8 +79,8 @@ func (*brandR) NewStruct() *brandR {
 type brandL struct{}
 
 var (
-	brandAllColumns            = []string{"id", "name", "logo"}
-	brandColumnsWithoutDefault = []string{"id", "name", "logo"}
+	brandAllColumns            = []string{"id", "name", "code", "logo"}
+	brandColumnsWithoutDefault = []string{"id", "name", "code", "logo"}
 	brandColumnsWithDefault    = []string{}
 	brandPrimaryKeyColumns     = []string{"id"}
 )

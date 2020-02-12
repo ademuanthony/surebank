@@ -28,12 +28,12 @@
                                     <form class="user" method="post" novalidate>
                                         <div class="form-group">
                                             <select  name="AccountID" placeholder="AccountID" required
-                                                    class="form-control form-control-select-box {{ ValidationFieldClass $.validationErrors "AccountID" }}">
+                                                    class="form-control form-control-select-box {{ ValidationFieldClass $.validationErrors "ProductID" }}">
                                                 {{ range $i := $.accounts }}
                                                     <option value="{{ $i.ID }}" {{ if eq $.form.AccountID $i.ID }}selected="selected"{{ end }}>{{ $i.Name }}</option>
                                                 {{ end }}
                                             </select>
-                                            {{template "invalid-feedback" dict "fieldName" "AccountID" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                                            {{template "invalid-feedback" dict "fieldName" "ProductID" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
                                         </div>
                                         <button class="btn btn-primary btn-user btn-block">
                                             Login

@@ -353,6 +353,84 @@ func testProductsInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testProductToManyInventories(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Product
+	var b, c Inventory
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, productDBTypes, true, productColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Product struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, inventoryDBTypes, false, inventoryColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, inventoryDBTypes, false, inventoryColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.ProductID = a.ID
+	c.ProductID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Inventories().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ProductID == b.ProductID {
+			bFound = true
+		}
+		if v.ProductID == c.ProductID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ProductSlice{&a}
+	if err = a.L.LoadInventories(ctx, tx, false, (*[]*Product)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Inventories); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Inventories = nil
+	if err = a.L.LoadInventories(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Inventories); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testProductToManyProductCategories(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -509,34 +587,30 @@ func testProductToManySaleItems(t *testing.T) {
 	}
 }
 
-func testProductToManyStocks(t *testing.T) {
+func testProductToManyAddOpInventories(t *testing.T) {
 	var err error
+
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Product
-	var b, c Stock
+	var b, c, d, e Inventory
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, productDBTypes, true, productColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Product struct: %s", err)
+	if err = randomize.Struct(seed, &a, productDBTypes, false, strmangle.SetComplement(productPrimaryKeyColumns, productColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Inventory{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, inventoryDBTypes, false, strmangle.SetComplement(inventoryPrimaryKeyColumns, inventoryColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-
-	if err = randomize.Struct(seed, &b, stockDBTypes, false, stockColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, stockDBTypes, false, stockColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.ProductID = a.ID
-	c.ProductID = a.ID
-
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -544,49 +618,50 @@ func testProductToManyStocks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.Stocks().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
+	foreignersSplitByInsertion := [][]*Inventory{
+		{&b, &c},
+		{&d, &e},
 	}
 
-	bFound, cFound := false, false
-	for _, v := range check {
-		if v.ProductID == b.ProductID {
-			bFound = true
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddInventories(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
 		}
-		if v.ProductID == c.ProductID {
-			cFound = true
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.ProductID {
+			t.Error("foreign key was wrong value", a.ID, first.ProductID)
 		}
-	}
+		if a.ID != second.ProductID {
+			t.Error("foreign key was wrong value", a.ID, second.ProductID)
+		}
 
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
+		if first.R.Product != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Product != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
 
-	slice := ProductSlice{&a}
-	if err = a.L.LoadStocks(ctx, tx, false, (*[]*Product)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.Stocks); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
+		if a.R.Inventories[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Inventories[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
 
-	a.R.Stocks = nil
-	if err = a.L.LoadStocks(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.Stocks); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
+		count, err := a.Inventories().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
 	}
 }
-
 func testProductToManyAddOpProductCategories(t *testing.T) {
 	var err error
 
@@ -729,81 +804,6 @@ func testProductToManyAddOpSaleItems(t *testing.T) {
 		}
 
 		count, err := a.SaleItems().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-func testProductToManyAddOpStocks(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Product
-	var b, c, d, e Stock
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, productDBTypes, false, strmangle.SetComplement(productPrimaryKeyColumns, productColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Stock{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, stockDBTypes, false, strmangle.SetComplement(stockPrimaryKeyColumns, stockColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*Stock{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddStocks(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if a.ID != first.ProductID {
-			t.Error("foreign key was wrong value", a.ID, first.ProductID)
-		}
-		if a.ID != second.ProductID {
-			t.Error("foreign key was wrong value", a.ID, second.ProductID)
-		}
-
-		if first.R.Product != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Product != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.Stocks[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.Stocks[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.Stocks().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1531,7 +1531,7 @@ func testProductsSelect(t *testing.T) {
 }
 
 var (
-	productDBTypes = map[string]string{`ID`: `character`, `BrandID`: `character`, `Name`: `character varying`, `Description`: `character varying`, `Sku`: `character varying`, `Barcode`: `character varying`, `Price`: `double precision`, `ReorderLevel`: `integer`, `Image`: `character varying`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `CreatedByID`: `character`, `UpdatedByID`: `character`, `ArchivedByID`: `character`, `CategoryID`: `character`}
+	productDBTypes = map[string]string{`ID`: `character`, `BrandID`: `character`, `CategoryID`: `character`, `Name`: `character varying`, `Description`: `character varying`, `Sku`: `character varying`, `Barcode`: `character varying`, `Price`: `double precision`, `ReorderLevel`: `integer`, `Image`: `character varying`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `CreatedByID`: `character`, `UpdatedByID`: `character`, `ArchivedByID`: `character`, `StockBalance`: `integer`}
 	_              = bytes.MinRead
 )
 

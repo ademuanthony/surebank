@@ -29,9 +29,9 @@
                         <div class="form-group">
                             <label for="inputTarget">Amount</label>
                             <input type="text" id="inputTarget"
-                                   class="form-control {{ ValidationFieldClass $.validationErrors "Amount" }}"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Quantity" }}"
                                    placeholder="Deposit Amount" name="Amount" value="{{ .form.Amount }}" required>
-                            {{template "invalid-feedback" dict "fieldName" "Amount" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                            {{template "invalid-feedback" dict "fieldName" "Quantity" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
                         </div>
 
                         <div class="form-group">

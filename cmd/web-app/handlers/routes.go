@@ -6,6 +6,7 @@ import (
 	"log"
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
+	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/transaction"
 	"net/http"
 	"os"
@@ -57,6 +58,7 @@ type AppContext struct {
 	ChecklistRepo     *checklist.Repository
 	GeoRepo           *geonames.Repository
 	ShopRepo          *shop.Repository
+	InventoryRepo	  *inventory.Repository
 	BranchRepo        *branch.Repository
 	CustomerRepo      *customer.Repository
 	AccountRepo       *account.Repository
@@ -204,18 +206,19 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 
 	// Stocks
 	stock := Stocks{
-		ShopRepo: appCtx.ShopRepo,
+		Repo:       appCtx.InventoryRepo,
+		ShopRepo:   appCtx.ShopRepo,
 		BranchRepo: appCtx.BranchRepo,
-		Redis:    appCtx.Redis,
-		Renderer: appCtx.Renderer,
+		Redis:      appCtx.Redis,
+		Renderer:   appCtx.Renderer,
 	}
-	app.Handle("POST", "/shop/inventory/:stock_id/update", stock.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/shop/inventory/:stock_id/update", stock.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	// app.Handle("POST", "/shop/inventory/:stock_id/update", stock.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	// app.Handle("GET", "/shop/inventory/:stock_id/update", stock.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("POST", "/shop/inventory/:stock_id", stock.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/shop/inventory/:stock_id", stock.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/shop/inventory/create", stock.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/shop/inventory/create", stock.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/shop/inventory/report", stock.Report, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	// app.Handle("GET", "/shop/inventory/report", stock.Report, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/shop/inventory", stock.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
 	// Customers
@@ -242,17 +245,6 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("POST", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers", custs.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-
-	// Customers
-	reports := Reports{
-		CustomerRepo: appCtx.CustomerRepo,
-		AccountRepo: appCtx.AccountRepo,
-		TransactionRepo: appCtx.TransactionRepo,
-		ShopRepo: appCtx.ShopRepo,
-		Redis:    appCtx.Redis,
-		Renderer: appCtx.Renderer,
-	}
-	app.Handle("GET", "/report/stocks", reports.Stocks, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 
 	// Register user management pages.
 	us := Users{

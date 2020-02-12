@@ -55,8 +55,8 @@ func FromModel(rec *models.Transaction) *Transaction {
 		Amount:         rec.Amount,
 		Narration:      rec.Narration,
 		SalesRepID:     rec.SalesRepID,
-		CreatedAt:      rec.CreatedAt,
-		UpdatedAt:      rec.UpdatedAt,
+		CreatedAt:      time.Unix(rec.CreatedAt, 0),
+		UpdatedAt:      time.Unix(rec.UpdatedAt, 0),
 	}
 
 	if rec.R != nil {
@@ -70,7 +70,8 @@ func FromModel(rec *models.Transaction) *Transaction {
 	}
 
 	if rec.ArchivedAt.Valid {
-		a.ArchivedAt = &rec.ArchivedAt.Time
+		archivedAt := time.Unix(rec.ArchivedAt.Int64, 0)
+		a.ArchivedAt = &archivedAt
 	}
 
 	return a

@@ -1269,7 +1269,7 @@ func testSalesSelect(t *testing.T) {
 }
 
 var (
-	saleDBTypes = map[string]string{`ID`: `character`, `ReceiptNumber`: `character varying`, `Amount`: `double precision`, `AmountTender`: `double precision`, `Balance`: `double precision`, `CustomerName`: `character varying`, `PhoneNumber`: `character varying`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `CreatedByID`: `character`, `UpdatedByID`: `character`, `ArchivedByID`: `character`, `BranchID`: `character`}
+	saleDBTypes = map[string]string{`ID`: `character`, `BranchID`: `character`, `ReceiptNumber`: `character varying`, `Amount`: `double precision`, `AmountTender`: `double precision`, `Balance`: `double precision`, `CustomerName`: `character varying`, `PhoneNumber`: `character varying`, `CreatedAt`: `bigint`, `UpdatedAt`: `bigint`, `ArchivedAt`: `bigint`, `CreatedByID`: `character`, `UpdatedByID`: `character`, `ArchivedByID`: `character`}
 	_           = bytes.MinRead
 )
 

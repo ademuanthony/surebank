@@ -16,6 +16,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Customers", testCustomersUpsert)
 
+	t.Run("Inventories", testInventoriesUpsert)
+
 	t.Run("Payments", testPaymentsUpsert)
 
 	t.Run("Products", testProductsUpsert)
@@ -25,8 +27,6 @@ func TestUpsert(t *testing.T) {
 	t.Run("Sales", testSalesUpsert)
 
 	t.Run("SaleItems", testSaleItemsUpsert)
-
-	t.Run("Stocks", testStocksUpsert)
 
 	t.Run("Transactions", testTransactionsUpsert)
 

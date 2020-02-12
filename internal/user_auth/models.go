@@ -65,7 +65,7 @@ type Token struct {
 	claims auth.Claims `json:"-"`
 	// UserId is the ID of the user authenticated.
 	UserID string `json:"user_id" example:"d69bdef7-173f-4d29-b52c-3edc60baf6a2"`
-	// AccountID is the ID of the account for the user authenticated.
+	// ProductID is the ID of the account for the user authenticated.
 	AccountID string `json:"account_id"example:"c4653bf9-5978-48b7-89c5-95704aebb7e2"`
 }
 

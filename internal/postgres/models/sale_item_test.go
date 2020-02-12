@@ -644,7 +644,7 @@ func testSaleItemsSelect(t *testing.T) {
 }
 
 var (
-	saleItemDBTypes = map[string]string{`ID`: `character`, `SaleID`: `character`, `ProductID`: `character`, `UnitPrice`: `double precision`, `UnitCostPrice`: `double precision`, `StockIds`: `character varying`}
+	saleItemDBTypes = map[string]string{`ID`: `character`, `SaleID`: `character`, `ProductID`: `character`, `Quantity`: `integer`, `UnitPrice`: `double precision`, `UnitCostPrice`: `double precision`, `StockIds`: `character varying`}
 	_               = bytes.MinRead
 )
 

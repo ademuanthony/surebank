@@ -24,11 +24,11 @@ import (
 
 // Branch is an object representing the database table.
 type Branch struct {
-	ID         string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name       string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	CreatedAt  time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt  time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	ArchivedAt null.Time `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
+	ID         string     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name       string     `boil:"name" json:"name" toml:"name" yaml:"name"`
+	CreatedAt  int64      `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt  int64      `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ArchivedAt null.Int64 `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
 
 	R *branchR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L branchL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -53,39 +53,39 @@ var BranchColumns = struct {
 var BranchWhere = struct {
 	ID         whereHelperstring
 	Name       whereHelperstring
-	CreatedAt  whereHelpertime_Time
-	UpdatedAt  whereHelpertime_Time
-	ArchivedAt whereHelpernull_Time
+	CreatedAt  whereHelperint64
+	UpdatedAt  whereHelperint64
+	ArchivedAt whereHelpernull_Int64
 }{
 	ID:         whereHelperstring{field: "\"branch\".\"id\""},
 	Name:       whereHelperstring{field: "\"branch\".\"name\""},
-	CreatedAt:  whereHelpertime_Time{field: "\"branch\".\"created_at\""},
-	UpdatedAt:  whereHelpertime_Time{field: "\"branch\".\"updated_at\""},
-	ArchivedAt: whereHelpernull_Time{field: "\"branch\".\"archived_at\""},
+	CreatedAt:  whereHelperint64{field: "\"branch\".\"created_at\""},
+	UpdatedAt:  whereHelperint64{field: "\"branch\".\"updated_at\""},
+	ArchivedAt: whereHelpernull_Int64{field: "\"branch\".\"archived_at\""},
 }
 
 // BranchRels is where relationship names are stored.
 var BranchRels = struct {
-	Accounts  string
-	Customers string
-	Sales     string
-	Stocks    string
-	Users     string
+	Accounts    string
+	Customers   string
+	Inventories string
+	Sales       string
+	Users       string
 }{
-	Accounts:  "Accounts",
-	Customers: "Customers",
-	Sales:     "Sales",
-	Stocks:    "Stocks",
-	Users:     "Users",
+	Accounts:    "Accounts",
+	Customers:   "Customers",
+	Inventories: "Inventories",
+	Sales:       "Sales",
+	Users:       "Users",
 }
 
 // branchR is where relationships are stored.
 type branchR struct {
-	Accounts  AccountSlice
-	Customers CustomerSlice
-	Sales     SaleSlice
-	Stocks    StockSlice
-	Users     UserSlice
+	Accounts    AccountSlice
+	Customers   CustomerSlice
+	Inventories InventorySlice
+	Sales       SaleSlice
+	Users       UserSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -236,6 +236,27 @@ func (o *Branch) Customers(mods ...qm.QueryMod) customerQuery {
 	return query
 }
 
+// Inventories retrieves all the inventory's Inventories with an executor.
+func (o *Branch) Inventories(mods ...qm.QueryMod) inventoryQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"inventory\".\"branch_id\"=?", o.ID),
+	)
+
+	query := Inventories(queryMods...)
+	queries.SetFrom(query.Query, "\"inventory\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"inventory\".*"})
+	}
+
+	return query
+}
+
 // Sales retrieves all the sale's Sales with an executor.
 func (o *Branch) Sales(mods ...qm.QueryMod) saleQuery {
 	var queryMods []qm.QueryMod
@@ -252,27 +273,6 @@ func (o *Branch) Sales(mods ...qm.QueryMod) saleQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"sale\".*"})
-	}
-
-	return query
-}
-
-// Stocks retrieves all the stock's Stocks with an executor.
-func (o *Branch) Stocks(mods ...qm.QueryMod) stockQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"stock\".\"branch_id\"=?", o.ID),
-	)
-
-	query := Stocks(queryMods...)
-	queries.SetFrom(query.Query, "\"stock\"")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"stock\".*"})
 	}
 
 	return query
@@ -475,6 +475,94 @@ func (branchL) LoadCustomers(ctx context.Context, e boil.ContextExecutor, singul
 	return nil
 }
 
+// LoadInventories allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (branchL) LoadInventories(ctx context.Context, e boil.ContextExecutor, singular bool, maybeBranch interface{}, mods queries.Applicator) error {
+	var slice []*Branch
+	var object *Branch
+
+	if singular {
+		object = maybeBranch.(*Branch)
+	} else {
+		slice = *maybeBranch.(*[]*Branch)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &branchR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &branchR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`inventory`), qm.WhereIn(`inventory.branch_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load inventory")
+	}
+
+	var resultSlice []*Inventory
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice inventory")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on inventory")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for inventory")
+	}
+
+	if singular {
+		object.R.Inventories = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &inventoryR{}
+			}
+			foreign.R.Branch = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.BranchID {
+				local.R.Inventories = append(local.R.Inventories, foreign)
+				if foreign.R == nil {
+					foreign.R = &inventoryR{}
+				}
+				foreign.R.Branch = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadSales allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (branchL) LoadSales(ctx context.Context, e boil.ContextExecutor, singular bool, maybeBranch interface{}, mods queries.Applicator) error {
@@ -553,94 +641,6 @@ func (branchL) LoadSales(ctx context.Context, e boil.ContextExecutor, singular b
 				local.R.Sales = append(local.R.Sales, foreign)
 				if foreign.R == nil {
 					foreign.R = &saleR{}
-				}
-				foreign.R.Branch = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadStocks allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (branchL) LoadStocks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeBranch interface{}, mods queries.Applicator) error {
-	var slice []*Branch
-	var object *Branch
-
-	if singular {
-		object = maybeBranch.(*Branch)
-	} else {
-		slice = *maybeBranch.(*[]*Branch)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &branchR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &branchR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(qm.From(`stock`), qm.WhereIn(`stock.branch_id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load stock")
-	}
-
-	var resultSlice []*Stock
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice stock")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on stock")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for stock")
-	}
-
-	if singular {
-		object.R.Stocks = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &stockR{}
-			}
-			foreign.R.Branch = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.BranchID {
-				local.R.Stocks = append(local.R.Stocks, foreign)
-				if foreign.R == nil {
-					foreign.R = &stockR{}
 				}
 				foreign.R.Branch = local
 				break
@@ -845,6 +845,59 @@ func (o *Branch) AddCustomers(ctx context.Context, exec boil.ContextExecutor, in
 	return nil
 }
 
+// AddInventories adds the given related objects to the existing relationships
+// of the branch, optionally inserting them as new records.
+// Appends related to o.R.Inventories.
+// Sets related.R.Branch appropriately.
+func (o *Branch) AddInventories(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Inventory) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.BranchID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"inventory\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"branch_id"}),
+				strmangle.WhereClause("\"", "\"", 2, inventoryPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.BranchID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &branchR{
+			Inventories: related,
+		}
+	} else {
+		o.R.Inventories = append(o.R.Inventories, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &inventoryR{
+				Branch: o,
+			}
+		} else {
+			rel.R.Branch = o
+		}
+	}
+	return nil
+}
+
 // AddSales adds the given related objects to the existing relationships
 // of the branch, optionally inserting them as new records.
 // Appends related to o.R.Sales.
@@ -889,59 +942,6 @@ func (o *Branch) AddSales(ctx context.Context, exec boil.ContextExecutor, insert
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &saleR{
-				Branch: o,
-			}
-		} else {
-			rel.R.Branch = o
-		}
-	}
-	return nil
-}
-
-// AddStocks adds the given related objects to the existing relationships
-// of the branch, optionally inserting them as new records.
-// Appends related to o.R.Stocks.
-// Sets related.R.Branch appropriately.
-func (o *Branch) AddStocks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Stock) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.BranchID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"stock\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"branch_id"}),
-				strmangle.WhereClause("\"", "\"", 2, stockPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.BranchID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &branchR{
-			Stocks: related,
-		}
-	} else {
-		o.R.Stocks = append(o.R.Stocks, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &stockR{
 				Branch: o,
 			}
 		} else {

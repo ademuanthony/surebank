@@ -15,7 +15,7 @@
             "category",
             "product",
             "product_category",
-            "stock",
+            "inventory",
             "sale",
             "sale_item",
             "payment",

@@ -267,7 +267,7 @@ func (h *UserAccount) Update(ctx context.Context, w http.ResponseWriter, r *http
 				return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 			}
 
-			return errors.Wrapf(err, "UserID: %s AccountID: %s  User Account: %+v", req.UserID, req.AccountID, &req)
+			return errors.Wrapf(err, "UserID: %s ProductID: %s  User Account: %+v", req.UserID, req.AccountID, &req)
 		}
 	}
 
@@ -318,7 +318,7 @@ func (h *UserAccount) Archive(ctx context.Context, w http.ResponseWriter, r *htt
 				return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 			}
 
-			return errors.Wrapf(err, "UserID: %s AccountID: %s  User Account: %+v", req.UserID, req.AccountID, &req)
+			return errors.Wrapf(err, "UserID: %s ProductID: %s  User Account: %+v", req.UserID, req.AccountID, &req)
 		}
 	}
 
@@ -364,7 +364,7 @@ func (h *UserAccount) Delete(ctx context.Context, w http.ResponseWriter, r *http
 				return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 			}
 
-			return errors.Wrapf(err, "UserID: %s, AccountID: %s", req.UserID, req.AccountID)
+			return errors.Wrapf(err, "UserID: %s, ProductID: %s", req.UserID, req.AccountID)
 		}
 	}
 

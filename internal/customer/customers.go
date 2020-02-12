@@ -133,9 +133,9 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		PhoneNumber: req.PhoneNumber,
 		Address:     req.Address,
 		SalesRepID:  req.SalesRepID,
-		CreatedAt:   now,
+		CreatedAt:   now.Unix(),
 		BranchID:    req.BranchID,
-		UpdatedAt:   now,
+		UpdatedAt:   now.Unix(),
 	}
 
 	if err := m.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
@@ -150,8 +150,8 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		Address:     m.Address,
 		SalesRepID:  m.SalesRepID,
 		BranchID:    m.BranchID,
-		CreatedAt:   m.CreatedAt,
-		UpdatedAt:   m.UpdatedAt,
+		CreatedAt:   time.Unix(m.CreatedAt, 0),
+		UpdatedAt:   time.Unix(m.UpdatedAt, 0),
 		ArchivedAt:  nil,
 	}, nil
 }

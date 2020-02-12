@@ -108,8 +108,8 @@ func (repo *Repository) CanModifyUser(ctx context.Context, claims auth.Claims, u
 		// If the request has claims from a specific account, ensure that the user
 		// has the correct access to the account.
 		if claims.Subject != "" && claims.Subject != userID {
-			// When the claims Audience - AccountID - does not match the requested account, the
-			// claims Audience - AccountID - should have a record with an admin role.
+			// When the claims Audience - ProductID - does not match the requested account, the
+			// claims Audience - ProductID - should have a record with an admin role.
 			// select id from users_accounts where  account_id = [claims.Audience] and user_id = [userID] and any (roles) = 'admin'
 			query := sqlbuilder.NewSelectBuilder().Select("id").From(userAccountTableName)
 			query.Where(query.And(

@@ -93,7 +93,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 
 	// Validate the request.
 	v := webcontext.Validator()
-	err = v.Struct(req)
+	err = v.StructCtx(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +111,8 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	m := models.Branch{
 		ID:        uuid.NewRandom().String(),
 		Name:      req.Name,
-		CreatedAt: now,
-		UpdatedAt: now,
+		CreatedAt: now.Unix(),
+		UpdatedAt: now.Unix(),
 	}
 
 	if err := m.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
@@ -122,8 +122,8 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	return &Branch{
 		ID:         m.ID,
 		Name:       m.Name,
-		CreatedAt:  m.CreatedAt,
-		UpdatedAt:  m.UpdatedAt,
+		CreatedAt:  time.Unix(m.CreatedAt, 0),
+		UpdatedAt:  time.Unix(m.UpdatedAt, 0),
 	}, nil
 }
 

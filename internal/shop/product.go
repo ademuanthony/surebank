@@ -28,6 +28,7 @@ type Product struct {
 	Sku          string      `json:"sku"`
 	Barcode      string      `json:"barcode"`
 	Price        float64     `json:"price"`
+	StockBalance int         `json:"stock_balance"`
 	ReorderLevel int         `json:"reorder_level"`
 	Image        string      `json:"image"`
 	CreatedAt    time.Time   `json:"created_at"`
@@ -61,7 +62,7 @@ func (m Product) ToModel() models.Product {
 	}
 }
 
-func productFromModel(product *models.Product) *Product {
+func ProductFromModel(product *models.Product) *Product {
 	p := &Product{
 		ID:           product.ID,
 		BrandID:      product.BrandID.String,
@@ -71,6 +72,7 @@ func productFromModel(product *models.Product) *Product {
 		Sku:          product.Sku,
 		Barcode:      product.Barcode,
 		Price:        product.Price,
+		StockBalance: product.StockBalance,
 		ReorderLevel: product.ReorderLevel,
 		Image:        product.Image.String,
 		CreatedAt:    product.CreatedAt,
@@ -107,6 +109,7 @@ type ProductResponse struct {
 	Sku          string  `json:"sku"`
 	Barcode      string  `json:"barcode"`
 	Price        float64 `json:"price"`
+	StockBalance int     `json:"stock_balance"`
 	ReorderLevel int     `json:"reorder_level"`
 	Image        string  `json:"image"`
 
@@ -125,18 +128,19 @@ func (m *Product) Response(ctx context.Context) *ProductResponse {
 	r := &ProductResponse{
 		ID:           m.ID,
 		BrandID:      m.BrandID,
-		Brand:		  m.Brand,
-		CategoryID:	  m.CategoryID,
-		Category: 	  m.Category,
+		Brand:        m.Brand,
+		CategoryID:   m.CategoryID,
+		Category:     m.Category,
 		Name:         m.Name,
 		Description:  m.Description,
 		Sku:          m.Sku,
 		Barcode:      m.Barcode,
 		Price:        m.Price,
+		StockBalance: m.StockBalance,
 		ReorderLevel: m.ReorderLevel,
 		Image:        m.Image,
-		CreatedByID: m.CreatedByID,
-		UpdatedByID: m.UpdatedByID,
+		CreatedByID:  m.CreatedByID,
+		UpdatedByID:  m.UpdatedByID,
 		CreatedAt:    web.NewTimeResponse(ctx, m.CreatedAt),
 		UpdatedAt:    web.NewTimeResponse(ctx, m.UpdatedAt),
 	}
@@ -262,7 +266,7 @@ func (repo Repository) FindProduct(ctx context.Context, req ProductFindRequest) 
 
 	var result Products
 	for _, rec := range ProductSlice {
-		result = append(result, productFromModel(rec))
+		result = append(result, ProductFromModel(rec))
 	}
 
 	return result, nil
@@ -280,7 +284,7 @@ func (repo *Repository) ReadProductByID(ctx context.Context, _ auth.Claims, id s
 		return  nil, err
 	}
 
-	return productFromModel(productModel), nil
+	return ProductFromModel(productModel), nil
 }
 
 func (repo *Repository) CreateProduct(ctx context.Context, claims auth.Claims, req ProductCreateRequest, now time.Time) (*Product, error) {
