@@ -9,6 +9,7 @@ import (
 	"github.com/volatiletech/null"
 
 	"merryworld/surebank/internal/branch"
+	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
 	"merryworld/surebank/internal/shop"
@@ -17,9 +18,10 @@ import (
 
 // Repository defines the required dependencies for Branch.
 type Repository struct {
-	DbConn   *sqlx.DB
-	ShopRepo *shop.Repository
-	mutex    sync.Mutex
+	DbConn        *sqlx.DB
+	ShopRepo      *shop.Repository
+	InventoryRepo *inventory.Repository
+	mutex         sync.Mutex
 }
 
 // NewRepository creates a new Repository that defines dependencies for Branch.
@@ -57,21 +59,21 @@ type Sale struct {
 func (s Sale) model() models.Sale {
 	m := models.Sale{
 		ID:            s.ID,
-		ReceiptNumber: null.StringFrom(s.ReceiptNumber),
+		ReceiptNumber: s.ReceiptNumber,
 		Amount:        s.Amount,
 		AmountTender:  s.AmountTender,
 		Balance:       s.Balance,
 		CustomerName:  null.StringFrom(s.CustomerName),
 		PhoneNumber:   null.StringFrom(s.PhoneNumber),
-		CreatedAt:     s.CreatedAt,
-		UpdatedAt:     null.TimeFrom(s.UpdatedAt),
+		CreatedAt:     s.CreatedAt.Unix(),
+		UpdatedAt:     s.UpdatedAt.Unix(),
 		CreatedByID:   s.CreatedByID,
 		UpdatedByID:   null.StringFrom(s.UpdatedByID),
 		BranchID:      s.BranchID,
 	}
 
 	if s.ArchivedAt != nil {
-		m.ArchivedAt = null.TimeFrom(*s.ArchivedAt)
+		m.ArchivedAt = null.Int64From(s.ArchivedAt.Unix())
 	}
 
 	if s.ArchivedByID != nil {
@@ -85,14 +87,14 @@ func (s Sale) model() models.Sale {
 func FromModel(m *models.Sale) *Sale {
 	s := &Sale{
 		ID:            m.ID,
-		ReceiptNumber: m.ReceiptNumber.String,
+		ReceiptNumber: m.ReceiptNumber,
 		Amount:        m.Amount,
 		AmountTender:  m.AmountTender,
 		Balance:       m.Balance,
 		CustomerName:  m.CustomerName.String,
 		PhoneNumber:   m.PhoneNumber.String,
-		CreatedAt:     m.CreatedAt,
-		UpdatedAt:     m.UpdatedAt.Time,
+		CreatedAt:     time.Unix(m.CreatedAt, 0),
+		UpdatedAt:     time.Unix(m.UpdatedAt, 0),
 		CreatedByID:   m.CreatedByID,
 		UpdatedByID:   m.UpdatedByID.String,
 		BranchID:      m.BranchID,
@@ -103,7 +105,8 @@ func FromModel(m *models.Sale) *Sale {
 	}
 
 	if m.ArchivedAt.Valid {
-		s.ArchivedAt = &m.ArchivedAt.Time
+		archivedAt := time.Unix(m.ArchivedAt.Int64, 0)
+		s.ArchivedAt = &archivedAt
 	}
 
 	if m.R != nil {

@@ -184,6 +184,12 @@ type DeleteRequest struct {
 	ID string `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
 }
 
+type MakeStockDeductionRequest struct {
+	ProductID string `json:"product_id"`
+	Quantity  int64  `json:"quantity"`
+	Ref       string `json:"ref"`
+}
+
 // FindRequest defines the possible options to search for inventory. By default
 // archived inventories will be excluded from response.
 type FindRequest struct {

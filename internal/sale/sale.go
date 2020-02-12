@@ -2,16 +2,20 @@ package sale
 
 import (
 	"context"
-	"github.com/pborman/uuid"
-	"merryworld/surebank/internal/platform/web/weberror"
-	"merryworld/surebank/internal/shop"
+	"math/rand"
+	"strconv"
 	"time"
 
+	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/sqlboiler/boil"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+
+	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
 )
 
@@ -127,6 +131,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 	repo.mutex.Lock()
 	defer  repo.mutex.Unlock()
 
+	saleID := uuid.NewRandom().String()
 	var itemSlice models.SaleItemSlice
 	var amount float64
 	for _, item := range req.Items {
@@ -134,7 +139,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 		if err != nil {
 			return nil, weberror.WithMessagef(ctx, err, "Invalid product ID, %s", item.ProductID)
 		}
-		bal, err := repo.ShopRepo.StockBalance(ctx, claims, shop.StockBalanceRequest{ProductID: item.ProductID})
+		bal, err := repo.InventoryRepo.Balance(ctx, claims, item.ProductID)
 		if err != nil {
 			return nil, weberror.WithMessagef(ctx, err, "Cannot get stock balance for product, %s", prod.Name)
 		}
@@ -144,8 +149,14 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 				"%s is remaining %d, cannot sell %d", prod.Name, bal, item.Quantity)
 		}
 
+		if _, err = repo.InventoryRepo.MakeStockDeduction(ctx, claims, inventory.MakeStockDeductionRequest{}, now, tx); err != nil {
+			_ = tx.Rollback()
+			return nil, weberror.WithMessagef(ctx, err,"Cannot make stock deduction for %s", prod.Name)
+		}
+
 		itemSlice = append(itemSlice, &models.SaleItem{
 			ID:            uuid.NewRandom().String(),
+			SaleID: saleID,
 			ProductID:     item.ProductID,
 			Quantity:      item.Quantity,
 			UnitPrice:     prod.Price,
@@ -171,8 +182,8 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 	}
 
 	sale := Sale{
-		ID:            uuid.NewRandom().String(),
-		ReceiptNumber: generateReceiptNumber(),
+		ID:            saleID,
+		ReceiptNumber: repo.generateReceiptNumber(ctx),
 		Amount:        amount,
 		AmountTender:  req.AmountTender,
 		Balance:       req.AmountTender - amount,
@@ -185,10 +196,34 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 		BranchID:      salesRep.BranchID,
 	}
 
+	saleModel := sale.model()
+	if err := saleModel.Insert(ctx, tx, boil.Infer()); err != nil {
+		_ = tx.Rollback()
+		return nil, weberror.WithMessage(ctx, err, "Cannot save sale")
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, weberror.WithMessage(ctx, err, "Unable to commit DB transaction")
+	}
+
+	return &sale, nil
 }
 
-func generateReceiptNumber() string {
+func (repo *Repository) generateReceiptNumber(ctx context.Context) string {
+	var receipt string
+	for receipt == "" || repo.saleExist(ctx, receipt) {
+		receipt = "SB"
+		rand.Seed(time.Now().UTC().UnixNano())
+		for i := 0; i < 6; i++ {
+			receipt += strconv.Itoa(rand.Intn(10))
+		}
+	}
+	return receipt
+}
 
+func (repo *Repository) saleExist(ctx context.Context, receiptNumber string) bool  {
+	exist, _ := models.Sales(models.SaleWhere.ReceiptNumber.EQ(receiptNumber)).Exists(ctx, repo.DbConn)
+	return exist
 }
 
 // Archive soft deleted the sale from the database.

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"merryworld/surebank/internal/transaction"
 	"time"
 
 	"github.com/pborman/uuid"
@@ -17,6 +16,7 @@ import (
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
+	"merryworld/surebank/internal/transaction"
 )
 
 var (
@@ -110,7 +110,7 @@ func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) 
 }
 
 // Balance gets the balance of the specified product from the database.
-func (repo *Repository) Balance(ctx context.Context, _ auth.Claims, productID string) (balance float64, err error) {
+func (repo *Repository) Balance(ctx context.Context, _ auth.Claims, productID string) (balance int64, err error) {
 	lastTx, err := repo.lastTransaction(ctx, productID, "")
 	if err != nil {
 		if err.Error() != sql.ErrNoRows.Error() {
@@ -173,7 +173,7 @@ func (repo *Repository) AddStock(ctx context.Context, claims auth.Claims, req Ad
 		ProductID:      req.ProductID,
 		BranchID:       salesRep.BranchID,
 		TXType:         transaction.TransactionType_Deposit.String(),
-		OpeningBalance: accountBalanceAtTx(lastTransaction),
+		OpeningBalance: float64(accountBalanceAtTx(lastTransaction)),
 		Quantity:       req.Quantity,
 		SalesRepID:     claims.Subject,
 		CreatedAt:      now.Unix(),
@@ -201,6 +201,82 @@ func (repo *Repository) AddStock(ctx context.Context, claims auth.Claims, req Ad
 	}, nil
 }
 
+// MakeStockDeduction inserts a new inventory transaction into the database.
+func (repo *Repository) MakeStockDeduction(ctx context.Context, claims auth.Claims, req MakeStockDeductionRequest, now time.Time, tx *sql.Tx) (*Inventory, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.inventory.makeStockDeduction")
+	defer span.Finish()
+	if claims.Subject == "" {
+		return nil, errors.WithStack(ErrForbidden)
+	}
+
+	salesRep, err := models.FindUser(ctx, tx, claims.Subject,)
+	if err != nil {
+		return nil, errors.WithStack(ErrForbidden)
+	}
+
+	// Validate the request.
+	v := webcontext.Validator()
+	err = v.Struct(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// If now empty set it to the current time.
+	if now.IsZero() {
+		now = time.Now()
+	}
+
+	// Always store the time as UTC.
+	now = now.UTC()
+	// Postgres truncates times to milliseconds when storing. We and do the same
+	// here so the value we return is consistent with what we store.
+	now = now.Truncate(time.Millisecond)
+
+	repo.mutex.Lock()
+	defer repo.mutex.Unlock()
+
+	lastTransaction, err := repo.lastTransaction(ctx, req.ProductID, salesRep.BranchID)
+	if err != nil {
+		if err.Error() != sql.ErrNoRows.Error() {
+			return nil, err
+		}
+	}
+
+	balance := accountBalanceAtTx(lastTransaction)
+	if balance < req.Quantity {
+		return nil, errors.New("not enough quantity. Aborted")
+	}
+
+	m := models.Inventory{
+		ID:             uuid.NewRandom().String(),
+		ProductID:      req.ProductID,
+		BranchID:       salesRep.BranchID,
+		TXType:         transaction.TransactionType_Withdrawal.String(),
+		OpeningBalance: float64(balance),
+		Quantity:       float64(req.Quantity),
+		SalesRepID:     claims.Subject,
+		Narration:      req.Ref,
+		CreatedAt:      now.Unix(),
+		UpdatedAt:      now.Unix(),
+	}
+
+	if err := m.Insert(ctx, tx, boil.Infer()); err != nil {
+		return nil, errors.WithMessage(err, "Insert deposit failed")
+	}
+
+	return &Inventory{
+		ID:             m.ID,
+		ProductID:      m.ProductID,
+		Quantity:       m.Quantity,
+		OpeningBalance: m.OpeningBalance,
+		Narration:      m.Narration,
+		TXType:         m.TXType,
+		SalesRepID:     m.SalesRepID,
+		CreatedAt:      m.CreatedAt,
+		UpdatedAt:      m.UpdatedAt,
+	}, nil
+}
+
 // lastTransaction returns the last transaction for the specified product
 func (repo *Repository) lastTransaction(ctx context.Context, productID string, branchID string) (*models.Inventory, error) {
 	return models.Inventories(
@@ -212,7 +288,7 @@ func (repo *Repository) lastTransaction(ctx context.Context, productID string, b
 }
 
 // accountBalanceAtTx returns the account balance as at the specified tx
-func accountBalanceAtTx(tx *models.Inventory) float64 {
+func accountBalanceAtTx(tx *models.Inventory) int64 {
 	var lastBalance float64
 	if tx != nil {
 		if tx.TXType == transaction.TransactionType_Deposit.String() {
@@ -222,7 +298,7 @@ func accountBalanceAtTx(tx *models.Inventory) float64 {
 		}
 	}
 
-	return lastBalance
+	return int64(lastBalance)
 }
 
 // Archive soft deleted the stock transaction from the database.
