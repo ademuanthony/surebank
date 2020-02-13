@@ -7,6 +7,7 @@ import (
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/inventory"
+	"merryworld/surebank/internal/sale"
 	"merryworld/surebank/internal/transaction"
 	"net/http"
 	"os"
@@ -63,6 +64,7 @@ type AppContext struct {
 	CustomerRepo      *customer.Repository
 	AccountRepo       *account.Repository
 	TransactionRepo   *transaction.Repository
+	SaleRepo		  *sale.Repository
 	Authenticator     *auth.Authenticator
 	StaticDir         string
 	TemplateDir       string
@@ -245,6 +247,14 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("POST", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers", custs.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+
+	// Register sales endpoint
+	sales := Sales{
+		Repository: appCtx.SaleRepo,
+		Redis:      appCtx.Redis,
+		Renderer:   appCtx.Renderer,
+	}
+	app.Handle("POST", "/api/v1/sales/sell", sales.Sell, mid.AuthenticateSessionRequired(appCtx.Authenticator))
 
 	// Register user management pages.
 	us := Users{

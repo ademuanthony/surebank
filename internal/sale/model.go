@@ -25,10 +25,11 @@ type Repository struct {
 }
 
 // NewRepository creates a new Repository that defines dependencies for Branch.
-func NewRepository(db *sqlx.DB, shopRepo *shop.Repository) *Repository {
+func NewRepository(db *sqlx.DB, shopRepo *shop.Repository, inventoryRepo *inventory.Repository) *Repository {
 	return &Repository{
-		DbConn:   db,
-		ShopRepo: shopRepo,
+		DbConn:        db,
+		ShopRepo:      shopRepo,
+		InventoryRepo: inventoryRepo,
 	}
 }
 

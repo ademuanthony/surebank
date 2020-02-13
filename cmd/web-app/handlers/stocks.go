@@ -63,6 +63,7 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		{Field: "branch_name", Title: "Branch", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Branch"},
 		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: false, Filterable: false,},
 		{Field: "quantity", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: false, },
+		{Field: "type", Title: "Type", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Transaction Type"},
 		{Field: "created_at", Title: "Date", Visible: true, Searchable: false, Orderable: true, Filterable: true, },
 		{Field: "sales_rep", Title: "Added By", Visible: true, Searchable: false, Orderable: true, Filterable: true, },
 	}
@@ -93,6 +94,9 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 				v.Value = fmt.Sprintf("%d", q.Quantity)
 				p := message.NewPrinter(language.English)
 				v.Formatted = p.Sprintf("%d", q.Quantity)
+			case "type":
+				v.Value = q.TXType
+				v.Formatted = v.Value
 			case "created_at":
 				v.Value = q.CreatedAt.Local
 				v.Formatted = fmt.Sprintf("<span class='cell-font-date'>%s</span>", v.Value)
@@ -110,8 +114,11 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	}
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+		if len(sorting) == 0 {
+			sorting = "created_at"
+		}
 		res, err := h.Repo.Find(ctx, claims, inventory.FindRequest{
-			Order: strings.Split(sorting, ","), IncludeProduct: true, IncludeBranch: true,
+			Order: strings.Split(sorting, ","), IncludeProduct: true, IncludeBranch: true, IncludeSalesRep: true,
 		})
 
 		if err != nil {

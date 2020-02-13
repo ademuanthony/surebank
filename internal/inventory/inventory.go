@@ -110,8 +110,8 @@ func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) 
 }
 
 // Balance gets the balance of the specified product from the database.
-func (repo *Repository) Balance(ctx context.Context, _ auth.Claims, productID string) (balance int64, err error) {
-	lastTx, err := repo.lastTransaction(ctx, productID, "")
+func (repo *Repository) Balance(ctx context.Context, claim auth.Claims, productID string, branchID string) (balance int64, err error) {
+	lastTx, err := repo.lastTransaction(ctx, productID, branchID)
 	if err != nil {
 		if err.Error() != sql.ErrNoRows.Error() {
 			return 0, err

@@ -1,5 +1,7 @@
 import { Controller } from 'stimulus'
-import { show } from '../utils'
+import { hide, show } from '../utils'
+import _ from 'lodash-es'
+import axios from 'axios'
 
 export default class extends Controller {
   list
@@ -7,7 +9,8 @@ export default class extends Controller {
 
   static get targets () {
     return [
-      'barcodeInput', 'productSelect', 'quantityInput', 'addToListBtn', 'cartItemDiv', 'listTbl', 'itemTemplate', 'cartTotal'
+      'barcodeInput', 'productSelect', 'quantityInput', 'addToListBtn', 'cartItemDiv', 'listTbl', 'itemTemplate',
+      'cartTotal', 'customerName', 'phoneNumber', 'amountTender'
     ]
   }
 
@@ -46,6 +49,8 @@ export default class extends Controller {
     let barcode = this.barcodeInputTarget.value
     if (barcode === '') {
       barcode = this.productSelectTarget.value
+    } else {
+      this.productSelectTarget.value = barcode
     }
 
     if (barcode === '') {
@@ -59,6 +64,14 @@ export default class extends Controller {
       qnt = 1
     }
 
+    for (let i = 0; i < this.list.length; i++) {
+      if (this.list[i].barcode === barcode) {
+        this.list[i].quantity += qnt
+        this.displayList()
+        return
+      }
+    }
+
     let p = this.findProduct(barcode)
     this.list.push({
       id: p.id,
@@ -69,7 +82,21 @@ export default class extends Controller {
     })
 
     this.displayList()
-    show(this.cartItemDivTarget)
+  }
+
+  barcodeEntered (evt) {
+    if (evt.keyCode !== 13) {
+      return
+    }
+    this.addToList()
+  }
+
+  removeFromList (evt) {
+    let barcode = evt.currentTarget.getAttribute('data-barcode')
+    _.remove(this.list, function (item) {
+      return item.barcode === barcode
+    })
+    this.displayList()
   }
 
   displayList () {
@@ -87,11 +114,59 @@ export default class extends Controller {
       fields[3].innerHTML = item.quantity
       fields[4].innerHTML = item.unitPrice
       fields[5].innerHTML = (item.quantity * item.unitPrice)
+      fields[6].innerHTML = `<button data-action="click->sale#removeFromList" data-barcode="${item.barcode}">Remove</button>`
 
       _this.listTblTarget.appendChild(exRow)
       cartTotal += item.quantity * item.unitPrice
     })
 
     this.cartTotalTarget.textContent = cartTotal
+    this.amountTenderTarget.value = cartTotal
+    if (this.list.length > 0) {
+      show(this.cartItemDivTarget)
+    } else {
+      hide(this.cartItemDivTarget)
+    }
+    this.barcodeInputTarget.focus()
+  }
+
+  sell () {
+    const amountTender = parseFloat(this.amountTenderTarget.value)
+    if (amountTender < this.cartTotal) {
+      window.alert('The amount tender cannot be less than the cart total')
+      return
+    }
+    let req = {
+      amount_tender: amountTender,
+      customer_name: this.customerNameTarget.value,
+      phone_number: this.phoneNumberTarget.value,
+      items: []
+    }
+    this.list.forEach(item => {
+      req.items.push({
+        product_id: item.id,
+        quantity: item.quantity
+      })
+    })
+
+    const that = this
+
+    axios.post('/api/v1/sales/sell', req).then(resp => {
+      console.log(resp)
+      $('#receiptModal').modal()
+      // todo: open receipt page in a new tap
+      // todo: show notification
+      that.cancel()
+    }).catch(err => {
+      window.alert(err.response.data.error)
+    })
+  }
+
+  cancel () {
+    this.list = []
+    this.barcodeInputTarget.value = ''
+    this.productSelectTarget.value = ''
+    this.quantityInputTarget.value = 1
+    this.displayList()
   }
 }

@@ -37,7 +37,7 @@ func (h *Root) Index(ctx context.Context, w http.ResponseWriter, r *http.Request
 
 // indexDashboard loads the dashboard for a user when they are authenticated.
 func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
-	products, err := h.ShopRepo.FindProduct(ctx, shop.ProductFindRequest{Order:[]string{"name"}})
+	products, err := h.ShopRepo.FindProduct(ctx, shop.ProductFindRequest{Order:[]string{"name DESC"}})
 	if err != nil {
 		return err
 	}

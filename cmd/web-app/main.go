@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"log"
 	"merryworld/surebank/internal/inventory"
+	"merryworld/surebank/internal/sale"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -455,7 +456,7 @@ func main() {
 
 	webRoute, err := webroute.New(cfg.Project.WebApiBaseUrl, cfg.Service.BaseUrl)
 	if err != nil {
-		log.Fatalf("main : checklist routes : %+v", cfg.Service.BaseUrl, err)
+		log.Fatalf("main : surebank routes : %+v", cfg.Service.BaseUrl, err)
 	}
 
 	usrRepo := user.NewRepository(masterDb, webRoute.UserResetPassword, notifyEmail, cfg.Project.SharedSecretKey)
@@ -473,6 +474,7 @@ func main() {
 	accountRepo := account.NewRepository(masterDb)
 	transactionRepo := transaction.NewRepository(masterDb)
 	inventoryRepo := inventory.NewRepository(masterDb)
+	saleRepo := sale.NewRepository(masterDb, shopRepo, inventoryRepo)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -500,6 +502,7 @@ func main() {
 		ShopRepo:        shopRepo,
 		BranchRepo:      branchRepo,
 		InventoryRepo:   inventoryRepo,
+		SaleRepo:        saleRepo,
 	}
 
 	// =========================================================================
@@ -896,6 +899,10 @@ func main() {
 				return key
 			}
 			return res
+		},
+		// Timestamp returns the current timestamp
+		"Timestamp": func() int64 {
+			return time.Now().Unix()
 		},
 	}
 

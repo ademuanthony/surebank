@@ -2,13 +2,12 @@ package handlers
 
 import (
 	"context"
-	"merryworld/surebank/internal/account"
-	"merryworld/surebank/internal/customer"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"merryworld/surebank/internal/checklist"
+	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
@@ -134,7 +133,7 @@ func (h *Customers) Read(ctx context.Context, w http.ResponseWriter, r *http.Req
 	if err != nil {
 		cause := errors.Cause(err)
 		switch cause {
-		case checklist.ErrNotFound:
+		case customer.ErrNotFound:
 			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusNotFound))
 		default:
 			return errors.Wrapf(err, "ID: %s", params["id"])
@@ -181,7 +180,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 	if err != nil {
 		cause := errors.Cause(err)
 		switch cause {
-		case checklist.ErrForbidden:
+		case customer.ErrForbidden:
 			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
 		default:
 			_, ok := cause.(validator.ValidationErrors)
@@ -205,7 +204,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 		_ = h.Repository.Delete(ctx, claims, customer.DeleteRequest{ID: res.ID}) // TODO: log delete error for debug
 		cause := errors.Cause(err)
 		switch cause {
-		case checklist.ErrForbidden:
+		case customer.ErrForbidden:
 			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
 		default:
 			_, ok := cause.(validator.ValidationErrors)
@@ -257,7 +256,7 @@ func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 	if err != nil {
 		cause := errors.Cause(err)
 		switch cause {
-		case checklist.ErrForbidden:
+		case customer.ErrForbidden:
 			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
 		default:
 			_, ok := cause.(validator.ValidationErrors)
@@ -284,7 +283,7 @@ func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 // @Failure 400 {object} weberror.ErrorResponse
 // @Failure 403 {object} weberror.ErrorResponse
 // @Failure 500 {object} weberror.ErrorResponse
-// @Router /checklists/archive [patch]
+// @Router /customers/archive [patch]
 func (h *Customers) Archive(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 	v, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -308,7 +307,7 @@ func (h *Customers) Archive(ctx context.Context, w http.ResponseWriter, r *http.
 	if err != nil {
 		cause := errors.Cause(err)
 		switch cause {
-		case checklist.ErrForbidden:
+		case customer.ErrForbidden:
 			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
 		default:
 			_, ok := cause.(validator.ValidationErrors)
@@ -347,7 +346,7 @@ func (h *Customers) Delete(ctx context.Context, w http.ResponseWriter, r *http.R
 	if err != nil {
 		cause := errors.Cause(err)
 		switch cause {
-		case checklist.ErrForbidden:
+		case customer.ErrForbidden:
 			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
 		default:
 			_, ok := cause.(validator.ValidationErrors)

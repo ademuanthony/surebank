@@ -2,6 +2,7 @@ package sale
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
@@ -131,6 +132,11 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 	repo.mutex.Lock()
 	defer  repo.mutex.Unlock()
 
+	salesRep, err := models.Users(models.UserWhere.ID.EQ(claims.Subject)).One(ctx, repo.DbConn)
+	if err != nil {
+		return nil, weberror.NewErrorMessage(ctx, err, 400, "Something went wrong. Are you logged in?")
+	}
+
 	saleID := uuid.NewRandom().String()
 	var itemSlice models.SaleItemSlice
 	var amount float64
@@ -139,19 +145,23 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 		if err != nil {
 			return nil, weberror.WithMessagef(ctx, err, "Invalid product ID, %s", item.ProductID)
 		}
-		bal, err := repo.InventoryRepo.Balance(ctx, claims, item.ProductID)
+		bal, err := repo.InventoryRepo.Balance(ctx, claims, item.ProductID, salesRep.BranchID)
 		if err != nil {
 			return nil, weberror.WithMessagef(ctx, err, "Cannot get stock balance for product, %s", prod.Name)
 		}
 
 		if bal < int64(item.Quantity) {
-			return nil, weberror.WithMessagef(ctx, errors.New("Low stock balance"),
-				"%s is remaining %d, cannot sell %d", prod.Name, bal, item.Quantity)
+			return nil, weberror.NewError(ctx, weberror.WithMessagef(ctx, errors.New("Low stock balance"),
+				"%s is remaining %d, cannot sell %d", prod.Name, bal, item.Quantity), 400)
 		}
 
-		if _, err = repo.InventoryRepo.MakeStockDeduction(ctx, claims, inventory.MakeStockDeductionRequest{}, now, tx); err != nil {
+		if _, err = repo.InventoryRepo.MakeStockDeduction(ctx, claims, inventory.MakeStockDeductionRequest{
+			ProductID: item.ProductID,
+			Quantity:  int64(item.Quantity),
+			Ref:       fmt.Sprintf("Sale to Customer(%s), %s", req.CustomerName, saleID),
+		}, now, tx); err != nil {
 			_ = tx.Rollback()
-			return nil, weberror.WithMessagef(ctx, err,"Cannot make stock deduction for %s", prod.Name)
+			return nil, weberror.NewError(ctx, weberror.WithMessagef(ctx, err,"Cannot make stock deduction for %s", prod.Name), 400)
 		}
 
 		itemSlice = append(itemSlice, &models.SaleItem{
@@ -175,11 +185,6 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 	// Postgres truncates times to milliseconds when storing. We and do the same
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
-
-	salesRep, err := models.Users(models.UserWhere.ID.EQ(claims.Subject)).One(ctx, repo.DbConn)
-	if err != nil {
-		return nil, weberror.NewErrorMessage(ctx, err, 400, "Something went wrong. Are you logged in?")
-	}
 
 	sale := Sale{
 		ID:            saleID,
