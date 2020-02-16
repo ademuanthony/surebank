@@ -218,7 +218,15 @@ type ReportRequest struct {
 }
 
 type StockInfo struct {
-	ProductID   string `json:"product_id"`
-	ProductName string `json:"product_name"`
-	Quantity    int64  `json:"quantity"`
+	ProductID      string `json:"product_id"`
+	ProductName    string `json:"product_name"`
+	OpeningBalance int64  `json:"opening_balance"`
+	Quantity       int64  `json:"quantity"`
+	TxType         string `json:"tx_type"`
+}
+
+// PagedStockInfo holds list of inventory and total count for pagination
+type PagedStockInfo struct {
+	Inventories []StockInfo `json:"inventories"`
+	TotalCount   int64       `json:"total_count"`
 }

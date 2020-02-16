@@ -28,7 +28,7 @@ var (
 )
 
 // Find gets all the transaction from the database based on the request params.
-func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
+func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRequest) (*PagedResponseList, error) {
 	var queries = []QueryMod {
 		Load(models.TransactionRels.SalesRep),
 		Load(models.TransactionRels.Account),
@@ -40,6 +40,11 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	if !req.IncludeArchived {
 		queries = append(queries, And("archived_at is null"))
+	}
+
+	// if the current sales resp is not an admin, show only his transactions
+	if !claims.HasRole(auth.RoleAdmin) {
+		queries = append(queries, And(fmt.Sprintf("%s = '%s", models.TransactionColumns.SalesRepID, claims.Subject)))
 	}
 
 	totalCount, err := models.Transactions(queries...).Count(ctx, repo.DbConn)

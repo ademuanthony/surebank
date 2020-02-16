@@ -62,6 +62,8 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 		for _, s := range req.Order {
 			queries = append(queries, OrderBy(s))
 		}
+	} else {
+		queries = append(queries, OrderBy("created_at desc"))
 	}
 
 	if req.Limit != nil {
@@ -205,6 +207,13 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 	if err := saleModel.Insert(ctx, tx, boil.Infer()); err != nil {
 		_ = tx.Rollback()
 		return nil, weberror.WithMessage(ctx, err, "Cannot save sale")
+	}
+
+	for _, item := range itemSlice {
+		if err = item.Insert(ctx, tx, boil.Infer()); err != nil {
+			_ = tx.Rollback()
+			return nil, weberror.WithMessage(ctx, err, "Cannot insert sales items")
+		}
 	}
 
 	if err = tx.Commit(); err != nil {

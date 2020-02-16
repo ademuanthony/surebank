@@ -153,9 +153,10 @@ export default class extends Controller {
 
     axios.post('/api/v1/sales/sell', req).then(resp => {
       console.log(resp)
-      $('#receiptModal').modal()
+      // $('#receiptModal').modal()
       // todo: open receipt page in a new tap
       // todo: show notification
+      window.location.href = `/sales/${resp.data.id}`
       that.cancel()
     }).catch(err => {
       window.alert(err.response.data.error)

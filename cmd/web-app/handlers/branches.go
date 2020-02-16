@@ -84,10 +84,16 @@ func (h *Branches) Index(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
+
 		res, err := h.Repo.Find(ctx, claims, branch.FindRequest{
-			Order: strings.Split(sorting, ","),
+			Order: order,
 		})
-		if err != nil { 
+		if err != nil {
 			return resp, err
 		}
 

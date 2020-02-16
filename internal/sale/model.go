@@ -281,6 +281,7 @@ type ItemResponse struct {
 	Quantity      int     `json:"quantity"`
 	UnitPrice     float64 `json:"unit_price"`
 	UnitCostPrice float64 `json:"unit_cost_price"`
+	SubTotal      float64 `json:"sub_total"`
 	StockIds      string  `json:"stock_ids"`
 
 	Product *string `json:"product,omitempty"`
@@ -294,6 +295,7 @@ func (item Item) Response(ctx context.Context) *ItemResponse {
 		Quantity:      item.Quantity,
 		UnitPrice:     item.UnitPrice,
 		UnitCostPrice: item.UnitCostPrice,
+		SubTotal:      float64(item.Quantity) * item.UnitPrice,
 		StockIds:      item.StockIds,
 	}
 

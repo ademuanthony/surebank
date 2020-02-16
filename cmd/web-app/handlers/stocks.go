@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/shop"
-	"merryworld/surebank/internal/branch"
+	"merryworld/surebank/internal/transaction"
 	"net/http"
 	"strings"
 
@@ -115,7 +116,7 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 		if len(sorting) == 0 {
-			sorting = "created_at"
+			sorting = "created_at desc"
 		}
 		res, err := h.Repo.Find(ctx, claims, inventory.FindRequest{
 			Order: strings.Split(sorting, ","), IncludeProduct: true, IncludeBranch: true, IncludeSalesRep: true,
@@ -300,8 +301,8 @@ func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "stocks-view.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
-// Index handles listing all stocks.
-/*func (h *Stocks) Report(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+// Report handles listing all stock balance.
+func (h *Stocks) Report(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
@@ -314,7 +315,7 @@ func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		{Field: "quantity", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: false, },
 	}
 
-	mapFunc := func(q shop.StockInfo, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q inventory.StockInfo, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -323,11 +324,16 @@ func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 				v.Value = fmt.Sprintf("%s", q.ProductID)
 			case "product_name":
 				v.Value = q.ProductName
-				v.Formatted = q.ProductName
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlProductsView(q.ProductID), v.Value)
 			case "quantity":
-				v.Value = fmt.Sprintf("%d", q.Quantity)
-				p := message.NewPrinter(language.English)
-				v.Formatted = p.Sprintf("%.2d", q.Quantity)
+				var qnt int64
+				if q.TxType == transaction.TransactionType_Deposit.String() {
+					qnt = q.OpeningBalance + q.Quantity
+				} else {
+					qnt = q.OpeningBalance - q.Quantity
+				}
+				v.Value = fmt.Sprintf("%d", qnt)
+				v.Formatted = v.Value
 			default:
 				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
 			}
@@ -338,15 +344,23 @@ func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	}
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
-		res, err := h.Repo.StockReport(ctx, claims, shop.StockReportRequest{
-			Order: strings.Split(sorting, ","),
+
+		var order []string
+		if len(sorting) > 0 {
+			order = order
+		} else {
+			order = append(order, "p.name")
+		}
+
+		res, err := h.Repo.Report(ctx, claims, inventory.ReportRequest{
+			Order: order,
 		})
 
 		if err != nil {
 			return resp, err
 		}
 
-		for _, a := range res {
+		for _, a := range res.Inventories {
 			l, err := mapFunc(a, fields)
 			if err != nil {
 				return resp, errors.Wrapf(err, "Failed to map category for display.")
@@ -381,4 +395,4 @@ func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "stocks-report.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
-}*/
+}

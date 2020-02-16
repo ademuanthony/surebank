@@ -30,6 +30,11 @@
                 Interface
             </div>
 
+            <li class="nav-item">
+                <a class="nav-link" href="/sales">
+                    <i class="fas fa-fw fa-list"></i>
+                    <span>Sales</span></a>
+            </li>
             <!-- Nav Item - Pages Collapse Menu -->
 
             {{ if HasRole $._Ctx "admin" }}
@@ -72,19 +77,7 @@
                         <a class="collapse-item" href="/shop/categories">Categories</a>
                         <a class="collapse-item" href="/shop/products">Products</a>
                         <a class="collapse-item" href="/shop/inventory">Inventory Records</a>
-                    </div>
-                </div>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#navSectionReports" aria-expanded="true" aria-controls="navSectionChecklists">
-                    <i class="fas fa-fw fa-list"></i>
-                    <span>Report</span>
-                </a>
-                <div id="navSectionReports" class="collapse" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <a class="collapse-item" href="/report/stocks">Stock Balance</a>
-                        <a class="collapse-item" href="/report/sales">Sales</a>
+                        <a class="collapse-item" href="/shop/inventory/report">Stock Balance</a>
                     </div>
                 </div>
             </li>

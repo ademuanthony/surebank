@@ -127,8 +127,14 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 	}
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
+
 		res, err := h.CustomerRepo.Find(ctx, claims, customer.FindRequest{
-			Order: strings.Split(sorting, ","),
+			Order: order,
 		})
 		if err != nil {
 			return resp, err
@@ -543,11 +549,16 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
+
 		var res = &transaction.PagedResponseList{}
 		// 0 where means this customer has no associated account
 		if len(txWhere) > 0 {
 			res, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
-				Order: strings.Split(sorting, ","), Where: strings.Join(txWhere, " OR "), Args: txArgs,
+				Order: order, Where: strings.Join(txWhere, " OR "), Args: txArgs,
 			})
 			if err != nil {
 				return resp, err
@@ -836,9 +847,14 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
+
 		var res = &transaction.PagedResponseList{}
 		res, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
-			Order: strings.Split(sorting, ","),
+			Order: order,
 			Where: "account_id = ?",
 			Args: []interface{}{accountID},
 		})

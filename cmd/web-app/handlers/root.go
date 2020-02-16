@@ -37,12 +37,7 @@ func (h *Root) Index(ctx context.Context, w http.ResponseWriter, r *http.Request
 
 // indexDashboard loads the dashboard for a user when they are authenticated.
 func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
-	products, err := h.ShopRepo.FindProduct(ctx, shop.ProductFindRequest{Order:[]string{"name DESC"}})
-	if err != nil {
-		return err
-	}
-	data := map[string]interface{}{"products": products}
-	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "root-dashboard.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "root-dashboard.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, nil)
 }
 
 // indexDefault loads the root index page when a user has no authentication.

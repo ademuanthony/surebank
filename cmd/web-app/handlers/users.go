@@ -149,9 +149,18 @@ func (h *Users) Index(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	}
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		} else {
+			order = append(order, "id")
+		}
+
 		res, err := h.UserAccountRepo.UserFindByAccount(ctx, claims, user_account.UserFindByAccountRequest{
 			AccountID: claims.Audience,
-			Order:     strings.Split(sorting, ","),
+			Order: order,
 		})
 		if err != nil {
 			return resp, err

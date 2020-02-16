@@ -1,0 +1,134 @@
+{{define "title"}}Sales{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ .urlSalesIndex }}">Sales</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Index</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+
+        <h1 class="h3 mb-0 text-gray-800">Sales</h1>
+    </div>
+
+    <div class="row mb-2">
+        <div class="col-12">
+            <div data-controller="sale" class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        Make Sale 
+                    </h5>
+                    <div class="form-row">
+                        <div class="col">
+                            <input data-target="sale.barcodeInput" data-action="keyup->sale#barcodeEntered" type="text" class="form-control" placeholder="Barcode">
+                        </div>
+                        <div class="col">
+                            <select data-target="sale.productSelect" data-action="change->sale#changeProduct" placeholder="Product" required
+                                    class="form-control form-control-select-box">
+                                <option value=""></option>
+                                {{ range $i := $.products }}
+                                    <option data-id="{{ $i.ID }}" data-name="{{ $i.Name }}" data-price="{{ $i.Price }}"
+                                            value="{{ $i.Barcode }}">{{ $i.Name }}</option>
+                                {{ end }}
+                            </select>
+                        </div>
+                        <div class="col">
+                            <input data-target="sale.quantityInput" type="number" value="1" class="form-control" placeholder="Quantity">
+                        </div>
+                        <div class="col">
+                            <button data-action="click->sale#addToList" class="btn btn-primary">Add To List</button>
+                        </div>
+                    </div>
+
+                    <div class="d-none mt-2" data-target="sale.cartItemDiv">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th class="text-right">#</th>
+                                <th>Product</th>
+                                <th>Code</th>
+                                <th class="text-right">Quantity</th>
+                                <th class="text-right">Unit Price</th>
+                                <th class="text-right">Subtotal</th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                            <tbody data-target="sale.listTbl">
+
+                            </tbody>
+                            <tfoot>
+                            <tr>
+                                <th colspan="5" class="text-right font-weight">Total</th>
+                                <td class="text-right">
+                                    <span class="font-weight-bolder" data-target="sale.cartTotal"></span>
+                                </td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                        <template data-target="sale.itemTemplate">
+                            <tr>
+                                <td class="text-right"></td>
+                                <td></td>
+                                <td></td>
+                                <td class="text-right"></td>
+                                <td class="text-right"></td>
+                                <td class="text-right"></td>
+                                <td></td>
+                            </tr>
+                        </template>
+
+                        <div class="row mt-2">
+                            <div class="col-md-8 offset-md-1">
+                                <div class="form-row">
+                                    <div class="col">
+                                        <input data-target="sale.customerName" type="text" class="form-control" placeholder="Customer Name">
+                                    </div>
+                                    <div class="col">
+                                        <input data-target="sale.phoneNumber" type="text" class="form-control" placeholder="Phone Number">
+                                    </div>
+                                    <div class="col">
+                                        <input data-target="sale.amountTender" type="text" class="form-control" placeholder="Amount Tender">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <button data-action="click->sale#sell"
+                                        class="btn btn-success">Make Sale</button>
+                                <button data-action="click->sale#cancel" class="btn btn-danger">Cancel</button>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <form method="post">
+                <div class="card shadow">
+                    <div class="table-responsive dataTable_card">
+                        {{ template "partials/datatable/html" . }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{{end}}
+{{define "style"}}
+    {{ template "partials/datatable/style" . }}
+{{ end }}
+{{define "js"}}
+    {{ template "partials/datatable/js" . }}
+
+    <script>
+        $(document).ready(function(){
+            //$("#dataTable_filter").hide();
+        });
+    </script>
+
+{{end}}

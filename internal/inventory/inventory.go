@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pborman/uuid"
@@ -370,74 +371,62 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	return nil
 }
 
-/*
-func (repo *Repository) Report(ctx context.Context, claims auth.Claims, req ReportRequest) ([]StockInfo, error)  {
+func (repo *Repository) Report(ctx context.Context, claims auth.Claims, req ReportRequest) (*PagedStockInfo, error)  {
 	salesRep, err := models.FindUser(ctx, repo.DbConn, claims.Subject,)
 	if err != nil {
 		return nil, errors.WithStack(ErrForbidden)
 	}
 
-	var queries []QueryMod
+	statement := `select p.name as product_name, t.product_id, t.opening_balance, t.quantity, t.tx_type from inventory t
+			inner join product p on t.product_id = p.id
+			inner join (
+				select product_id, max(created_at) as MaxDate
+				from inventory
+				group by product_id
+			) tm on t.product_id = tm.product_id and t.created_at = tm.MaxDate`
+
+	if !claims.HasRole(auth.RoleAdmin) {
+		if len(req.Where) > 0 {
+			req.Where = fmt.Sprintf("(%s) and branch_id = ?", req.Where)
+		} else {
+			req.Where = "branch_id = ?"
+		}
+		req.Args = append(req.Args, salesRep.BranchID)
+	}
 
 	if req.Where != "" {
-		queries = append(queries, Where(req.Where, req.Args...))
-	}
-
-	if !req.IncludeArchived {
-		queries = append(queries, And("archived_at is null"))
-	}
-
-	totalCount, err := models.Inventories(queries...).Count(ctx, repo.DbConn)
-	if err != nil {
-		return nil, weberror.WithMessage(ctx, err, "Cannot get inventory count")
+		statement = fmt.Sprintf("%s where %s", statement, req.Where)
 	}
 
 	if len(req.Order) > 0 {
-		for _, s := range req.Order {
-			queries = append(queries, OrderBy(s))
-		}
-	}
-
-	if req.IncludeBranch {
-		queries = append(queries, Load(models.InventoryRels.Branch))
-	}
-
-	if req.IncludeProduct {
-		queries = append(queries, Load(models.InventoryRels.Product))
-	}
-
-	if req.IncludeSalesRep {
-		queries = append(queries, Load(models.InventoryRels.SalesRep))
-	}
-
-	if req.Limit != nil {
-		queries = append(queries, Limit(int(*req.Limit)))
+		statement = fmt.Sprintf("%s order by %s", statement, strings.Join(req.Order, ","))
 	}
 
 	if req.Offset != nil {
-		queries = append(queries, Offset(int(*req.Offset)))
+		statement = fmt.Sprintf("%s offset %d", statement, req.Offset)
 	}
 
-	slice, err := models.Inventories(queries...).All(ctx, repo.DbConn)
+	if req.Limit != nil {
+		statement = fmt.Sprintf("%s offset %d", statement, req.Limit)
+	}
+
+	var stockInfos []StockInfo
+	err = models.Inventories(SQL(statement)).Bind(ctx, repo.DbConn, &stockInfos)
 	if err != nil {
 		if err.Error() == sql.ErrNoRows.Error() {
-			return &PagedResponseList{}, nil
+			return &PagedStockInfo{}, nil
 		}
 		return nil, weberror.NewError(ctx, err, 500)
 	}
 
-	var result Inventories
-	for _, rec := range slice {
-		result = append(result, FromModel(rec))
+	var result = PagedStockInfo{
+		Inventories: stockInfos,
 	}
 
-	if len(result) == 0 {
-		return &PagedResponseList{}, nil
+	if len(stockInfos) == 0 {
+		return &PagedStockInfo{}, nil
 	}
 
-	return &PagedResponseList{
-		Transactions: result.Response(ctx),
-		TotalCount:   totalCount,
-	}, nil
+	return &result, nil
 }
-*/
+

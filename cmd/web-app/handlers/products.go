@@ -54,6 +54,7 @@ func (h *Products) Index(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	mapFunc := func(q *shop.Product, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -80,8 +81,14 @@ func (h *Products) Index(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
+
 		res, err := h.ShopRepo.FindProduct(ctx, shop.ProductFindRequest{
-			Order: strings.Split(sorting, ","),
+			Order: order,
 		})
 		if err != nil {
 			return resp, err

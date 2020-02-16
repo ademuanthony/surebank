@@ -220,7 +220,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/shop/inventory/:stock_id", stock.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/shop/inventory/create", stock.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/shop/inventory/create", stock.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	// app.Handle("GET", "/shop/inventory/report", stock.Report, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/shop/inventory/report", stock.Report, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/shop/inventory", stock.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
 	// Customers
@@ -251,10 +251,13 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	// Register sales endpoint
 	sales := Sales{
 		Repository: appCtx.SaleRepo,
+		ShopRepo:   appCtx.ShopRepo,
 		Redis:      appCtx.Redis,
 		Renderer:   appCtx.Renderer,
 	}
 	app.Handle("POST", "/api/v1/sales/sell", sales.Sell, mid.AuthenticateSessionRequired(appCtx.Authenticator))
+	app.Handle("GET", "/sales/:sale_id", sales.View, mid.AuthenticateSessionRequired(appCtx.Authenticator))
+	app.Handle("GET", "/sales", sales.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator))
 
 	// Register user management pages.
 	us := Users{

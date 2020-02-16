@@ -69,8 +69,14 @@ func (h *Categories) Index(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
+
 		res, err := h.ShopRepo.FindCategory(ctx, shop.CategoryFindRequest{
-			Order: strings.Split(sorting, ","),
+			Order: order,
 		})
 		if err != nil {
 			return resp, err
