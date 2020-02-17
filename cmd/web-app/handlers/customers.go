@@ -507,8 +507,16 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 				v.Value = q.CreatedAt.Local
 				v.Formatted = q.CreatedAt.Local
 			case "narration":
-				v.Value = q.Narration
-				v.Formatted = q.Narration
+				values := strings.Split(q.Narration, ":")
+				if len(values) > 1 {
+					if values[0] == "sale" {
+						v.Value = values[1]
+						v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlSalesView(values[2]), v.Value)
+					}
+				} else {
+					v.Value = q.Narration
+					v.Formatted = q.Narration
+				}
 			case "account":
 				v.Value = q.AccountNumber
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(customerID, q.AccountID), v.Value)
@@ -824,8 +832,16 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 				v.Value = q.CreatedAt.Local
 				v.Formatted = q.CreatedAt.Local
 			case "narration":
-				v.Value = q.Narration
-				v.Formatted = q.Narration
+				values := strings.Split(q.Narration, ":")
+				if len(values) > 1 {
+					if values[0] == "sale" {
+						v.Value = values[1]
+						v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlSalesView(values[2]), v.Value)
+					}
+				} else {
+					v.Value = q.Narration
+					v.Formatted = q.Narration
+				}
 			case "account":
 				v.Value = q.AccountNumber
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(cust.ID, q.AccountID), v.Value)

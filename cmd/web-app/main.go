@@ -474,7 +474,7 @@ func main() {
 	accountRepo := account.NewRepository(masterDb)
 	transactionRepo := transaction.NewRepository(masterDb)
 	inventoryRepo := inventory.NewRepository(masterDb)
-	saleRepo := sale.NewRepository(masterDb, shopRepo, inventoryRepo)
+	saleRepo := sale.NewRepository(masterDb, shopRepo, inventoryRepo, transactionRepo)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -903,6 +903,17 @@ func main() {
 		// Timestamp returns the current timestamp
 		"Timestamp": func() int64 {
 			return time.Now().Unix()
+		},
+		// FormatNarration format the specified transaction narration for display
+		"FormatNarration": func(narration string) template.HTML {
+			values := strings.Split(narration, ":")
+			if len(values) > 1 {
+				if values[0] == "sale" {
+					narration = fmt.Sprintf("<a href='/sales/%s'>%s</a>", values[2], values[1])
+				}
+			}
+
+			return template.HTML(narration)
 		},
 	}
 

@@ -159,6 +159,12 @@ type CreateRequest struct {
 	Narration     string          `json:"narration"`
 }
 
+type MakeDeductionRequest struct {
+	AccountNumber string          `json:"account_number" validate:"required"`
+	Amount        float64         `json:"amount" validate:"required,gt=0"`
+	Narration     string          `json:"narration"`
+}
+
 // CreateDepositRequest contains information needed to add a new Transaction of type, deposit.
 type CreateDepositRequest struct {
 	AccountNumber string  `json:"account_number" validate:"required"`

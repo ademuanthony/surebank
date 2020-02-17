@@ -13,23 +13,26 @@ import (
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
 	"merryworld/surebank/internal/shop"
+	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/user"
 )
 
 // Repository defines the required dependencies for Branch.
 type Repository struct {
-	DbConn        *sqlx.DB
-	ShopRepo      *shop.Repository
-	InventoryRepo *inventory.Repository
-	mutex         sync.Mutex
+	DbConn          *sqlx.DB
+	ShopRepo        *shop.Repository
+	InventoryRepo   *inventory.Repository
+	TransactionRepo *transaction.Repository
+	mutex           sync.Mutex
 }
 
 // NewRepository creates a new Repository that defines dependencies for Branch.
-func NewRepository(db *sqlx.DB, shopRepo *shop.Repository, inventoryRepo *inventory.Repository) *Repository {
+func NewRepository(db *sqlx.DB, shopRepo *shop.Repository, inventoryRepo *inventory.Repository, transactionRepo *transaction.Repository) *Repository {
 	return &Repository{
-		DbConn:        db,
-		ShopRepo:      shopRepo,
-		InventoryRepo: inventoryRepo,
+		DbConn:          db,
+		ShopRepo:        shopRepo,
+		InventoryRepo:   inventoryRepo,
+		TransactionRepo: transactionRepo,
 	}
 }
 
@@ -314,7 +317,9 @@ type PagedResponseList struct {
 
 // MakeSalesRequest contains the payload for capturing a new sale
 type MakeSalesRequest struct {
-	AmountTender float64 `json:"amount_tender" validate:"required"`
+	PaymentMethod string `json:"payment_method" validate:"required"`
+	AccountNumber string `json:"account_number"`
+	AmountTender float64 `json:"amount_tender"`
 	CustomerName string  `json:"customer_name"`
 	PhoneNumber  string  `json:"phone_number"`
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"net/http"
 	"time"
 
@@ -399,4 +400,85 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	}
 
 	return nil
+}
+
+// MakeDeduction inserts a new transaction of type withdrawal into the database.
+func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, req MakeDeductionRequest,
+	now time.Time, tx *sql.Tx) (*Transaction, error) {
+
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.makeDeduction")
+	defer span.Finish()
+	if claims.Subject == "" {
+		return nil, errors.WithStack(ErrForbidden)
+	}
+
+	account, err := models.Accounts(models.AccountWhere.Number.EQ(req.AccountNumber)).One(ctx, tx)
+	if err != nil {
+		return nil, weberror.NewErrorMessage(ctx, err, 400, "invalid account number")
+	}
+
+	// Validate the request.
+	v := webcontext.Validator()
+	err = v.Struct(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// If now empty set it to the current time.
+	if now.IsZero() {
+		now = time.Now()
+	}
+
+	// Always store the time as UTC.
+	now = now.UTC()
+	// Postgres truncates times to milliseconds when storing. We and do the same
+	// here so the value we return is consistent with what we store.
+	now = now.Truncate(time.Millisecond)
+
+	repo.accNumMtx.Lock()
+	defer repo.accNumMtx.Unlock()
+
+	lastTransaction, err := models.Transactions(
+		models.TransactionWhere.AccountID.EQ(account.ID),
+		OrderBy(fmt.Sprintf("%s desc", models.TransactionColumns.CreatedAt)),
+		Limit(1),
+	).One(ctx, tx)
+	if err != nil {
+		if err.Error() != sql.ErrNoRows.Error() {
+			return nil, err
+		}
+	}
+
+	spew.Dump(lastTransaction)
+	balance := accountBalanceAtTx(lastTransaction)
+	spew.Dump(balance)
+	if balance < req.Amount {
+		return nil, fmt.Errorf("balance: %.2f, cannot deduct %.2f. Insufficient fund. Aborted", balance, req.Amount)
+	}
+
+	m := models.Transaction{
+		ID:             uuid.NewRandom().String(),
+		AccountID:      account.ID,
+		TXType:         TransactionType_Withdrawal.String(),
+		OpeningBalance: balance,
+		Amount:         req.Amount,
+		Narration:      req.Narration,
+		SalesRepID:     claims.Subject,
+		CreatedAt:      now.Unix(),
+		UpdatedAt:      now.Unix(),
+	}
+
+	if err := m.Insert(ctx, tx, boil.Infer()); err != nil {
+		return nil, errors.WithMessage(err, "Insert deposit failed")
+	}
+
+	if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, tx, models.M{
+		models.AccountColumns.Balance: accountBalanceAtTx(&m),
+	}); err != nil {
+
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	return FromModel(&m), nil
 }

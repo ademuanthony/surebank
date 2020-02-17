@@ -10,7 +10,8 @@ export default class extends Controller {
   static get targets () {
     return [
       'barcodeInput', 'productSelect', 'quantityInput', 'addToListBtn', 'cartItemDiv', 'listTbl', 'itemTemplate',
-      'cartTotal', 'customerName', 'phoneNumber', 'amountTender'
+      'cartTotal', 'customerName', 'phoneNumber', 'amountTender', 'paymentMethod', 'accountNumber',
+      'accountNumberDiv', 'amountTenderDiv'
     ]
   }
 
@@ -130,6 +131,16 @@ export default class extends Controller {
     this.barcodeInputTarget.focus()
   }
 
+  paymentMethodChanged (evt) {
+    if (this.paymentMethodTarget.value === 'wallet') {
+      show(this.accountNumberDivTarget)
+      hide(this.amountTenderDivTarget)
+    } else {
+      hide(this.accountNumberDivTarget)
+      show(this.amountTenderDivTarget)
+    }
+  }
+
   sell () {
     const amountTender = parseFloat(this.amountTenderTarget.value)
     if (amountTender < this.cartTotal) {
@@ -137,6 +148,8 @@ export default class extends Controller {
       return
     }
     let req = {
+      payment_method: this.paymentMethodTarget.value,
+      account_number: this.accountNumberTarget.value,
       amount_tender: amountTender,
       customer_name: this.customerNameTarget.value,
       phone_number: this.phoneNumberTarget.value,
@@ -159,7 +172,8 @@ export default class extends Controller {
       window.location.href = `/sales/${resp.data.id}`
       that.cancel()
     }).catch(err => {
-      window.alert(err.response.data.error)
+      let error = err.response.data.details
+      window.alert(error)
     })
   }
 
@@ -168,6 +182,10 @@ export default class extends Controller {
     this.barcodeInputTarget.value = ''
     this.productSelectTarget.value = ''
     this.quantityInputTarget.value = 1
+    this.paymentMethodTarget.value = 'cash'
+    this.accountNumberTarget.value = ''
+    hide(this.accountNumberDivTarget)
+    show(this.amountTenderDivTarget)
     this.displayList()
   }
 }

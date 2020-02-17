@@ -18,7 +18,7 @@
             <div data-controller="sale" class="card">
                 <div class="card-body">
                     <h5 class="card-title">
-                        Make Sale 
+                        Make Sale
                     </h5>
                     <div class="form-row">
                         <div class="col">
@@ -80,20 +80,35 @@
                         </template>
 
                         <div class="row mt-2">
-                            <div class="col-md-8 offset-md-1">
+                            <div class="col-md-12">
                                 <div class="form-row">
                                     <div class="col">
-                                        <input data-target="sale.customerName" type="text" class="form-control" placeholder="Customer Name">
+                                        <label for="customerName">Customer Name</label><br/>
+                                        <input data-target="sale.customerName" id="customerName" type="text" class="form-control" placeholder="Customer Name">
                                     </div>
                                     <div class="col">
-                                        <input data-target="sale.phoneNumber" type="text" class="form-control" placeholder="Phone Number">
+                                        <label for="phoneNumber">Phone Number</label><br/>
+                                        <input data-target="sale.phoneNumber" id="phoneNumber" type="text" class="form-control" placeholder="Phone Number">
                                     </div>
                                     <div class="col">
-                                        <input data-target="sale.amountTender" type="text" class="form-control" placeholder="Amount Tender">
+                                        <label for="paymentMethod">Payment Method</label><br/>
+                                        <select class="form-control" id="paymentMethod" data-target="sale.paymentMethod"
+                                            data-action="change->sale#paymentMethodChanged">
+                                            <option value="cash" selected>Cash</option>
+                                            <option value="wallet">Wallet</option>
+                                        </select>
+                                    </div>
+                                    <div class="col d-none" data-target="sale.accountNumberDiv">
+                                        <label for="accountNumber">Account Number</label><br/>
+                                        <input data-target="sale.accountNumber" id="accountNumber" type="text" class="form-control" placeholder="The Buy's Account Number">
+                                    </div>
+                                    <div class="col" data-target="sale.amountTenderDiv">
+                                        <label for="amountTender">Amount Tender</label><br/>
+                                        <input data-target="sale.amountTender" id="amountTender" type="text" class="form-control" placeholder="Amount Tender">
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 offset-md-5 mt-2">
                                 <button data-action="click->sale#sell"
                                         class="btn btn-success">Make Sale</button>
                                 <button data-action="click->sale#cancel" class="btn btn-danger">Cancel</button>

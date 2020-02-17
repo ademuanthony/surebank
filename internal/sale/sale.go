@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"merryworld/surebank/internal/transaction"
 	"strconv"
 	"time"
 
@@ -177,6 +178,34 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 		amount += float64(item.Quantity) * prod.Price
 	}
 
+	if req.PaymentMethod == "cash" && amount > req.AmountTender {
+		return nil, weberror.NewError(ctx, fmt.Errorf("you must collect %f from the customer to make this sale", amount), 400)
+	}
+
+	receiptNumber := repo.generateReceiptNumber(ctx)
+
+	if req.PaymentMethod == "wallet" {
+		if req.AccountNumber == "" {
+			return nil, weberror.NewError(ctx, errors.New("You must specify the buyer's account number to use wallet for payment"), 400)
+		}
+		accountBalance, err := repo.TransactionRepo.AccountBalance(ctx, claims, req.AccountNumber)
+		if err != nil {
+			return nil, weberror.NewErrorMessage(ctx, err, 400, "cannot get buyer's account balance")
+		}
+		if accountBalance < amount {
+			return nil, weberror.NewError(ctx, errors.New("insufficient fund"), 400)
+		}
+
+		_, err = repo.TransactionRepo.MakeDeduction(ctx, claims, transaction.MakeDeductionRequest{
+			AccountNumber: req.AccountNumber,
+			Amount:        amount,
+			Narration:     fmt.Sprintf("sale:%s:%s", receiptNumber, saleID),
+		}, now, tx)
+		if err != nil {
+			return nil, weberror.NewErrorMessage(ctx, err, 500, "cannot make deduction")
+		}
+	}
+
 	// If now empty set it to the current time.
 	if now.IsZero() {
 		now = time.Now()
@@ -190,7 +219,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 
 	sale := Sale{
 		ID:            saleID,
-		ReceiptNumber: repo.generateReceiptNumber(ctx),
+		ReceiptNumber: receiptNumber,
 		Amount:        amount,
 		AmountTender:  req.AmountTender,
 		Balance:       req.AmountTender - amount,

@@ -104,7 +104,7 @@
                             <tr>
                                 <td><a href="/customers/{{ $.customer.ID }}/accounts/{{ $tran.AccountID}}/transactions/{{ $tran.ID }}">{{ $tran.Amount }}</a></td>
                                 <td>{{ $tran.CreatedAt.Local }}</td>
-                                <td>{{ $tran.Narration }}</td>
+                                <td>{{ FormatNarration $tran.Narration }}</td>
                                 <td><a href="/accounts/{{ $tran.AccountID }}">{{ $tran.AccountNumber }}</a></td>
                                 <td><a href="/users/{{ $tran.SalesRepID }}">{{ $tran.SalesRep}}</a></td>
                                 <td>{{ $tran.OpeningBalance }}</td>
