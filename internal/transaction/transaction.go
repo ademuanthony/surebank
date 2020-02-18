@@ -157,7 +157,6 @@ func (repo *Repository) DepositAmountByWhere(ctx context.Context, where string, 
 }
 
 
-
 // AccountBalance gets the balance of the specified account from the database.
 func (repo *Repository) AccountBalance(ctx context.Context, _ auth.Claims, accountNumber string) (balance float64, err error) {
 	account, err := models.Accounts(models.AccountWhere.Number.EQ(accountNumber)).One(ctx, repo.DbConn)

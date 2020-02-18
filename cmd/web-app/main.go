@@ -546,12 +546,6 @@ func main() {
 	}
 	// sessionStore := sessions.NewCookieStore([]byte(cfg.Project.SharedSecretKey))
 	sessionStore := sessions.NewFilesystemStore(os.TempDir(), []byte(cfg.Project.SharedSecretKey))
-
-	// set the maxLength of the cookies stored on the disk to a larger number to prevent issues with:
-	// securecookie: the value is too long
-	// when using OpenID Connect , since this can contain a large amount of extra information in the id_token
-
-	// Note, when using the FilesystemStore only the session.ID is written to a browser cookie, so this is explicit for the storage on disk
 	sessionStore.MaxLength(math.MaxInt64)
 	appCtx.PostAppMiddleware = append(appCtx.PostAppMiddleware, mid.Session(sessionStore, cfg.Service.SessionName))
 

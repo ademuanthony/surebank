@@ -1,2 +1,3 @@
 local.env
 static/dist/
+.data
