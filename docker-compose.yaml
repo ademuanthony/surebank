@@ -24,6 +24,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASS=postgres
       - POSTGRES_DB=shared
+      - POSTGRES_HOST_AUTH_METHOD=trust
 
   redis:
     image: redis:latest
