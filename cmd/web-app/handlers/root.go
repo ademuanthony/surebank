@@ -4,7 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"merryworld/surebank/internal/account"
+	"merryworld/surebank/internal/customer"
+	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/shop"
+	"merryworld/surebank/internal/transaction"
 
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
@@ -21,6 +25,9 @@ import (
 // Root represents the Root API method handler set.
 type Root struct {
 	ShopRepo *shop.Repository
+	CustomerRepo *customer.Repository
+	AccountRepo *account.Repository
+	TransactionRepo *transaction.Repository
 	Renderer web.Renderer
 	Sitemap  *stm.Sitemap
 	WebRoute webroute.WebRoute
@@ -31,13 +38,44 @@ func (h *Root) Index(ctx context.Context, w http.ResponseWriter, r *http.Request
 	if claims, err := auth.ClaimsFromContext(ctx); err == nil && claims.HasAuth() {
 		return h.indexDashboard(ctx, w, r, params)
 	}
-
 	return h.indexDefault(ctx, w, r, params)
 }
 
 // indexDashboard loads the dashboard for a user when they are authenticated.
-func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
-	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "root-dashboard.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, nil)
+func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	customerCount, err := h.CustomerRepo.CustomersCount(ctx, claims)
+	if err != nil {
+		return weberror.WithMessage(ctx, err, "Cannot get customer count")
+	}
+
+	accountCount, err := h.AccountRepo.AccountsCount(ctx, claims)
+	if err != nil {
+		return weberror.WithMessage(ctx, err, "Cannot get accounts count")
+	}
+
+	thisWeekDeposit, err := h.TransactionRepo.ThisWeekDepositAmount(ctx, claims)
+	if err != nil {
+		return weberror.WithMessage(ctx, err, "Cannot get total deposit for the week")
+	}
+
+	todayDeposit, err := h.TransactionRepo.TodayDepositAmount(ctx, claims)
+	if err != nil {
+		return weberror.WithMessage(ctx, err, "Cannot get total deposit for the day")
+	}
+
+	data := map[string]interface{} {
+		"customerCount": customerCount,
+		"accountCount": accountCount,
+		"todayDeposit": todayDeposit,
+		"thisWeekDeposit": thisWeekDeposit,
+	}
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "root-dashboard.gohtml",
+		web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // indexDefault loads the root index page when a user has no authentication.

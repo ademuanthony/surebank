@@ -915,6 +915,10 @@ func main() {
 
 			return template.HTML(narration)
 		},
+		// CompStringInt
+		"CompStringInt": func(s1 interface{}, s2 interface{}) bool {
+			return fmt.Sprintf("%v", s1) == fmt.Sprintf("%v", s2)
+		},
 	}
 
 	imgUrlFormatter := staticUrlFormatter

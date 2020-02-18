@@ -248,6 +248,17 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers", custs.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
+	reports := Reports{
+		CustomerRepo:    appCtx.CustomerRepo,
+		AccountRepo:     appCtx.AccountRepo,
+		TransactionRepo: appCtx.TransactionRepo,
+		ShopRepo:        appCtx.ShopRepo,
+		UserRepos:       appCtx.UserRepo,
+		Renderer:        appCtx.Renderer,
+		Redis:           appCtx.Redis,
+	}
+	app.Handle("GET", "/reports/collections", reports.Transactions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+
 	// Register sales endpoint
 	sales := Sales{
 		Repository: appCtx.SaleRepo,
@@ -356,10 +367,13 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 
 	// Register root
 	r := Root{
-		ShopRepo: appCtx.ShopRepo,
-		Renderer: appCtx.Renderer,
-		WebRoute: appCtx.WebRoute,
-		Sitemap:  sm,
+		ShopRepo:        appCtx.ShopRepo,
+		CustomerRepo:    appCtx.CustomerRepo,
+		AccountRepo:     appCtx.AccountRepo,
+		TransactionRepo: appCtx.TransactionRepo,
+		Renderer:        appCtx.Renderer,
+		Sitemap:         sm,
+		WebRoute:        appCtx.WebRoute,
 	}
 	app.Handle("GET", "/api", r.SitePage)
 	app.Handle("GET", "/pricing", r.SitePage)

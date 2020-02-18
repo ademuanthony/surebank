@@ -1,0 +1,86 @@
+{{define "title"}}Collection Report{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Collection Report</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+
+        <h1 class="h3 mb-0 text-gray-800">Collection Report <small>{{ .filter }}</small></h1>
+    </div>
+
+    <div class="mb-3">
+        <form class="form-row">
+            <div class="col">
+                <label for="sales_rep_id">Sales Rep</label><br/>
+                <select name="sales_rep_id" id="sales_rep_id" class="form-control">
+                    {{ $salesRespID := .salesRepID }}
+                    <option></option>
+                    {{ range $user := .users}}
+                        <option {{ if CompStringInt $salesRespID $user.ID}} selected {{ end }}
+                                value="{{ $user.ID }}">{{ $user.FirstName }} {{ $user.LastName }}</option>
+                    {{ end }}
+                </select>
+            </div>
+            <div class="col">
+                <label for="startDate">Start Date</label><br/>
+                <input id="startDate" name="start_date" value="{{ .startDate }}">
+            </div>
+            <div class="col">
+                <label for="endDate">End Date</label><br/>
+                <input id="endDate" name="end_date" value="{{ .endDate }}">
+            </div>
+            <div class="col">
+                <label></label><br>
+                <button class="btn btn-primary mt-2" type="submit">Search</button>
+                <button class="btn btn-warning mt-2" type="reset">Reset</button>
+            </div>
+        </form>
+
+        <br/>
+        <p class="font-weight-bolder">Total: {{ .total }}</p>
+    </div>
+
+    <div class="row"> 
+        <div class="col">
+            <form method="post">
+                <div class="card shadow">
+                    <div class="table-responsive dataTable_card">
+                        {{ template "partials/datatable/html" . }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{{end}}
+{{define "style"}}
+    {{ template "partials/datatable/style" . }}
+{{ end }}
+{{define "js"}}
+    {{ template "partials/datatable/js" . }}
+
+    <script>
+        $(document).ready(function(){
+          $('#startDate').datepicker({
+            uiLibrary: 'bootstrap4',
+            iconsLibrary: 'fontawesome',
+            minDate: new Date(2020, 1, 1),
+            maxDate: function () {
+              return $('#endDate').val();
+            }
+          });
+          $('#endDate').datepicker({
+            uiLibrary: 'bootstrap4',
+            iconsLibrary: 'fontawesome',
+            minDate: function () {
+              return $('#startDate').val();
+            }
+          });
+        });
+    </script>
+
+{{end}}

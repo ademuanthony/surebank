@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/jinzhu/now"
 	"net/http"
 	"time"
 
@@ -112,6 +113,50 @@ func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) 
 
 	return FromModel(model), nil
 }
+
+func (repo *Repository) TodayDepositAmount(ctx context.Context, claims auth.Claims) (float64, error) {
+	startDate := now.BeginningOfDay()
+	return repo.DepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
+}
+
+func (repo *Repository) ThisWeekDepositAmount(ctx context.Context, claims auth.Claims) (float64, error) {
+	startDate := now.BeginningOfWeek()
+	return repo.DepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
+}
+
+func (repo *Repository) ThisMonthDepositAmount(ctx context.Context, claims auth.Claims) (float64, error) {
+	startDate := now.BeginningOfMonth()
+	return repo.DepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
+}
+
+func (repo *Repository) DepositAmount(ctx context.Context, claims auth.Claims, startDate, endDate int64) (float64, error) {
+	statement := `select sum(amount) total from transaction where tx_type = 'deposit' and created_at > $1 and created_at < $2`
+	args := []interface{}{startDate, endDate}
+	if !claims.HasRole(auth.RoleAdmin) {
+		statement += " and sales_rep_id = $3"
+		args = append(args, claims.Subject)
+	}
+
+	var result struct {
+		Total sql.NullFloat64
+	}
+	err := models.NewQuery(SQL(statement, args...)).Bind(ctx, repo.DbConn, &result)
+	return result.Total.Float64, err
+}
+
+func (repo *Repository) DepositAmountByWhere(ctx context.Context, where string, args []interface{}) (float64, error) {
+	statement := `select sum(amount) total from transaction`
+	if len(where) > 0 {
+		statement += " where " + where
+	}
+	var result struct {
+		Total sql.NullFloat64
+	}
+	err := models.NewQuery(SQL(statement, args...)).Bind(ctx, repo.DbConn, &result)
+	return result.Total.Float64, err
+}
+
+
 
 // AccountBalance gets the balance of the specified account from the database.
 func (repo *Repository) AccountBalance(ctx context.Context, _ auth.Claims, accountNumber string) (balance float64, err error) {

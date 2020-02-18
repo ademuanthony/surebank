@@ -94,6 +94,15 @@ func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id str
 	return FromModel(branchModel), nil
 }
 
+func (repo *Repository) CustomersCount(ctx context.Context, claims auth.Claims) (int64, error) {
+	var queries []QueryMod
+	if !claims.HasRole(auth.RoleAdmin) {
+		queries = append(queries, models.CustomerWhere.SalesRepID.EQ(claims.Subject))
+	}
+
+	return models.Customers(queries...).Count(ctx, repo.DbConn)
+}
+
 // Create inserts a new customer into the database.
 func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req CreateRequest, now time.Time) (*Customer, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.Create")
