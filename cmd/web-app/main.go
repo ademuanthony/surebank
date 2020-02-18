@@ -545,7 +545,7 @@ func main() {
 		cfg.Service.SessionName = fmt.Sprintf("%s-session", cfg.Service.Name)
 	}
 	// sessionStore := sessions.NewCookieStore([]byte(cfg.Project.SharedSecretKey))
-	sessionStore := sessions.NewFilesystemStore(os.TempDir(), []byte(cfg.Project.SharedSecretKey))
+	sessionStore := sessions.NewFilesystemStore(".data", []byte(cfg.Project.SharedSecretKey))
 	sessionStore.MaxLength(math.MaxInt64)
 	appCtx.PostAppMiddleware = append(appCtx.PostAppMiddleware, mid.Session(sessionStore, cfg.Service.SessionName))
 
