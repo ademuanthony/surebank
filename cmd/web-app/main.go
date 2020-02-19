@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"math"
 	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/sale"
 	"net"
@@ -23,15 +22,11 @@ import (
 	"syscall"
 	"time"
 
+	"merryworld/surebank/cmd/web-app/handlers"
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/branch"
-	"merryworld/surebank/internal/customer"
-	"merryworld/surebank/internal/shop"
-	"merryworld/surebank/internal/transaction"
-	"merryworld/surebank/cmd/web-app/handlers"
-	"merryworld/surebank/internal/tenant"
-	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/checklist"
+	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/geonames"
 	"merryworld/surebank/internal/mid"
 	"merryworld/surebank/internal/platform/auth"
@@ -42,14 +37,17 @@ import (
 	template_renderer "merryworld/surebank/internal/platform/web/tmplrender"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/shop"
 	"merryworld/surebank/internal/signup"
+	"merryworld/surebank/internal/tenant"
+	"merryworld/surebank/internal/tenant/account_preference"
+	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"
 	"merryworld/surebank/internal/user_account/invite"
 	"merryworld/surebank/internal/user_auth"
 	"merryworld/surebank/internal/webroute"
 
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
@@ -60,6 +58,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/sqlboiler/boil"
 	"gitlab.com/geeks-accelerator/oss/devops/pkg/devdeploy"
 	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
@@ -544,9 +543,9 @@ func main() {
 	if cfg.Service.SessionName == "" {
 		cfg.Service.SessionName = fmt.Sprintf("%s-session", cfg.Service.Name)
 	}
-	// sessionStore := sessions.NewCookieStore([]byte(cfg.Project.SharedSecretKey))
-	sessionStore := sessions.NewFilesystemStore(".data", []byte(cfg.Project.SharedSecretKey))
-	sessionStore.MaxLength(math.MaxInt64)
+	sessionStore := sessions.NewCookieStore([]byte(cfg.Project.SharedSecretKey))
+	// sessionStore := sessions.NewFilesystemStore(".data", []byte(cfg.Project.SharedSecretKey))
+	// sessionStore.MaxLength(math.MaxInt64)
 	appCtx.PostAppMiddleware = append(appCtx.PostAppMiddleware, mid.Session(sessionStore, cfg.Service.SessionName))
 
 	// =========================================================================
