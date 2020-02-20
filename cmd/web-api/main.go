@@ -117,7 +117,10 @@ func main() {
 			Name              string `default:"" envconfig:"PROJECT_NAME"`
 			SharedTemplateDir string `default:"../../resources/templates/shared" envconfig:"SHARED_TEMPLATE_DIR"`
 			SharedSecretKey   string `default:"" envconfig:"SHARED_SECRET_KEY"`
-			EmailSender       string `default:"test@example.saasstartupkit.com" envconfig:"EMAIL_SENDER"`
+			EmailSender       string `default:"norepply@surebankltd.com" envconfig:"EMAIL_SENDER"`
+			SMSSender         string `default:"BulkSMSNG" envconfig:"SMS_SENDER"`
+			SMSProvider       string `default:"bulksmsnigeria" envconfig:"SMS_Provider"`
+			SMSAuthToken      string `default:"ikxmyun7ZDLdmC2RugtlMvstHoEulfG44CXxRDPafv5fLP9edkfRNmtLNrKY" envconfig:"SMS_Auth_TOKEN"`
 			WebAppBaseUrl     string `default:"http://127.0.0.1:3000" envconfig:"WEB_APP_BASE_URL" example:"www.example.saasstartupkit.com"`
 		}
 		Redis struct {
@@ -429,6 +432,20 @@ func main() {
 	}
 
 	// =========================================================================
+	// Notify SMS
+	var notifySMS notify.SMS
+	if cfg.Project.SMSProvider == "bulksmsnigeria" {
+		// send SMS with bulksmsnigeria.com API
+		notifySMS, err = notify.NewBulkSmsNigeria(cfg.Project.SMSAuthToken, cfg.Project.SMSSender,
+			cfg.Project.SharedTemplateDir, http.Client{})
+		if err != nil {
+			log.Fatalf("main : Notify SMS : %+v", err)
+		}
+	} else {
+		notifySMS = notify.NewSMSDisabled()
+	}
+
+	// =========================================================================
 	// Init new Authenticator
 	var authenticator *auth.Authenticator
 	if cfg.Auth.UseAwsSecretManager {
@@ -459,7 +476,7 @@ func main() {
 	chklstRepo := checklist.NewRepository(masterDb)
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
-	depositRepo := transaction.NewRepository(masterDb)
+	depositRepo := transaction.NewRepository(masterDb, notifySMS)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,

@@ -116,20 +116,20 @@ func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) 
 
 func (repo *Repository) TodayDepositAmount(ctx context.Context, claims auth.Claims) (float64, error) {
 	startDate := now.BeginningOfDay()
-	return repo.DepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
+	return repo.TotalDepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
 }
 
 func (repo *Repository) ThisWeekDepositAmount(ctx context.Context, claims auth.Claims) (float64, error) {
 	startDate := now.BeginningOfWeek()
-	return repo.DepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
+	return repo.TotalDepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
 }
 
 func (repo *Repository) ThisMonthDepositAmount(ctx context.Context, claims auth.Claims) (float64, error) {
 	startDate := now.BeginningOfMonth()
-	return repo.DepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
+	return repo.TotalDepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
 }
 
-func (repo *Repository) DepositAmount(ctx context.Context, claims auth.Claims, startDate, endDate int64) (float64, error) {
+func (repo *Repository) TotalDepositAmount(ctx context.Context, claims auth.Claims, startDate, endDate int64) (float64, error) {
 	statement := `select sum(amount) total from transaction where tx_type = 'deposit' and created_at > $1 and created_at < $2`
 	args := []interface{}{startDate, endDate}
 	if !claims.HasRole(auth.RoleAdmin) {
@@ -189,7 +189,8 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, err
 	}
 
-	account, err := models.Accounts(models.AccountWhere.Number.EQ(req.AccountNumber)).One(ctx, repo.DbConn)
+	account, err := models.Accounts(models.AccountWhere.Number.EQ(req.AccountNumber),
+		Load(models.AccountRels.Customer)).One(ctx, repo.DbConn)
 	if err != nil {
 		return nil, weberror.NewErrorMessage(ctx, err, http.StatusBadRequest, "Invalid account number")
 	}
@@ -247,6 +248,19 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 
 	if err = tx.Commit(); err != nil {
 		return nil, err
+	}
+
+	// send SMS notification
+	if req.Type == TransactionType_Deposit {
+		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_received",
+			map[string]interface{}{
+				"Name":    account.R.Customer.Name,
+				"Amount":  req.Amount,
+				"Balance": m.OpeningBalance + req.Amount,
+			}); err != nil {
+			// TODO: log critical error. Send message to monitoring account
+			fmt.Println(err)
+		}
 	}
 
 	return &Transaction{

@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"gopkg.in/go-playground/validator.v9"
+	"merryworld/surebank/internal/platform/notify"
 	"sync"
 	"time"
 
@@ -19,13 +20,15 @@ import (
 // Repository defines the required dependencies for Transaction.
 type Repository struct {
 	DbConn    *sqlx.DB
+	notifySMS notify.SMS
 	accNumMtx sync.Mutex
 }
 
 // NewRepository creates a new Repository that defines dependencies for Transaction.
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *sqlx.DB, notifySMS notify.SMS) *Repository {
 	return &Repository{
-		DbConn: db,
+		DbConn:    db,
+		notifySMS: notifySMS,
 	}
 }
 
