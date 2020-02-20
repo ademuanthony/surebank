@@ -93,14 +93,13 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 				v.Formatted = v.Value
 			case "quantity":
 				v.Value = fmt.Sprintf("%d", q.Quantity)
-				p := message.NewPrinter(language.English)
-				v.Formatted = p.Sprintf("%d", q.Quantity)
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlStocksView(q.ID), v.Value)
 			case "type":
 				v.Value = q.TXType
 				v.Formatted = v.Value
 			case "created_at":
 				v.Value = q.CreatedAt.Local
-				v.Formatted = fmt.Sprintf("<span class='cell-font-date'>%s</span>", v.Value)
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlStocksView(q.ID), v.Value)
 			case "sales_rep":
 				v.Value = q.SalesRep
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), v.Value)
@@ -294,6 +293,7 @@ func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		return err
 	}
 	data["stock"] = prj.Response(ctx)
+	data["urlStocksCreate"] = urlStocksCreate()
 	data["urlStocksIndex"] = urlStocksIndex()
 	data["urlStocksView"] = urlStocksView(id)
 	data["urlStocksUpdate"] = urlStocksUpdate(id)

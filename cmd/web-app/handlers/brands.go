@@ -235,11 +235,27 @@ func (h *Brands) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		return nil
 	}
 
-	prj, err := h.ShopRepo.ReadBrandByID(ctx, claims, brandID)
+	where := "brand_id = $1"
+	args := []interface{}{brandID}
+	dt, ok, err := productDatatable(ctx, h.ShopRepo, h.Redis, w, r, where, args)
+	if ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
 	if err != nil {
 		return err
 	}
-	data["brand"] = prj.Response(ctx)
+
+	brand, err := h.ShopRepo.ReadBrandByID(ctx, claims, brandID)
+	if err != nil {
+		return err
+	}
+	data["brand"] = brand.Response(ctx)
+	data["datatable"] = dt.Response()
+	data["urlBrandsCreate"] = urlBrandsCreate()
 	data["urlBrandsIndex"] = urlBrandsIndex()
 	data["urlBrandsUpdate"] = urlBrandsUpdate(brandID)
 	data["urlBrandsView"] = urlBrandsView(brandID)

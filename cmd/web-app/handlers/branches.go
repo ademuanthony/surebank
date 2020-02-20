@@ -259,6 +259,7 @@ func (h *Branches) View(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return err
 	}
 	data["branch"] = prj.Response(ctx)
+	data["urlBranchesCreate"] = urlBranchesCreate()
 	data["urlBranchesIndex"] = urlBranchesIndex()
 	data["urlBranchesView"] = urlBranchesView(branchID)
 	data["urlBranchesUpdate"] = urlBranchesUpdate(branchID)

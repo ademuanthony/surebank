@@ -371,6 +371,7 @@ func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 	data["urlCustomersIndex"] = urlCustomersIndex()
 	data["urlCustomersUpdate"] = urlCustomersUpdate(customerID)
+	data["urlCustomersCreate"] = urlCustomersCreate()
 	data["urlCustomersView"] = urlCustomersView(customerID)
 	data["urlCustomersAddAccount"] = urlCustomersAddAccount(customerID)
 	data["urlCustomersTransactions"] = urlCustomersTransactions(customerID)

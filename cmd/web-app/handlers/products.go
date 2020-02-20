@@ -46,6 +46,30 @@ func urlProductsUpdate(categoryID string) string {
 // Index handles listing all products.
 func (h *Products) Index(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
+	dt, ok, err := productDatatable(ctx, h.ShopRepo, h.Redis, w, r, "", nil)
+	if ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	data := map[string]interface{}{
+		"datatable":      dt.Response(),
+		"urlProductsCreate": urlProductsCreate(),
+		"urlProductsIndex": urlProductsIndex(),
+	}
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "products-index.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+func productDatatable(ctx context.Context, shopRepo *shop.Repository, redisClient *redis.Client, w http.ResponseWriter, r *http.Request,
+	where string, args []interface{}) (*datatable.Datatable, bool, error) {
+
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "name", Title: "Product", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
@@ -87,8 +111,10 @@ func (h *Products) Index(ctx context.Context, w http.ResponseWriter, r *http.Req
 			order = strings.Split(sorting, ",")
 		}
 
-		res, err := h.ShopRepo.FindProduct(ctx, shop.ProductFindRequest{
+		res, err := shopRepo.FindProduct(ctx, shop.ProductFindRequest{
 			Order: order,
+			Where: where,
+			Args: args,
 		})
 		if err != nil {
 			return resp, err
@@ -106,29 +132,18 @@ func (h *Products) Index(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return resp, nil
 	}
 
-	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
+	dt, err := datatable.New(ctx, w, r, redisClient, fields, loadFunc)
 	if err != nil {
-		return err
+		return nil, false, err
 	}
 
 	if dt.HasCache() {
-		return nil
+		return nil, false, nil
 	}
 
-	if ok, err := dt.Render(); ok {
-		if err != nil {
-			return err
-		}
-		return nil
-	}
+	ok, err := dt.Render()
 
-	data := map[string]interface{}{
-		"datatable":      dt.Response(),
-		"urlProductsCreate": urlProductsCreate(),
-		"urlProductsIndex": urlProductsIndex(),
-	}
-
-	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "products-index.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+	return dt, ok, err
 }
 
 // Create handles creating a new product.
@@ -265,6 +280,7 @@ func (h *Products) View(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	data["urlProductsIndex"] = urlProductsIndex()
 	data["urlProductsView"] = urlProductsView(productID)
 	data["urlProductsUpdate"] = urlProductsUpdate(productID)
+	data["urlProductsCreate"] = urlProductsCreate()
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "products-view.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }

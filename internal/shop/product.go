@@ -248,10 +248,6 @@ func (repo Repository) FindProduct(ctx context.Context, req ProductFindRequest) 
 		queries = append(queries, And("archived_at is null"))
 	}
 
-	if req.Where != "" {
-		queries = append(queries, Where(req.Where, req.Args...))
-	}
-
 	if req.Limit != nil {
 		queries = append(queries, Limit(int(*req.Limit)))
 	}

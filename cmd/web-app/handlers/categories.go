@@ -234,7 +234,24 @@ func (h *Categories) View(ctx context.Context, w http.ResponseWriter, r *http.Re
 	if err != nil {
 		return err
 	}
+
+	where := "category_id = $1"
+	args := []interface{}{categoryID}
+	dt, ok, err := productDatatable(ctx, h.ShopRepo, h.Redis, w, r, where, args)
+	if ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
 	data["category"] = prj.Response(ctx)
+	data["datatable"] = dt.Response()
+	data["urlCategoriesCreate"] = urlCategoriesCreate()
 	data["urlCategoriesIndex"] = urlCategoriesIndex()
 	data["urlCategoriesView"] = urlCategoriesView(categoryID)
 	data["urlCategoriesUpdate"] = urlCategoriesUpdate(categoryID)
