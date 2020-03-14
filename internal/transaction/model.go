@@ -113,6 +113,7 @@ func (m *Transaction) Response(ctx context.Context) *Response {
 		OpeningBalance: m.OpeningBalance,
 		Amount:         m.Amount,
 		Narration:      m.Narration,
+		ReceiptNo: 		"TX069448",
 		SalesRepID:     m.SalesRepID,
 		CreatedAt:      web.NewTimeResponse(ctx, m.CreatedAt),
 		UpdatedAt:      web.NewTimeResponse(ctx, m.UpdatedAt),
