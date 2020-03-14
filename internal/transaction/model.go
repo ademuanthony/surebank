@@ -41,6 +41,7 @@ type Transaction struct {
 	Amount         float64         `json:"amount" truss:"api-read"`
 	Narration      string          `json:"narration" truss:"api-read"`
 	SalesRepID     string          `json:"sales_rep_id" truss:"api-read"`
+	ReceiptNo	   string 		   `json:"receipt_no"`
 	CreatedAt      time.Time       `json:"created_at" truss:"api-read"`
 	UpdatedAt      time.Time       `json:"updated_at" truss:"api-read"`
 	ArchivedAt     *time.Time      `json:"archived_at,omitempty" truss:"api-hide"`
@@ -92,6 +93,7 @@ type Response struct {
 	Narration      string            `json:"narration" truss:"api-read"`
 	SalesRepID     string            `json:"sales_rep_id" truss:"api-read"`
 	SalesRep       string            `json:"sales_rep,omitempty" truss:"api-read"`
+	ReceiptNo	   string			 `json:"receipt_no"`
 	CreatedAt      web.TimeResponse  `json:"created_at" truss:"api-read"`            // CreatedAt contains multiple format options for display.
 	UpdatedAt      web.TimeResponse  `json:"updated_at" truss:"api-read"`            // UpdatedAt contains multiple format options for display.
 	ArchivedAt     *web.TimeResponse `json:"archived_at,omitempty" truss:"api-read"` // ArchivedAt contains multiple format options for display.
