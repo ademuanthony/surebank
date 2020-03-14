@@ -39,7 +39,7 @@ services:
     entrypoint: redis-server --appendonly yes
 
   datadog:
-    image: example-checklist/datadog:latest
+    image: surebank/datadog:latest
     build:
       context: build/docker/datadog-agent
       dockerfile: Dockerfile
@@ -62,8 +62,10 @@ services:
       - DD_DOGSTATSD_ORIGIN_DETECTION=true
       - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
       - DD_EXPVAR=service_name=web-app env=dev url=http://web-app:4000/debug/vars|service_name=web-api env=dev url=http://web-api:4001/debug/vars
+
   web-app:
-    image: example-checklist/web-app:latest
+    image: surebank/web-app:latest
+    hostname: "web-app"
     build:
       context: .
       target: dev
@@ -73,7 +75,7 @@ services:
     volumes:
       - ./:/go/src/gitlab.com/merryworld/surebank
     ports:
-      - 3000:3000 # WEB APP
+      - 80:3000 # WEB APP
       - 4000:4000 # DEBUG API
     networks:
       main:
@@ -105,7 +107,7 @@ services:
       # - GODEBUG=gctrace=1
 
   web-api:
-    image: example-checklist/web-api:latest
+    image: surebank/web-api:latest
     build:
       context: .
       target: dev
