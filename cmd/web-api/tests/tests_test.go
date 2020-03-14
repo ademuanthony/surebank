@@ -17,7 +17,6 @@ import (
 	"merryworld/surebank/cmd/web-api/handlers"
 	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/tenant/account_preference"
-	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/notify"
 	"merryworld/surebank/internal/platform/tests"
@@ -107,7 +106,6 @@ func testMain(m *testing.M) int {
 	authRepo := user_auth.NewRepository(test.MasterDB, authenticator, usrRepo, usrAccRepo, accPrefRepo)
 	signupRepo := signup.NewRepository(test.MasterDB, usrRepo, usrAccRepo, accRepo)
 	inviteRepo := invite.NewRepository(test.MasterDB, usrRepo, usrAccRepo, accRepo, projectRoute.UserInviteAccept, notifyEmail, "6368616e676520746869732070613434")
-	prjRepo := checklist.NewRepository(test.MasterDB)
 
 	appCtx = &handlers.AppContext{
 		Log:             log,
@@ -121,7 +119,6 @@ func testMain(m *testing.M) int {
 		AuthRepo:        authRepo,
 		SignupRepo:      signupRepo,
 		InviteRepo:      inviteRepo,
-		ProjectRepo:     prjRepo,
 		Authenticator:   authenticator,
 	}
 

@@ -193,7 +193,7 @@
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/account.UpdateRequest"
+                            "$ref": "#/definitions/tenant.AccountUpdateRequest"
                         }
                     }
                 ],
@@ -290,7 +290,7 @@
                 "tags": [
                     "account"
                 ],
-                "summary": "Get account by ID.",
+                "summary": "Get account by ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -304,7 +304,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/account.Response"
+                            "$ref": "#/definitions/tenant.AccountResponse"
                         }
                     },
                     "400": {
@@ -315,59 +315,6 @@
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/checklists/archive": {
-            "patch": {
-                "security": [
-                    {
-                        "OAuth2Password": []
-                    }
-                ],
-                "description": "Archive soft-deletes the specified customer from the system.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "customer"
-                ],
-                "summary": "Archive customer by ID",
-                "parameters": [
-                    {
-                        "description": "Update fields",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/customer.ArchiveRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {},
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/weberror.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/weberror.ErrorResponse"
                         }
@@ -546,6 +493,59 @@
                         "schema": {
                             "type": "object",
                             "$ref": "#/definitions/customer.UpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/weberror.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/customers/archive": {
+            "patch": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Archive soft-deletes the specified customer from the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer"
+                ],
+                "summary": "Archive customer by ID",
+                "parameters": [
+                    {
+                        "description": "Update fields",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/customer.ArchiveRequest"
                         }
                     }
                 ],
@@ -2391,6 +2391,9 @@
                 },
                 "opening_balance": {
                     "type": "number"
+                },
+                "receipt_no": {
+                    "type": "string"
                 },
                 "sales_rep": {
                     "type": "string"
