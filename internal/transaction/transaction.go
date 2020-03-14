@@ -4,10 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/now"
-	"net/http"
-	"time"
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -230,6 +233,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		Narration:      req.Narration,
 		TXType:         req.Type.String(),
 		SalesRepID:     claims.Subject,
+		ReceiptNo: 		repo.generateReceiptNumber(ctx),
 		CreatedAt:      now.Unix(),
 		UpdatedAt:      now.Unix(),
 	}
@@ -274,6 +278,23 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		CreatedAt:      time.Unix(m.CreatedAt, 0),
 		UpdatedAt:      time.Unix(m.UpdatedAt, 0),
 	}, nil
+}
+
+func (repo *Repository) generateReceiptNumber(ctx context.Context) string {
+	var receipt string
+	for receipt == "" || repo.receiptExists(ctx, receipt) {
+		receipt = "TX"
+		rand.Seed(time.Now().UTC().UnixNano())
+		for i := 0; i < 6; i++ {
+			receipt += strconv.Itoa(rand.Intn(10))
+		}
+	}
+	return receipt
+}
+
+func (repo *Repository) receiptExists(ctx context.Context, receipt string) bool {
+	exists, _ := models.Transactions(models.TransactionWhere.ReceiptNo.EQ(receipt)).Exists(ctx, repo.DbConn)
+	return exists
 }
 
 // lastTransaction returns the last transaction for the specified account

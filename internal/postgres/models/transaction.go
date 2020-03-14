@@ -34,6 +34,7 @@ type Transaction struct {
 	CreatedAt      int64      `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt      int64      `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	ArchivedAt     null.Int64 `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
+	ReceiptNo      string     `boil:"receipt_no" json:"receipt_no" toml:"receipt_no" yaml:"receipt_no"`
 
 	R *transactionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L transactionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -50,6 +51,7 @@ var TransactionColumns = struct {
 	CreatedAt      string
 	UpdatedAt      string
 	ArchivedAt     string
+	ReceiptNo      string
 }{
 	ID:             "id",
 	AccountID:      "account_id",
@@ -61,6 +63,7 @@ var TransactionColumns = struct {
 	CreatedAt:      "created_at",
 	UpdatedAt:      "updated_at",
 	ArchivedAt:     "archived_at",
+	ReceiptNo:      "receipt_no",
 }
 
 // Generated where
@@ -76,6 +79,7 @@ var TransactionWhere = struct {
 	CreatedAt      whereHelperint64
 	UpdatedAt      whereHelperint64
 	ArchivedAt     whereHelpernull_Int64
+	ReceiptNo      whereHelperstring
 }{
 	ID:             whereHelperstring{field: "\"transaction\".\"id\""},
 	AccountID:      whereHelperstring{field: "\"transaction\".\"account_id\""},
@@ -87,6 +91,7 @@ var TransactionWhere = struct {
 	CreatedAt:      whereHelperint64{field: "\"transaction\".\"created_at\""},
 	UpdatedAt:      whereHelperint64{field: "\"transaction\".\"updated_at\""},
 	ArchivedAt:     whereHelpernull_Int64{field: "\"transaction\".\"archived_at\""},
+	ReceiptNo:      whereHelperstring{field: "\"transaction\".\"receipt_no\""},
 }
 
 // TransactionRels is where relationship names are stored.
@@ -113,9 +118,9 @@ func (*transactionR) NewStruct() *transactionR {
 type transactionL struct{}
 
 var (
-	transactionAllColumns            = []string{"id", "account_id", "tx_type", "opening_balance", "amount", "narration", "sales_rep_id", "created_at", "updated_at", "archived_at"}
+	transactionAllColumns            = []string{"id", "account_id", "tx_type", "opening_balance", "amount", "narration", "sales_rep_id", "created_at", "updated_at", "archived_at", "receipt_no"}
 	transactionColumnsWithoutDefault = []string{"id", "tx_type", "opening_balance", "sales_rep_id", "created_at", "updated_at", "archived_at"}
-	transactionColumnsWithDefault    = []string{"account_id", "amount", "narration"}
+	transactionColumnsWithDefault    = []string{"account_id", "amount", "narration", "receipt_no"}
 	transactionPrimaryKeyColumns     = []string{"id"}
 )
 

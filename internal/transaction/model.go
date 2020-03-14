@@ -59,6 +59,7 @@ func FromModel(rec *models.Transaction) *Transaction {
 		Amount:         rec.Amount,
 		Narration:      rec.Narration,
 		SalesRepID:     rec.SalesRepID,
+		ReceiptNo:  	rec.ReceiptNo,
 		CreatedAt:      time.Unix(rec.CreatedAt, 0),
 		UpdatedAt:      time.Unix(rec.UpdatedAt, 0),
 	}
@@ -113,7 +114,7 @@ func (m *Transaction) Response(ctx context.Context) *Response {
 		OpeningBalance: m.OpeningBalance,
 		Amount:         m.Amount,
 		Narration:      m.Narration,
-		ReceiptNo: 		"TX069448",
+		ReceiptNo: 		m.ReceiptNo,
 		SalesRepID:     m.SalesRepID,
 		CreatedAt:      web.NewTimeResponse(ctx, m.CreatedAt),
 		UpdatedAt:      web.NewTimeResponse(ctx, m.UpdatedAt),

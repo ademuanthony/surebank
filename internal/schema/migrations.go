@@ -1108,6 +1108,20 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		// Add receipt number to transaction
+		{
+			ID: "20200414-01",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE transaction ADD receipt_no VARCHAR(33) NOT NULL DEFAULT '';`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
 		// TODO: store dates in unix
 	}
 }

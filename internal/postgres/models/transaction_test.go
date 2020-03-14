@@ -644,7 +644,7 @@ func testTransactionsSelect(t *testing.T) {
 }
 
 var (
-	transactionDBTypes = map[string]string{`ID`: `character`, `AccountID`: `character`, `TXType`: `character varying`, `OpeningBalance`: `double precision`, `Amount`: `double precision`, `Narration`: `character varying`, `SalesRepID`: `character`, `CreatedAt`: `bigint`, `UpdatedAt`: `bigint`, `ArchivedAt`: `bigint`}
+	transactionDBTypes = map[string]string{`ID`: `character`, `AccountID`: `character`, `TXType`: `character varying`, `OpeningBalance`: `double precision`, `Amount`: `double precision`, `Narration`: `character varying`, `SalesRepID`: `character`, `CreatedAt`: `bigint`, `UpdatedAt`: `bigint`, `ArchivedAt`: `bigint`, `ReceiptNo`: `character varying`}
 	_                  = bytes.MinRead
 )
 
