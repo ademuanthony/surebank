@@ -428,10 +428,17 @@ func (repo *Repository) CreateInvite(ctx context.Context, claims auth.Claims, re
 
 // ReadByID gets the specified user by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*User, error) {
-	return repo.Read(ctx, claims, UserReadRequest{
+	u, e := repo.Read(ctx, claims, UserReadRequest{
 		ID:              id,
 		IncludeArchived: false,
 	})
+	if e == nil {
+		if u.Timezone == nil || *u.Timezone == "" {
+			lagos := "Africa/Lagos"
+			u.Timezone = &lagos
+		}
+	}
+	return u, e
 }
 
 // Read gets the specified user from the database.
