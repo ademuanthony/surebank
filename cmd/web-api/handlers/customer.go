@@ -68,6 +68,8 @@ func (h *Customers) Find(ctx context.Context, w http.ResponseWriter, r *http.Req
 				req.Order = append(req.Order, o)
 			}
 		}
+	} else {
+		req.Order = []string{"created_at desc"}
 	}
 
 	// Handle limit query value if set.

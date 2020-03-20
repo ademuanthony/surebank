@@ -83,7 +83,7 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 // ReadByID gets the specified branch by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*Customer, error) {
-	branchModel, err := models.FindCustomer(ctx, repo.DbConn, id)
+	customerModel, err := models.FindCustomer(ctx, repo.DbConn, id)
 	if err != nil {
 		if err.Error() == sql.ErrNoRows.Error() {
 			return nil, weberror.WithMessage(ctx, err, "Invalid customer ID")
@@ -91,7 +91,7 @@ func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id str
 		return nil, weberror.NewError(ctx, err, 500)
 	}
 
-	return FromModel(branchModel), nil
+	return FromModel(customerModel), nil
 }
 
 func (repo *Repository) CustomersCount(ctx context.Context, claims auth.Claims) (int64, error) {
