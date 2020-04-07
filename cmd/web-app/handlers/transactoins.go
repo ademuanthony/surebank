@@ -15,3 +15,4 @@ type Transactions struct {
 	Redis       *redis.Client
 	Renderer    web.Renderer
 }
+ 

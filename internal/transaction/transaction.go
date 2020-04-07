@@ -9,12 +9,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/now"
-
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
@@ -264,6 +263,16 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 			// TODO: log critical error. Send message to monitoring account
 			fmt.Println(err)
 		}
+	} else {
+		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_withdrawn",
+			map[string]interface{}{
+				"Name":    account.R.Customer.Name,
+				"Amount":  req.Amount,
+				"Balance": m.OpeningBalance + req.Amount,
+			}); err != nil {
+			// TODO: log critical error. Send message to monitoring account
+			fmt.Println(err)
+		}
 	}
 
 	return &Transaction{
@@ -277,6 +286,36 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		CreatedAt:      time.Unix(m.CreatedAt, 0),
 		UpdatedAt:      time.Unix(m.UpdatedAt, 0),
 	}, nil
+}
+
+// Withdraw inserts a new withdrawal transaction into the database.
+func (repo *Repository) Withdraw(ctx context.Context, claims auth.Claims, req WithdrawRequest, now time.Time) (*Transaction, error) {
+	createReq := MakeDeductionRequest {
+		AccountNumber: req.AccountNumber,
+		Amount: req.Amount,
+		Narration: fmt.Sprintf("%s - %s", req.PaymentMethod, req.Narration),
+	}
+	tx, err := repo.DbConn.Begin()
+	if err != nil {
+		return nil, err
+	}
+	if req.PaymentMethod == "Transfer" {
+		if len(req.Narration) > 0 {
+			createReq.Narration += " -"
+		}
+		if len(req.Bank) > 0 && len(req.BankAccountNumber) > 0 {
+			createReq.Narration += fmt.Sprintf("%s - %s", req.Bank, req.BankAccountNumber)
+		}
+		
+	}
+	
+	txn, err := repo.MakeDeduction(ctx, claims, createReq, now, tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	_ = tx.Commit()
+	return txn, nil
 }
 
 func (repo *Repository) generateReceiptNumber(ctx context.Context) string {
@@ -490,7 +529,9 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 		return nil, errors.WithStack(ErrForbidden)
 	}
 
-	account, err := models.Accounts(models.AccountWhere.Number.EQ(req.AccountNumber)).One(ctx, tx)
+	account, err := models.Accounts(
+		qm.Load(models.AccountRels.Customer),
+		models.AccountWhere.Number.EQ(req.AccountNumber)).One(ctx, tx)
 	if err != nil {
 		return nil, weberror.NewErrorMessage(ctx, err, 400, "invalid account number")
 	}
@@ -527,9 +568,7 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 		}
 	}
 
-	spew.Dump(lastTransaction)
 	balance := accountBalanceAtTx(lastTransaction)
-	spew.Dump(balance)
 	if balance < req.Amount {
 		return nil, fmt.Errorf("balance: %.2f, cannot deduct %.2f. Insufficient fund. Aborted", balance, req.Amount)
 	}
@@ -557,6 +596,16 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 		_ = tx.Rollback()
 		return nil, err
 	}
+
+	if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_withdrawn",
+			map[string]interface{}{
+				"Name":    account.R.Customer.Name,
+				"Amount":  req.Amount,
+				"Balance": m.OpeningBalance + req.Amount,
+			}); err != nil {
+			// TODO: log critical error. Send message to monitoring account
+			fmt.Println(err)
+		}
 
 	return FromModel(&m), nil
 }

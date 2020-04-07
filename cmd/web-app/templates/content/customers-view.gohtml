@@ -112,9 +112,14 @@
 
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h3>Recent Transactions</h3>
-                        <a href="{{ .urlCustomersTransactionsCreate }}"
+                        <div>
+                            <a href="{{ .urlCustomersTransactionsCreate }}"
                            class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
                             <i class="fas fa-folder-plus fa-sm text-white-50 mr-1"></i>New Deposit</a>
+                            <a href="{{ .urlCustomersTransactionsWithdraw }}"
+                            class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                                <i class="fas fa-folder-plus fa-sm text-white-50 mr-1"></i>New Withdrawal</a>
+                        </div>
                     </div>
 
                     <table class="table-bordered table">
@@ -122,6 +127,7 @@
                         <tr>
                             <th>Amount</th>
                             <th>Date</th>
+                            <th>Type</th>
                             <th>Narration</th>
                             <th>Account</th>
                             <th>Recorded By</th>
@@ -136,6 +142,7 @@
                                     <a href="/customers/{{ $.customer.ID }}/accounts/{{ $tran.AccountID}}/transactions/{{ $tran.ID }}">{{ $tran.Amount }}</a>
                                 </td>
                                 <td>{{ $tran.CreatedAt.Local }}</td>
+                                <td>{{ $tran.Type }}</td>
                                 <td>{{ FormatNarration $tran.Narration }}</td>
                                 <td><a href="/customers/{{$.customer.ID}}/accounts/{{ $tran.AccountID }}">{{ $tran.AccountNumber }}</a></td>
                                 <td><a href="/users/{{ $tran.SalesRepID }}">{{ $tran.SalesRep}}</a></td>

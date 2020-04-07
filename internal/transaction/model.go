@@ -166,6 +166,17 @@ type CreateRequest struct {
 	Narration     string          `json:"narration"`
 }
 
+// WithdrawRequest contains information needed to make a new Transaction.
+type WithdrawRequest struct {
+	Type          	  TransactionType `json:"type" validate:"required,oneof=deposit withdrawal"`
+	AccountNumber 	  string          `json:"account_number" validate:"required"`
+	Amount        	  float64         `json:"amount" validate:"required,gt=0"`
+	PaymentMethod 	  string 		  `json:"payment_method" validate:"required"`
+	Bank			  string 		  `json:"bank"`
+	BankAccountNumber string 		  `json:"bank_account_number"`
+	Narration     	  string          `json:"narration"`
+}
+
 type MakeDeductionRequest struct {
 	AccountNumber string          `json:"account_number" validate:"required"`
 	Amount        float64         `json:"amount" validate:"required,gt=0"`

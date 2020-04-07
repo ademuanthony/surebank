@@ -9,6 +9,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dimfeld/httptreemux v5.0.1+incompatible
 	github.com/dustin/go-humanize v1.0.0
+	github.com/fatih/structs v1.1.0
 	github.com/friendsofgo/errors v0.9.2
 	github.com/geeks-accelerator/files v0.0.0-20190704085106-630677cd5c14
 	github.com/geeks-accelerator/sqlxmigrate v0.0.0-20190823021348-d047c980bb66

@@ -74,6 +74,10 @@ func urlCustomersTransactionsCreate(customerID, accountID string) string {
 	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/deposit", customerID, accountID)
 }
 
+func urlCustomersTransactionsWithdraw(customerID, accountID string) string {
+	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/withdraw", customerID, accountID)
+}
+
 func urlCustomersTransactionsView(customerID, accountID, tranxID string) string {
 	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/%s", customerID, accountID, tranxID)
 }
@@ -380,7 +384,7 @@ func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Req
 		accountID = accountsResp.Accounts[0].ID
 	}
 	data["urlCustomersTransactionsCreate"] = urlCustomersTransactionsCreate(customerID, accountID)
-
+	data["urlCustomersTransactionsWithdraw"] = urlCustomersTransactionsWithdraw(customerID, accountID)
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-view.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
@@ -611,6 +615,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 		"customer":              customer,
 		"datatable":             dt.Response(),
 		"urlCustomersTransactionsCreate": urlCustomersTransactionsCreate(customerID, accountID),
+		"urlCustomersTransactionsWithdraw": urlCustomersTransactionsWithdraw(customerID, accountID),
 		"urlCustomersIndex":     urlCustomersIndex(),
 		"urlCustomersView":      urlCustomersView(customerID),
 	}
@@ -783,6 +788,7 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 	data["urlCustomersIndex"] = urlCustomersIndex()
 	data["urlCustomersView"] = urlCustomersView(customerID)
 	data["urlCustomersAccountTransactions"] = urlCustomersAccountTransactions(customerID, accountID)
+	data["urlCustomersTransactionsWithdraw"] = urlCustomersTransactionsWithdraw(cust.ID, accountID)
 	data["urlCustomersTransactionsCreate"] = urlCustomersTransactionsCreate(customerID, accountID)
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
@@ -911,7 +917,8 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		"customer":                       cust.Response(ctx),
 		"account":                        acc.Response(ctx),
 		"datatable":                      dt.Response(),
-		"urlCustomersTransactionsCreate": urlCustomersTransactionsCreate(cust.ID, accountID),
+		"urlTransactionsCreate": urlCustomersTransactionsCreate(cust.ID, accountID),
+		"urlTransactionsWithdraw": urlCustomersTransactionsWithdraw(cust.ID, accountID),
 		"urlCustomersAccountsView":       urlCustomersAccountsView(cust.ID, accountID),
 		"urlCustomersIndex":              urlCustomersIndex(),
 		"urlCustomersView":               urlCustomersView(cust.ID),
@@ -1007,6 +1014,95 @@ func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-deposit.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// Withraw handles add a new withdrawal to account.
+func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err 
+	}
+
+	customerID := params["customer_id"]
+	accountID := params["account_id"]
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
+	if err != nil {
+		return  weberror.NewErrorMessage(ctx, err, 400, "accountID" + accountID)
+	}
+
+	req := new(transaction.WithdrawRequest)
+	data := make(map[string]interface{})
+	f := func() (bool, error) {
+		if r.Method == http.MethodPost {
+			err := r.ParseForm()
+			if err != nil {
+				return false, err
+			}
+
+			decoder := schema.NewDecoder()
+			decoder.IgnoreUnknownKeys(true)
+
+			if err := decoder.Decode(req, r.PostForm); err != nil {
+				return false, err
+			}
+			req.AccountNumber = acc.Number
+			req.Type = transaction.TransactionType_Deposit
+
+			_, err = h.TransactionRepo.Withdraw(ctx, claims, *req, ctxValues.Now)
+			if err != nil {
+				switch errors.Cause(err) {
+				default:
+					if verr, ok := weberror.NewValidationError(ctx, err); ok {
+						data["validationErrors"] = verr.(*weberror.Error)
+						return false, nil
+					} else {
+						return false, err
+					}
+				}
+			}
+
+			// Display a success message to the checklist.
+			webcontext.SessionFlashSuccess(ctx,
+				"Withdrawal Added",
+				"Withdrawal successfully Added.")
+
+			return true, web.Redirect(ctx, w, r, urlCustomersView(customerID), http.StatusFound)
+		}
+
+		return false, nil
+	}
+
+	end, err := f()
+	if err != nil {
+		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
+	} else if end {
+		return nil
+	}
+
+	customerRes, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	if err != nil {
+		return  weberror.NewErrorMessage(ctx, err, 400, "customerID" + customerID)
+	}
+
+	data["form"] = req
+	data["account"] = acc
+	data["customer"] = customerRes
+	data["urlCustomersIndex"] = urlCustomersIndex()
+	data["urlCustomersView"] = urlCustomersView(customerID)
+	data["urlCustomersAccountsView"] = urlCustomersAccountsView(customerID, accountID)
+
+	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(transaction.CreateRequest{})); ok {
+		data["validationDefaults"] = verr.(*weberror.Error)
+	}
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-withdrawal.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // Transaction handles displaying of a transaction
