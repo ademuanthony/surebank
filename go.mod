@@ -1,7 +1,6 @@
 module merryworld/surebank
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.4.0 // indirect
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/aws/aws-sdk-go v1.27.2
@@ -19,9 +18,7 @@ require (
 	github.com/go-playground/pkg v0.0.0-20190522230805-792a755e6910
 	github.com/go-playground/universal-translator v0.16.0
 	github.com/go-redis/redis v6.15.6+incompatible
-	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/google/go-cmp v0.4.0
-	github.com/gorilla/handlers v1.4.2 // indirect
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.0
@@ -43,7 +40,7 @@ require (
 	github.com/pkg/errors v0.9.0
 	github.com/sethgrid/pester v0.0.0-20190127155807-68a33a018ad0
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
-	github.com/spf13/viper v1.3.2
+	github.com/spf13/viper v1.6.3
 	github.com/stretchr/testify v1.4.0
 	github.com/sudo-suhas/symcrypto v1.0.0
 	github.com/tdewolff/minify v2.3.6+incompatible
@@ -51,9 +48,10 @@ require (
 	github.com/tdewolff/test v1.0.6 // indirect
 	github.com/tinylib/msgp v1.1.0 // indirect
 	github.com/urfave/cli v1.22.2
-	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
-	github.com/volatiletech/null v8.0.0+incompatible
-	github.com/volatiletech/sqlboiler v3.6.1+incompatible
+	github.com/volatiletech/null/v8 v8.1.0
+	github.com/volatiletech/randomize v0.0.1
+	github.com/volatiletech/sqlboiler/v4 v4.1.1
+	github.com/volatiletech/strmangle v0.0.1
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
 	gitlab.com/geeks-accelerator/oss/devops v1.0.59
 	golang.org/x/crypto v0.0.0-20200109152110-61a87790db17
