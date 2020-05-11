@@ -1122,6 +1122,105 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		
+		// Create table bank_account
+		{
+			ID: "20200511-01",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS bank_account (
+					  id char(36) NOT NULL,
+					  account_name VARCHAR(256) NOT NULL,
+					  account_number VARCHAR(256) NOT NULL,
+					  bank VARCHAR(256) NOT NULL,
+					  PRIMARY KEY (id)
+					) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS bank_account`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
+		
+		// Create table bank_deposit
+		{
+			ID: "20200511-02",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS bank_deposit (
+					  id char(36) NOT NULL,
+					  bank_account_id char(36) NOT NULL REFERENCES bank_account(id),
+					  amount FLOAT8 NOT NULL,
+					  date INT8 NOT NULL,
+					  PRIMARY KEY (id)
+					) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS bank_deposit`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
+		
+		// Create table expenditure
+		{
+			ID: "20200511-03",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS expenditure (
+					  id char(36) NOT NULL,
+					  amount FLOAT8 NOT NULL,
+					  date INT8 NOT NULL,
+					  PRIMARY KEY (id)
+					) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS expenditure`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
+
+		// Create table daily_summary
+		{
+			ID: "20200511-04",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS daily_summary (
+					  income FLOAT8 NOT NULL,
+					  expenditure FLOAT8 NOT NULL,
+					  bank_deposit FLOAT8 NOT NULL,
+					  date INT8 NOT NULL,
+					  PRIMARY KEY (date)
+					) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS daily_summary`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
 		// TODO: store dates in unix
 	}
 }

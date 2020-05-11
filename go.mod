@@ -9,7 +9,6 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dimfeld/httptreemux v5.0.1+incompatible
 	github.com/dustin/go-humanize v1.0.0
-	github.com/fatih/structs v1.1.0
 	github.com/friendsofgo/errors v0.9.2
 	github.com/geeks-accelerator/files v0.0.0-20190704085106-630677cd5c14
 	github.com/geeks-accelerator/sqlxmigrate v0.0.0-20190823021348-d047c980bb66
@@ -22,7 +21,7 @@ require (
 	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/google/go-cmp v0.4.0
-	github.com/gorilla/handlers v1.4.2
+	github.com/gorilla/handlers v1.4.2 // indirect
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.0
