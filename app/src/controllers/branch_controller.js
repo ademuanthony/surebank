@@ -1,6 +1,5 @@
 import { Controller } from 'stimulus'
 import { hide, show } from '../utils'
-import _ from 'lodash-es'
 import axios from 'axios'
 
 export default class extends Controller {
@@ -19,7 +18,7 @@ export default class extends Controller {
       return
     }
     const that = this
-    const req = {name: this.nameInputTarget.value}
+    const req = { name: this.nameInputTarget.value }
     axios.post('/api/v1/branches', req).then(resp => {
       console.log(resp)
       window.location.reload()
