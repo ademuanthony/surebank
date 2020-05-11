@@ -13,10 +13,14 @@ import "testing"
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
 	t.Run("Accounts", testAccounts)
+	t.Run("BankAccounts", testBankAccounts)
+	t.Run("BankDeposits", testBankDeposits)
 	t.Run("Branches", testBranches)
 	t.Run("Brands", testBrands)
 	t.Run("Categories", testCategories)
 	t.Run("Customers", testCustomers)
+	t.Run("DailySummaries", testDailySummaries)
+	t.Run("Expenditures", testExpenditures)
 	t.Run("Inventories", testInventories)
 	t.Run("Payments", testPayments)
 	t.Run("Products", testProducts)
@@ -29,10 +33,14 @@ func TestParent(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	t.Run("Accounts", testAccountsDelete)
+	t.Run("BankAccounts", testBankAccountsDelete)
+	t.Run("BankDeposits", testBankDepositsDelete)
 	t.Run("Branches", testBranchesDelete)
 	t.Run("Brands", testBrandsDelete)
 	t.Run("Categories", testCategoriesDelete)
 	t.Run("Customers", testCustomersDelete)
+	t.Run("DailySummaries", testDailySummariesDelete)
+	t.Run("Expenditures", testExpendituresDelete)
 	t.Run("Inventories", testInventoriesDelete)
 	t.Run("Payments", testPaymentsDelete)
 	t.Run("Products", testProductsDelete)
@@ -45,10 +53,14 @@ func TestDelete(t *testing.T) {
 
 func TestQueryDeleteAll(t *testing.T) {
 	t.Run("Accounts", testAccountsQueryDeleteAll)
+	t.Run("BankAccounts", testBankAccountsQueryDeleteAll)
+	t.Run("BankDeposits", testBankDepositsQueryDeleteAll)
 	t.Run("Branches", testBranchesQueryDeleteAll)
 	t.Run("Brands", testBrandsQueryDeleteAll)
 	t.Run("Categories", testCategoriesQueryDeleteAll)
 	t.Run("Customers", testCustomersQueryDeleteAll)
+	t.Run("DailySummaries", testDailySummariesQueryDeleteAll)
+	t.Run("Expenditures", testExpendituresQueryDeleteAll)
 	t.Run("Inventories", testInventoriesQueryDeleteAll)
 	t.Run("Payments", testPaymentsQueryDeleteAll)
 	t.Run("Products", testProductsQueryDeleteAll)
@@ -61,10 +73,14 @@ func TestQueryDeleteAll(t *testing.T) {
 
 func TestSliceDeleteAll(t *testing.T) {
 	t.Run("Accounts", testAccountsSliceDeleteAll)
+	t.Run("BankAccounts", testBankAccountsSliceDeleteAll)
+	t.Run("BankDeposits", testBankDepositsSliceDeleteAll)
 	t.Run("Branches", testBranchesSliceDeleteAll)
 	t.Run("Brands", testBrandsSliceDeleteAll)
 	t.Run("Categories", testCategoriesSliceDeleteAll)
 	t.Run("Customers", testCustomersSliceDeleteAll)
+	t.Run("DailySummaries", testDailySummariesSliceDeleteAll)
+	t.Run("Expenditures", testExpendituresSliceDeleteAll)
 	t.Run("Inventories", testInventoriesSliceDeleteAll)
 	t.Run("Payments", testPaymentsSliceDeleteAll)
 	t.Run("Products", testProductsSliceDeleteAll)
@@ -77,10 +93,14 @@ func TestSliceDeleteAll(t *testing.T) {
 
 func TestExists(t *testing.T) {
 	t.Run("Accounts", testAccountsExists)
+	t.Run("BankAccounts", testBankAccountsExists)
+	t.Run("BankDeposits", testBankDepositsExists)
 	t.Run("Branches", testBranchesExists)
 	t.Run("Brands", testBrandsExists)
 	t.Run("Categories", testCategoriesExists)
 	t.Run("Customers", testCustomersExists)
+	t.Run("DailySummaries", testDailySummariesExists)
+	t.Run("Expenditures", testExpendituresExists)
 	t.Run("Inventories", testInventoriesExists)
 	t.Run("Payments", testPaymentsExists)
 	t.Run("Products", testProductsExists)
@@ -93,10 +113,14 @@ func TestExists(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	t.Run("Accounts", testAccountsFind)
+	t.Run("BankAccounts", testBankAccountsFind)
+	t.Run("BankDeposits", testBankDepositsFind)
 	t.Run("Branches", testBranchesFind)
 	t.Run("Brands", testBrandsFind)
 	t.Run("Categories", testCategoriesFind)
 	t.Run("Customers", testCustomersFind)
+	t.Run("DailySummaries", testDailySummariesFind)
+	t.Run("Expenditures", testExpendituresFind)
 	t.Run("Inventories", testInventoriesFind)
 	t.Run("Payments", testPaymentsFind)
 	t.Run("Products", testProductsFind)
@@ -109,10 +133,14 @@ func TestFind(t *testing.T) {
 
 func TestBind(t *testing.T) {
 	t.Run("Accounts", testAccountsBind)
+	t.Run("BankAccounts", testBankAccountsBind)
+	t.Run("BankDeposits", testBankDepositsBind)
 	t.Run("Branches", testBranchesBind)
 	t.Run("Brands", testBrandsBind)
 	t.Run("Categories", testCategoriesBind)
 	t.Run("Customers", testCustomersBind)
+	t.Run("DailySummaries", testDailySummariesBind)
+	t.Run("Expenditures", testExpendituresBind)
 	t.Run("Inventories", testInventoriesBind)
 	t.Run("Payments", testPaymentsBind)
 	t.Run("Products", testProductsBind)
@@ -125,10 +153,14 @@ func TestBind(t *testing.T) {
 
 func TestOne(t *testing.T) {
 	t.Run("Accounts", testAccountsOne)
+	t.Run("BankAccounts", testBankAccountsOne)
+	t.Run("BankDeposits", testBankDepositsOne)
 	t.Run("Branches", testBranchesOne)
 	t.Run("Brands", testBrandsOne)
 	t.Run("Categories", testCategoriesOne)
 	t.Run("Customers", testCustomersOne)
+	t.Run("DailySummaries", testDailySummariesOne)
+	t.Run("Expenditures", testExpendituresOne)
 	t.Run("Inventories", testInventoriesOne)
 	t.Run("Payments", testPaymentsOne)
 	t.Run("Products", testProductsOne)
@@ -141,10 +173,14 @@ func TestOne(t *testing.T) {
 
 func TestAll(t *testing.T) {
 	t.Run("Accounts", testAccountsAll)
+	t.Run("BankAccounts", testBankAccountsAll)
+	t.Run("BankDeposits", testBankDepositsAll)
 	t.Run("Branches", testBranchesAll)
 	t.Run("Brands", testBrandsAll)
 	t.Run("Categories", testCategoriesAll)
 	t.Run("Customers", testCustomersAll)
+	t.Run("DailySummaries", testDailySummariesAll)
+	t.Run("Expenditures", testExpendituresAll)
 	t.Run("Inventories", testInventoriesAll)
 	t.Run("Payments", testPaymentsAll)
 	t.Run("Products", testProductsAll)
@@ -157,10 +193,14 @@ func TestAll(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	t.Run("Accounts", testAccountsCount)
+	t.Run("BankAccounts", testBankAccountsCount)
+	t.Run("BankDeposits", testBankDepositsCount)
 	t.Run("Branches", testBranchesCount)
 	t.Run("Brands", testBrandsCount)
 	t.Run("Categories", testCategoriesCount)
 	t.Run("Customers", testCustomersCount)
+	t.Run("DailySummaries", testDailySummariesCount)
+	t.Run("Expenditures", testExpendituresCount)
 	t.Run("Inventories", testInventoriesCount)
 	t.Run("Payments", testPaymentsCount)
 	t.Run("Products", testProductsCount)
@@ -174,6 +214,10 @@ func TestCount(t *testing.T) {
 func TestInsert(t *testing.T) {
 	t.Run("Accounts", testAccountsInsert)
 	t.Run("Accounts", testAccountsInsertWhitelist)
+	t.Run("BankAccounts", testBankAccountsInsert)
+	t.Run("BankAccounts", testBankAccountsInsertWhitelist)
+	t.Run("BankDeposits", testBankDepositsInsert)
+	t.Run("BankDeposits", testBankDepositsInsertWhitelist)
 	t.Run("Branches", testBranchesInsert)
 	t.Run("Branches", testBranchesInsertWhitelist)
 	t.Run("Brands", testBrandsInsert)
@@ -182,6 +226,10 @@ func TestInsert(t *testing.T) {
 	t.Run("Categories", testCategoriesInsertWhitelist)
 	t.Run("Customers", testCustomersInsert)
 	t.Run("Customers", testCustomersInsertWhitelist)
+	t.Run("DailySummaries", testDailySummariesInsert)
+	t.Run("DailySummaries", testDailySummariesInsertWhitelist)
+	t.Run("Expenditures", testExpendituresInsert)
+	t.Run("Expenditures", testExpendituresInsertWhitelist)
 	t.Run("Inventories", testInventoriesInsert)
 	t.Run("Inventories", testInventoriesInsertWhitelist)
 	t.Run("Payments", testPaymentsInsert)
@@ -206,6 +254,7 @@ func TestToOne(t *testing.T) {
 	t.Run("AccountToBranchUsingBranch", testAccountToOneBranchUsingBranch)
 	t.Run("AccountToCustomerUsingCustomer", testAccountToOneCustomerUsingCustomer)
 	t.Run("AccountToUserUsingSalesRep", testAccountToOneUserUsingSalesRep)
+	t.Run("BankDepositToBankAccountUsingBankAccount", testBankDepositToOneBankAccountUsingBankAccount)
 	t.Run("CustomerToBranchUsingBranch", testCustomerToOneBranchUsingBranch)
 	t.Run("CustomerToUserUsingSalesRep", testCustomerToOneUserUsingSalesRep)
 	t.Run("InventoryToBranchUsingBranch", testInventoryToOneBranchUsingBranch)
@@ -239,6 +288,7 @@ func TestOneToOne(t *testing.T) {}
 // or deadlocks can occur.
 func TestToMany(t *testing.T) {
 	t.Run("AccountToTransactions", testAccountToManyTransactions)
+	t.Run("BankAccountToBankDeposits", testBankAccountToManyBankDeposits)
 	t.Run("BranchToAccounts", testBranchToManyAccounts)
 	t.Run("BranchToCustomers", testBranchToManyCustomers)
 	t.Run("BranchToInventories", testBranchToManyInventories)
@@ -272,6 +322,7 @@ func TestToOneSet(t *testing.T) {
 	t.Run("AccountToBranchUsingAccounts", testAccountToOneSetOpBranchUsingBranch)
 	t.Run("AccountToCustomerUsingAccounts", testAccountToOneSetOpCustomerUsingCustomer)
 	t.Run("AccountToUserUsingSalesRepAccounts", testAccountToOneSetOpUserUsingSalesRep)
+	t.Run("BankDepositToBankAccountUsingBankDeposits", testBankDepositToOneSetOpBankAccountUsingBankAccount)
 	t.Run("CustomerToBranchUsingCustomers", testCustomerToOneSetOpBranchUsingBranch)
 	t.Run("CustomerToUserUsingSalesRepCustomers", testCustomerToOneSetOpUserUsingSalesRep)
 	t.Run("InventoryToBranchUsingInventories", testInventoryToOneSetOpBranchUsingBranch)
@@ -318,6 +369,7 @@ func TestOneToOneRemove(t *testing.T) {}
 // or deadlocks can occur.
 func TestToManyAdd(t *testing.T) {
 	t.Run("AccountToTransactions", testAccountToManyAddOpTransactions)
+	t.Run("BankAccountToBankDeposits", testBankAccountToManyAddOpBankDeposits)
 	t.Run("BranchToAccounts", testBranchToManyAddOpAccounts)
 	t.Run("BranchToCustomers", testBranchToManyAddOpCustomers)
 	t.Run("BranchToInventories", testBranchToManyAddOpInventories)
@@ -365,10 +417,14 @@ func TestToManyRemove(t *testing.T) {
 
 func TestReload(t *testing.T) {
 	t.Run("Accounts", testAccountsReload)
+	t.Run("BankAccounts", testBankAccountsReload)
+	t.Run("BankDeposits", testBankDepositsReload)
 	t.Run("Branches", testBranchesReload)
 	t.Run("Brands", testBrandsReload)
 	t.Run("Categories", testCategoriesReload)
 	t.Run("Customers", testCustomersReload)
+	t.Run("DailySummaries", testDailySummariesReload)
+	t.Run("Expenditures", testExpendituresReload)
 	t.Run("Inventories", testInventoriesReload)
 	t.Run("Payments", testPaymentsReload)
 	t.Run("Products", testProductsReload)
@@ -381,10 +437,14 @@ func TestReload(t *testing.T) {
 
 func TestReloadAll(t *testing.T) {
 	t.Run("Accounts", testAccountsReloadAll)
+	t.Run("BankAccounts", testBankAccountsReloadAll)
+	t.Run("BankDeposits", testBankDepositsReloadAll)
 	t.Run("Branches", testBranchesReloadAll)
 	t.Run("Brands", testBrandsReloadAll)
 	t.Run("Categories", testCategoriesReloadAll)
 	t.Run("Customers", testCustomersReloadAll)
+	t.Run("DailySummaries", testDailySummariesReloadAll)
+	t.Run("Expenditures", testExpendituresReloadAll)
 	t.Run("Inventories", testInventoriesReloadAll)
 	t.Run("Payments", testPaymentsReloadAll)
 	t.Run("Products", testProductsReloadAll)
@@ -397,10 +457,14 @@ func TestReloadAll(t *testing.T) {
 
 func TestSelect(t *testing.T) {
 	t.Run("Accounts", testAccountsSelect)
+	t.Run("BankAccounts", testBankAccountsSelect)
+	t.Run("BankDeposits", testBankDepositsSelect)
 	t.Run("Branches", testBranchesSelect)
 	t.Run("Brands", testBrandsSelect)
 	t.Run("Categories", testCategoriesSelect)
 	t.Run("Customers", testCustomersSelect)
+	t.Run("DailySummaries", testDailySummariesSelect)
+	t.Run("Expenditures", testExpendituresSelect)
 	t.Run("Inventories", testInventoriesSelect)
 	t.Run("Payments", testPaymentsSelect)
 	t.Run("Products", testProductsSelect)
@@ -413,10 +477,14 @@ func TestSelect(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	t.Run("Accounts", testAccountsUpdate)
+	t.Run("BankAccounts", testBankAccountsUpdate)
+	t.Run("BankDeposits", testBankDepositsUpdate)
 	t.Run("Branches", testBranchesUpdate)
 	t.Run("Brands", testBrandsUpdate)
 	t.Run("Categories", testCategoriesUpdate)
 	t.Run("Customers", testCustomersUpdate)
+	t.Run("DailySummaries", testDailySummariesUpdate)
+	t.Run("Expenditures", testExpendituresUpdate)
 	t.Run("Inventories", testInventoriesUpdate)
 	t.Run("Payments", testPaymentsUpdate)
 	t.Run("Products", testProductsUpdate)
@@ -429,10 +497,14 @@ func TestUpdate(t *testing.T) {
 
 func TestSliceUpdateAll(t *testing.T) {
 	t.Run("Accounts", testAccountsSliceUpdateAll)
+	t.Run("BankAccounts", testBankAccountsSliceUpdateAll)
+	t.Run("BankDeposits", testBankDepositsSliceUpdateAll)
 	t.Run("Branches", testBranchesSliceUpdateAll)
 	t.Run("Brands", testBrandsSliceUpdateAll)
 	t.Run("Categories", testCategoriesSliceUpdateAll)
 	t.Run("Customers", testCustomersSliceUpdateAll)
+	t.Run("DailySummaries", testDailySummariesSliceUpdateAll)
+	t.Run("Expenditures", testExpendituresSliceUpdateAll)
 	t.Run("Inventories", testInventoriesSliceUpdateAll)
 	t.Run("Payments", testPaymentsSliceUpdateAll)
 	t.Run("Products", testProductsSliceUpdateAll)

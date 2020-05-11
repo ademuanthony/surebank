@@ -19,4 +19,8 @@
             "sale",
             "sale_item",
             "payment",
+	    "bank_account",
+	    "bank_deposit",
+	    "expenditure",
+	    "daily_summary"
             ]

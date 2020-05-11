@@ -5,10 +5,14 @@ package models
 
 var TableNames = struct {
 	Account         string
+	BankAccount     string
+	BankDeposit     string
 	Branch          string
 	Brand           string
 	Category        string
 	Customer        string
+	DailySummary    string
+	Expenditure     string
 	Inventory       string
 	Payment         string
 	Product         string
@@ -19,10 +23,14 @@ var TableNames = struct {
 	Users           string
 }{
 	Account:         "account",
+	BankAccount:     "bank_account",
+	BankDeposit:     "bank_deposit",
 	Branch:          "branch",
 	Brand:           "brand",
 	Category:        "category",
 	Customer:        "customer",
+	DailySummary:    "daily_summary",
+	Expenditure:     "expenditure",
 	Inventory:       "inventory",
 	Payment:         "payment",
 	Product:         "product",
