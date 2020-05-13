@@ -204,6 +204,43 @@ func (h *Branches) Create(ctx context.Context, w http.ResponseWriter, r *http.Re
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "branches-create.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
+// APICreate handles the json request from creating a new branch
+func (h *Branches) APICreate(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
+	}
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	//
+	var req branch.CreateRequest
+	if err := web.Decode(ctx, r, &req); err != nil {
+		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
+			err = weberror.NewError(ctx, err, http.StatusBadRequest)
+		}
+		return web.RespondJsonError(ctx, w, err)
+	}
+
+	res, err := h.Repo.Create(ctx, claims, req, ctxValues.Now)
+	if err != nil {
+		cause := errors.Cause(err)
+		switch cause {
+		case branch.ErrForbidden:
+			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
+		default:
+			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
+		}
+	}
+
+	result := res.Response(ctx)
+	return web.RespondJson(ctx, w, result, http.StatusCreated)
+}
+
 // View handles displaying a branch.
 func (h *Branches) View(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 

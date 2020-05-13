@@ -18,6 +18,7 @@ require (
 	github.com/go-playground/pkg v0.0.0-20190522230805-792a755e6910
 	github.com/go-playground/universal-translator v0.16.0
 	github.com/go-redis/redis v6.15.6+incompatible
+	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/google/go-cmp v0.4.0
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/securecookie v1.1.1
@@ -50,6 +51,7 @@ require (
 	github.com/urfave/cli v1.22.2
 	github.com/volatiletech/null/v8 v8.1.0
 	github.com/volatiletech/randomize v0.0.1
+	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	github.com/volatiletech/sqlboiler/v4 v4.1.1
 	github.com/volatiletech/strmangle v0.0.1
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2

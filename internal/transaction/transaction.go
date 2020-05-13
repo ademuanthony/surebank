@@ -248,6 +248,11 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, err
 	}
 
+	if err = SaveDailySummary(ctx, req.Amount, 0, 0, tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -608,4 +613,27 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 		}
 
 	return FromModel(&m), nil
+}
+
+// SaveDailySummary saves the provided daily summary info to the db
+func SaveDailySummary(ctx context.Context, income, expenditure, bankDeposit, date time.Time, tx *sql.Tx) error {
+	today := now.New(date).BeginningOfDay().Unix()
+	existingSummary, err := models.FindDailySummary(ctx, tx, date)
+	if err == nil {
+		existingSummary.BankDeposit += bankDeposit
+		existingSummary.Income += income
+		existingSummary.Expenditure += expenditure
+
+		_, err = existingSummary.Update(ctx, tx, boil.Infer())
+		return err
+	}
+
+	model := models.DailySummary{
+		Date: today,
+		BankDeposit: bankDeposit,
+		Income: income,
+		Expenditure: expend,
+	}
+
+	return model.Insert(ctx, tx, boil.Infer())
 }

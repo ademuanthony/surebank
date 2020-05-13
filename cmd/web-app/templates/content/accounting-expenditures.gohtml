@@ -1,0 +1,74 @@
+{{define "title"}}Expenditure{{end}}
+{{define "content"}}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/accounting">Accounting</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Expenditure</li>
+    </ol>
+</nav>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+
+    <h1 class="h3 mb-0 text-gray-800">Expenditure</h1>
+    {{ if HasRole $._Ctx "admin" }}
+    <button data-toggle="modal" data-target="#createModal"
+        class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+        <i class="fas fa-folder-plus fa-sm text-white-50 mr-1"></i>Create Expenditure</button>
+    {{ end }}
+</div>
+
+<div class="row">
+    <div class="col">
+        <form method="post">
+            <div class="card shadow">
+                <div class="table-responsive dataTable_card">
+                    {{ template "partials/datatable/html" . }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="createModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <form method="POST" data-action="submit->expenditure#create">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createModalLabel">Create Expenditure</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <input type="text" required class="form-control" data-target="expenditure.amount">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button data-action="click->expenditure#create" type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{{end}}
+{{define "style"}}
+{{ template "partials/datatable/style" . }}
+{{ end }}
+{{define "js-controller"}}deposit{{end}}
+{{define "js"}}
+{{ template "partials/datatable/js" . }}
+
+<script>
+    $(document).ready(function () {
+        //$("#dataTable_filter").hide();
+    });
+</script>
+
+{{end}}
