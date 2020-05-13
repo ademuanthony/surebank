@@ -2,20 +2,26 @@ package handlers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"merryworld/surebank/internal/accounting"
-	"merryworld/surebank/internal/platform/web"
-	"merryworld/surebank/internal/postgres/models"
-	"merryworld/surebank/internal/transaction"
+	"net/http"
 	"strconv"
 	"time"
 
+	"merryworld/surebank/internal/accounting"
+	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/datatable"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/postgres/models"
+	"merryworld/surebank/internal/transaction"
+	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
+
+	"github.com/pkg/errors"
 	"github.com/gofrs/uuid"
 	"github.com/jinzhu/now"
 	"github.com/jmoiron/sqlx"
-	"github.com/volatiletech/sqlboiler/boil"
 	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 )
 
 // Branches represents the Branches API method handler set.
@@ -35,7 +41,6 @@ func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
    }
 
    fields := []datatable.DisplayField{
-	   {Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 	   {Field: "date", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 	   {Field: "income", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 	   {Field: "bank_deposit", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
@@ -49,8 +54,6 @@ func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
 		   col := cols[i]
 		   var v datatable.ColumnValue
 		   switch col.Field {
-		   case "id":
-			   v.Value = fmt.Sprintf("%s", q.ID)
 		   case "date":
 				dt := web.NewTimeResponse(ctx, time.Unix(q.Date, 0))
 			   v.Value = dt.Local
@@ -84,7 +87,7 @@ func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
 	   }
 
 	   var queries []QueryMod
-	   for _, s := order {
+	   for _, s := range order {
 		   queries = append(queries, OrderBy(s))
 	   }
 
@@ -178,7 +181,7 @@ func (h *Accounting) BankAccounts(ctx context.Context, w http.ResponseWriter,
 		}
 
 		var queries []QueryMod
-		for _, s := order {
+		for _, s := range order {
 			queries = append(queries, OrderBy(s))
 		}
 
@@ -320,7 +323,7 @@ func (h *Accounting) BankDeposits(ctx context.Context, w http.ResponseWriter,
 	   }
 
 	   var queries []QueryMod
-	   for _, s := order {
+	   for _, s := range order {
 		   queries = append(queries, OrderBy(s))
 	   }
 
@@ -482,7 +485,7 @@ func (h *Accounting) Expenditures(ctx context.Context, w http.ResponseWriter,
 	   }
 
 	   var queries []QueryMod
-	   for _, s := order {
+	   for _, s := range order {
 		   queries = append(queries, OrderBy(s))
 	   }
 	   

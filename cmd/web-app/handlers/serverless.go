@@ -19,7 +19,7 @@ type Serverless struct {
 	Renderer     web.Renderer
 	MasterDB     *sqlx.DB
 	MasterDbHost string
-	AwsSession   *session.Session
+	AwsSession   *session.Session 
 }
 
 // WaitDb validates the the database is resumed and ready to accept requests.

@@ -1,5 +1,4 @@
 import { Controller } from 'stimulus'
-import { hide, show } from '../utils'
 import axios from 'axios'
 
 export default class extends Controller {
