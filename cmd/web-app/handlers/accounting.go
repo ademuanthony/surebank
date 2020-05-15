@@ -2,62 +2,57 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"merryworld/surebank/internal/accounting"
-	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/datatable"
 	"merryworld/surebank/internal/platform/web"
-	"merryworld/surebank/internal/postgres/models"
-	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/postgres/models"
+	"merryworld/surebank/internal/transaction"
 
-	"github.com/pkg/errors"
 	"github.com/gofrs/uuid"
 	"github.com/jinzhu/now"
-	"github.com/jmoiron/sqlx"
-	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/pkg/errors"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 )
 
-// Branches represents the Branches API method handler set.
+// Accounting represents the Accounting API method handler set.
 type Accounting struct {
 	Redis    *redis.Client
 	Renderer web.Renderer
-	DbConn *sqlx.DB
+	DbConn   *sql.DB
 }
 
 // DailySummaries handles listing all the daily summaries.
 func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
 	r *http.Request, params map[string]string) error {
 
-   claims, err := auth.ClaimsFromContext(ctx)
-   if err != nil {
-	   return err
-   }
-
-   fields := []datatable.DisplayField{
-	   {Field: "date", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-	   {Field: "income", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-	   {Field: "bank_deposit", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-	   {Field: "expenditure", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-	   {Field: "balance", Title: "Balance", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-
+	fields := []datatable.DisplayField{
+		{Field: "date", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "income", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "bank_deposit", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "expenditure", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "balance", Title: "Balance", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 	}
 
-   mapFunc := func(q *models.DailySummary, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
-	for i := 0; i < len(cols); i++ {
-		   col := cols[i]
-		   var v datatable.ColumnValue
-		   switch col.Field {
-		   case "date":
+	mapFunc := func(q *models.DailySummary, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+		for i := 0; i < len(cols); i++ {
+			col := cols[i]
+			var v datatable.ColumnValue
+			switch col.Field {
+			case "date":
 				dt := web.NewTimeResponse(ctx, time.Unix(q.Date, 0))
-			   v.Value = dt.Local
-			   v.Formatted = v.Value
+				v.Value = dt.Local
+				v.Formatted = v.Value
 			case "income":
 				v.Value = fmt.Sprintf("%.2f", q.Income)
 				v.Formatted = v.Value
@@ -68,78 +63,73 @@ func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
 				v.Value = fmt.Sprintf("%.2f", q.Expenditure)
 				v.Formatted = fmt.Sprintf("<a href='/accounting/expenditure?date=%d'>%s</a>", q.Date, v.Value)
 			case "balance":
-				v.Value = fmt.Sprintf("%.2f", q.Income - (q.BankDeposit + q.Expenditure))
+				v.Value = fmt.Sprintf("%.2f", q.Income-(q.BankDeposit+q.Expenditure))
 				v.Formatted = v.Value
-		   default:
-			   return resp, errors.Errorf("Failed to map value for %s.", col.Field)
-		   }
-		   resp = append(resp, v)
-	   }
+			default:
+				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
+			}
+			resp = append(resp, v)
+		}
 
-	   return resp, nil
-   }
+		return resp, nil
+	}
 
-   loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 
-	   var order []string
-	   if len(sorting) > 0 {
-		   order = strings.Split(sorting, ",")
-	   }
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
 
-	   var queries []QueryMod
-	   for _, s := range order {
-		   queries = append(queries, OrderBy(s))
-	   }
+		var queries []qm.QueryMod
+		for _, s := range order {
+			queries = append(queries, qm.OrderBy(s))
+		}
 
-	   res, err := models.Expenditures(queries...).All(ctx, h.DbConn)
-	   if err != nil {
-		   return resp, err
-	   }
+		res, err := models.DailySummaries(queries...).All(ctx, h.DbConn)
+		if err != nil {
+			return resp, err
+		}
 
-	   for _, a := range res {
-		   l, err := mapFunc(a, fields)
-		   if err != nil {
-			   return resp, errors.Wrapf(err, "Failed to map branch for display.")
-		   }
+		for _, a := range res {
+			l, err := mapFunc(a, fields)
+			if err != nil {
+				return resp, errors.Wrapf(err, "Failed to map branch for display.")
+			}
 
-		   resp = append(resp, l)
-	   }
+			resp = append(resp, l)
+		}
 
-	   return resp, nil
-   }
+		return resp, nil
+	}
 
-   dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
-   if err != nil {
-	   return err
-   }
+	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
+	if err != nil {
+		return err
+	}
 
-   if dt.HasCache() {
-	   return nil
-   }
+	if dt.HasCache() {
+		return nil
+	}
 
-   if ok, err := dt.Render(); ok {
-	   if err != nil {
-		   return err
-	   }
-	   return nil
-   }
+	if ok, err := dt.Render(); ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 
-   data := map[string]interface{}{
-	   "datatable":           dt.Response(),
-	   "urlBranchesCreate": urlBranchesCreate(),
-   }
+	data := map[string]interface{}{
+		"datatable":         dt.Response(),
+		"urlBranchesCreate": urlBranchesCreate(),
+	}
 
-   return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-deposits.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-deposits.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // BankAccounts handles listing all the Bank Accounts.
 func (h *Accounting) BankAccounts(ctx context.Context, w http.ResponseWriter,
-	 r *http.Request, params map[string]string) error {
-
-	claims, err := auth.ClaimsFromContext(ctx)
-	if err != nil {
-		return err
-	}
+	r *http.Request, params map[string]string) error {
 
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
@@ -156,7 +146,7 @@ func (h *Accounting) BankAccounts(ctx context.Context, w http.ResponseWriter,
 			case "id":
 				v.Value = fmt.Sprintf("%s", q.ID)
 			case "bank":
-				v.Value = q.Name
+				v.Value = q.Bank
 				v.Formatted = v.Value
 			case "account_name":
 				v.Value = q.AccountName
@@ -180,9 +170,9 @@ func (h *Accounting) BankAccounts(ctx context.Context, w http.ResponseWriter,
 			order = strings.Split(sorting, ",")
 		}
 
-		var queries []QueryMod
+		var queries []qm.QueryMod
 		for _, s := range order {
-			queries = append(queries, OrderBy(s))
+			queries = append(queries, qm.OrderBy(s))
 		}
 
 		res, err := models.BankAccounts(queries...).All(ctx, h.DbConn)
@@ -219,7 +209,7 @@ func (h *Accounting) BankAccounts(ctx context.Context, w http.ResponseWriter,
 	}
 
 	data := map[string]interface{}{
-		"datatable":           dt.Response(),
+		"datatable":         dt.Response(),
 		"urlBranchesCreate": urlBranchesCreate(),
 	}
 
@@ -228,16 +218,6 @@ func (h *Accounting) BankAccounts(ctx context.Context, w http.ResponseWriter,
 
 // CreateBankAccount handles the json request from creating a new bank account
 func (h *Accounting) CreateBankAccount(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
-
-	ctxValues, err := webcontext.ContextValues(ctx)
-	if err != nil {
-		return err
-	}
-
-	claims, err := auth.ClaimsFromContext(ctx)
-	if err != nil {
-		return err
-	}
 
 	//
 	var req accounting.CreateBankAccount
@@ -248,345 +228,307 @@ func (h *Accounting) CreateBankAccount(ctx context.Context, w http.ResponseWrite
 		return web.RespondJsonError(ctx, w, err)
 	}
 
-	
 	id, _ := uuid.NewV4()
 	bankAccount := models.BankAccount{
-		ID: id.String(),
-		AccountName: req.Name,
+		ID:            id.String(),
+		AccountName:   req.Name,
 		AccountNumber: req.Number,
-		Bank: req.Bank,
+		Bank:          req.Bank,
 	}
-	res, err := bankAccount.Insert(ctx, h.Repo.DbConn)
+	err := bankAccount.Insert(ctx, h.DbConn, boil.Infer())
 	if err != nil {
-		cause := errors.Cause(err)
-		switch cause {
-		case branch.ErrForbidden:
-			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
-		default:
-			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
-		}
+		return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 	}
 
-	result := res.Response(ctx)
-	return web.RespondJson(ctx, w, result, http.StatusCreated)
+	return web.RespondJson(ctx, w, bankAccount, http.StatusCreated)
 }
 
 // BankDeposits handles listing all the Bank Deposits.
 func (h *Accounting) BankDeposits(ctx context.Context, w http.ResponseWriter,
 	r *http.Request, params map[string]string) error {
 
-   claims, err := auth.ClaimsFromContext(ctx)
-   if err != nil {
-	   return err
-   }
+	fields := []datatable.DisplayField{
+		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
+		{Field: "bank", Title: "Bank", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "amount", Title: "Amount", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "date", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+	}
 
-   fields := []datatable.DisplayField{
-	   {Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
-	   {Field: "bank", Title: "Bank", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-	   {Field: "amount", Title: "Amount", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-	   {Field: "date", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-   }
-
-   mapFunc := func(q *models.BankDeposit, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
-	bankInfo := fmt.Sprintf("%s (%s) - %s", q.R.BankAccount.AccountName,
-	 q.R.BankAccount.AccountNumber, q.R.BankAccount.Bank)   
-	for i := 0; i < len(cols); i++ {
-		   col := cols[i]
-		   var v datatable.ColumnValue
-		   switch col.Field {
-		   case "id":
-			   v.Value = fmt.Sprintf("%s", q.ID)
-		   case "bank":
-			   v.Value = bankInfo
-			   v.Formatted = v.Value
-		   case "amount":
-			   v.Value = fmt.Sprintf("%.2f", q.Amount)
-			   v.Formatted = v.Value
-		   case "date":
+	mapFunc := func(q *models.BankDeposit, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+		bankInfo := fmt.Sprintf("%s (%s) - %s", q.R.BankAccount.AccountName,
+			q.R.BankAccount.AccountNumber, q.R.BankAccount.Bank)
+		for i := 0; i < len(cols); i++ {
+			col := cols[i]
+			var v datatable.ColumnValue
+			switch col.Field {
+			case "id":
+				v.Value = fmt.Sprintf("%s", q.ID)
+			case "bank":
+				v.Value = bankInfo
+				v.Formatted = v.Value
+			case "amount":
+				v.Value = fmt.Sprintf("%.2f", q.Amount)
+				v.Formatted = v.Value
+			case "date":
 				dt := web.NewTimeResponse(ctx, time.Unix(q.Date, 0))
-			   v.Value = dt.Local
-			   v.Formatted = v.Value
-		   default:
-			   return resp, errors.Errorf("Failed to map value for %s.", col.Field)
-		   }
-		   resp = append(resp, v)
-	   }
+				v.Value = dt.Local
+				v.Formatted = v.Value
+			default:
+				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
+			}
+			resp = append(resp, v)
+		}
 
-	   return resp, nil
-   }
+		return resp, nil
+	}
 
-   loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 
-	   var order []string
-	   if len(sorting) > 0 {
-		   order = strings.Split(sorting, ",")
-	   }
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
 
-	   var queries []QueryMod
-	   for _, s := range order {
-		   queries = append(queries, OrderBy(s))
-	   }
+		var queries []qm.QueryMod
+		for _, s := range order {
+			queries = append(queries, qm.OrderBy(s))
+		}
 
-	   r.ParseForm()
-	   if date, err := strconv.ParseInt(r.FormValue("date"), 10, 64); err != nil {
-		   queries = models.BankDepositWhere.Date.GTE(date)
-	   }
+		r.ParseForm()
+		if date, err := strconv.ParseInt(r.FormValue("date"), 10, 64); err != nil {
+			queries = append(queries, models.BankDepositWhere.Date.GTE(date))
+		}
 
-	   res, err := models.BankDeposits(queries...).All(ctx, h.DbConn)
-	   if err != nil {
-		   return resp, err
-	   }
+		res, err := models.BankDeposits(queries...).All(ctx, h.DbConn)
+		if err != nil {
+			return resp, err
+		}
 
-	   for _, a := range res {
-		   l, err := mapFunc(a, fields)
-		   if err != nil {
-			   return resp, errors.Wrapf(err, "Failed to map branch for display.")
-		   }
+		for _, a := range res {
+			l, err := mapFunc(a, fields)
+			if err != nil {
+				return resp, errors.Wrapf(err, "Failed to map branch for display.")
+			}
 
-		   resp = append(resp, l)
-	   }
+			resp = append(resp, l)
+		}
 
-	   return resp, nil
-   }
+		return resp, nil
+	}
 
-   dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
-   if err != nil {
-	   return err
-   }
+	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
+	if err != nil {
+		return err
+	}
 
-   if dt.HasCache() {
-	   return nil
-   }
+	if dt.HasCache() {
+		return nil
+	}
 
-   if ok, err := dt.Render(); ok {
-	   if err != nil {
-		   return err
-	   }
-	   return nil
-   }
+	if ok, err := dt.Render(); ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 
-   banks, err := models.BankAccounts(OrderBy("account_name")).All(ctx, h.DbConn)
-   if err != nil {
-	   return web.RespondError(ctx, w, err)
-   }
+	banks, err := models.BankAccounts(qm.OrderBy("account_name")).All(ctx, h.DbConn)
+	if err != nil {
+		return web.RespondError(ctx, w, err)
+	}
 
-   data := map[string]interface{}{
-	   "datatable":           dt.Response(),
-	   "urlBranchesCreate": urlBranchesCreate(),
-	   "banks": banks,
-   }
+	data := map[string]interface{}{
+		"datatable":         dt.Response(),
+		"urlBranchesCreate": urlBranchesCreate(),
+		"banks":             banks,
+	}
 
-   return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-deposits.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-deposits.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // CreateBankDeposit handles the json request from creating a new bank deposit
 func (h *Accounting) CreateBankDeposit(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
-   ctxValues, err := webcontext.ContextValues(ctx)
-   if err != nil {
-	   return err
-   }
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
+	}
 
-   claims, err := auth.ClaimsFromContext(ctx)
-   if err != nil {
-	   return err
-   }
+	//
+	var req accounting.CreateBankDeposit
+	if err := web.Decode(ctx, r, &req); err != nil {
+		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
+			err = weberror.NewError(ctx, err, http.StatusBadRequest)
+		}
+		return web.RespondJsonError(ctx, w, err)
+	}
 
-   //
-   var req accounting.CreateBankDeposit
-   if err := web.Decode(ctx, r, &req); err != nil {
-	   if _, ok := errors.Cause(err).(*weberror.Error); !ok {
-		   err = weberror.NewError(ctx, err, http.StatusBadRequest)
-	   }
-	   return web.RespondJsonError(ctx, w, err)
-   }
-   
-   today := now.BeginningOfDay().UTC()
-   id, _ := uuid.NewV4()
-   model := models.BankDeposit{
-	   ID: id.String(),
-	   Amount	: req.Amount,
-	   BankAccountID: req.BankID,
-	   Date: ctxValues.Now,
-   }
+	today := now.New(ctxValues.Now).BeginningOfDay().UTC()
+	id, _ := uuid.NewV4()
+	model := models.BankDeposit{
+		ID:            id.String(),
+		Amount:        req.Amount,
+		BankAccountID: req.BankID,
+		Date:          today.Unix(),
+	}
 
-   tx, err := h.DbConn.Begin()
-   if err != nil {
-	   return err
-   }
-   res, err := model.Insert(ctx, tx)
-   if err != nil {
-	   cause := errors.Cause(err)
-	   switch cause {
-	   case branch.ErrForbidden:
-		   return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
-	   default:
-		   return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
-	   }
-   }
+	tx, err := h.DbConn.Begin()
+	if err != nil {
+		return err
+	}
+	err = model.Insert(ctx, tx, boil.Infer())
+	if err != nil {
+		return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
+	}
 
-   
-   if err = transaction.SaveDailySummary(ctx, 0, 0, req.Amount, tx); err != nil {
+	if err = transaction.SaveDailySummary(ctx, 0, 0, req.Amount, ctxValues.Now, tx); err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, err
+		return err
 	}
 
-   result := res.Response(ctx)
-   return web.RespondJson(ctx, w, result, http.StatusCreated)
+	return web.RespondJson(ctx, w, model, http.StatusCreated)
 }
 
 // Expenditures handles listing all the Expenditures.
 func (h *Accounting) Expenditures(ctx context.Context, w http.ResponseWriter,
 	r *http.Request, params map[string]string) error {
 
-   claims, err := auth.ClaimsFromContext(ctx)
-   if err != nil {
-	   return err
-   }
+	fields := []datatable.DisplayField{
+		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
+		{Field: "amount", Title: "Amount", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "date", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+	}
 
-   fields := []datatable.DisplayField{
-	   {Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
-	   {Field: "amount", Title: "Amount", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-	   {Field: "date", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-   }
-
-   mapFunc := func(q *models.Expenditure, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
-	for i := 0; i < len(cols); i++ {
-		   col := cols[i]
-		   var v datatable.ColumnValue
-		   switch col.Field {
-		   case "id":
-			   v.Value = fmt.Sprintf("%s", q.ID)
-		   case "amount":
-			   v.Value = fmt.Sprintf("%.2f", q.Amount)
-			   v.Formatted = v.Value
-		   case "date":
+	mapFunc := func(q *models.Expenditure, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+		for i := 0; i < len(cols); i++ {
+			col := cols[i]
+			var v datatable.ColumnValue
+			switch col.Field {
+			case "id":
+				v.Value = fmt.Sprintf("%s", q.ID)
+			case "amount":
+				v.Value = fmt.Sprintf("%.2f", q.Amount)
+				v.Formatted = v.Value
+			case "date":
 				dt := web.NewTimeResponse(ctx, time.Unix(q.Date, 0))
-			   v.Value = dt.Local
-			   v.Formatted = v.Value
-		   default:
-			   return resp, errors.Errorf("Failed to map value for %s.", col.Field)
-		   }
-		   resp = append(resp, v)
-	   }
+				v.Value = dt.Local
+				v.Formatted = v.Value
+			default:
+				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
+			}
+			resp = append(resp, v)
+		}
 
-	   return resp, nil
-   }
+		return resp, nil
+	}
 
-   loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 
-	   var order []string
-	   if len(sorting) > 0 {
-		   order = strings.Split(sorting, ",")
-	   }
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
 
-	   var queries []QueryMod
-	   for _, s := range order {
-		   queries = append(queries, OrderBy(s))
-	   }
-	   
-	   r.ParseForm()
-	   if date, err := strconv.ParseInt(r.FormValue("date"), 10, 64); err != nil {
-		   queries = models.ExpenditureWhere.Date.GTE(date)
-	   }
+		var queries []qm.QueryMod
+		for _, s := range order {
+			queries = append(queries, qm.OrderBy(s))
+		}
 
-	   res, err := models.Expenditures(queries...).All(ctx, h.DbConn)
-	   if err != nil {
-		   return resp, err
-	   }
+		r.ParseForm()
+		if date, err := strconv.ParseInt(r.FormValue("date"), 10, 64); err != nil {
+			queries = append(queries, models.ExpenditureWhere.Date.GTE(date))
+		}
 
-	   for _, a := range res {
-		   l, err := mapFunc(a, fields)
-		   if err != nil {
-			   return resp, errors.Wrapf(err, "Failed to map branch for display.")
-		   }
+		res, err := models.Expenditures(queries...).All(ctx, h.DbConn)
+		if err != nil {
+			return resp, err
+		}
 
-		   resp = append(resp, l)
-	   }
+		for _, a := range res {
+			l, err := mapFunc(a, fields)
+			if err != nil {
+				return resp, errors.Wrapf(err, "Failed to map branch for display.")
+			}
 
-	   return resp, nil
-   }
+			resp = append(resp, l)
+		}
 
-   dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
-   if err != nil {
-	   return err
-   }
+		return resp, nil
+	}
 
-   if dt.HasCache() {
-	   return nil
-   }
+	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
+	if err != nil {
+		return err
+	}
 
-   if ok, err := dt.Render(); ok {
-	   if err != nil {
-		   return err
-	   }
-	   return nil
-   }
+	if dt.HasCache() {
+		return nil
+	}
 
-   data := map[string]interface{}{
-	   "datatable":           dt.Response(),
-	   "urlBranchesCreate": urlBranchesCreate(),
-   }
+	if ok, err := dt.Render(); ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 
-   return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-deposits.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+	data := map[string]interface{}{
+		"datatable":         dt.Response(),
+		"urlBranchesCreate": urlBranchesCreate(),
+	}
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-deposits.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // CreateExpenditure handles the json request from creating a new bank expenditure
 func (h *Accounting) CreateExpenditure(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
-   ctxValues, err := webcontext.ContextValues(ctx)
-   if err != nil {
-	   return err
-   }
-
-   claims, err := auth.ClaimsFromContext(ctx)
-   if err != nil {
-	   return err
-   }
-
-   //
-   var req accounting.CreateExpenditure
-   if err := web.Decode(ctx, r, &req); err != nil {
-	   if _, ok := errors.Cause(err).(*weberror.Error); !ok {
-		   err = weberror.NewError(ctx, err, http.StatusBadRequest)
-	   }
-	   return web.RespondJsonError(ctx, w, err)
-   }
-
-   tx, err := h.DbConn.Begin()
-   if err != nil {
-	   return web.RespondJsonError(ctx, w, err)
-   }
-   id, _ := uuid.NewV4()
-   model := models.Expenditure{
-	   ID: id.String(),
-	   Amount	: req.Amount,
-	   Date: ctxValues.Now,
-   }
-   res, err := model.Insert(ctx, tx)
-   if err != nil {
-	   cause := errors.Cause(err)
-	   switch cause {
-	   case branch.ErrForbidden:
-		   return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusForbidden))
-	   default:
-		   return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
-	   }
-   }
-   
-   if err = transaction.SaveDailySummary(ctx, 0, req.Amount, 0, tx); err != nil {
-	   tx.Rollback()
-	   return err
-   }
-
-   if err = tx.Commit(); err != nil {
-	   return nil, err
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
 	}
 
-   result := res.Response(ctx)
-   return web.RespondJson(ctx, w, result, http.StatusCreated)
+	// claims, err := auth.ClaimsFromContext(ctx)
+	// if err != nil {
+	// 	return err
+	// }
+
+	//
+	var req accounting.CreateExpenditure
+	if err := web.Decode(ctx, r, &req); err != nil {
+		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
+			err = weberror.NewError(ctx, err, http.StatusBadRequest)
+		}
+		return web.RespondJsonError(ctx, w, err)
+	}
+
+	tx, err := h.DbConn.Begin()
+	if err != nil {
+		return web.RespondJsonError(ctx, w, err)
+	}
+	id, _ := uuid.NewV4()
+	model := models.Expenditure{
+		ID:     id.String(),
+		Amount: req.Amount,
+		Date:   ctxValues.Now.Unix(),
+	}
+	err = model.Insert(ctx, tx, boil.Infer())
+	if err != nil {
+		return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
+	}
+
+	if err = transaction.SaveDailySummary(ctx, 0, req.Amount, 0, ctxValues.Now, tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return web.RespondJson(ctx, w, model, http.StatusCreated)
 }
