@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
-	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/platform/auth"
@@ -15,16 +16,17 @@ import (
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/transaction"
 
 	"github.com/gorilla/schema"
+	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"github.com/pkg/errors"
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 )
 
 // Customers represents the Customers API method handler set.
-type Customers struct {
+type Ajor struct {
 	CustomerRepo    *customer.Repository
 	AccountRepo     *account.Repository
 	TransactionRepo *transaction.Repository
@@ -32,52 +34,29 @@ type Customers struct {
 	Redis           *redis.Client
 }
 
-func urlCustomersIndex() string {
-	return fmt.Sprintf("/customers")
+func urlAjorIndex() string {
+	return fmt.Sprintf("/ajor")
 }
 
-func urlCustomersCreate() string {
-	return fmt.Sprintf("/customers/create")
+func urlAjorCollect() string {
+	return fmt.Sprintf("/ajor/collect")
 }
 
-func urlCustomersView(customerID string) string {
-	return fmt.Sprintf("/customers/%s", customerID)
+func urlAjorsCollections() string {
+	return fmt.Sprintf("/ajor/collections")
 }
 
-func urlCustomersUpdate(customerID string) string {
-	return fmt.Sprintf("/customers/%s/update", customerID)
+func urlAjorAccountView(accountNumber string) string {
+	return fmt.Sprintf("/ajor/%s", accountNumber)
 }
 
-func urlCustomersTransactions(customerID string) string {
-	return fmt.Sprintf("/customers/%s/transactions", customerID)
+func urlAjorAccountCollections(customerID string) string {
+	return fmt.Sprintf("/ajor/%s/collections", customerID)
 }
 
-func urlCustomersAddAccount(customerID string) string {
-	return fmt.Sprintf("/customers/%s/add-account", customerID)
-}
-
-func urlCustomersAccountsView(customerID, accountID string) string {
-	return fmt.Sprintf("/customers/%s/accounts/%s", customerID, accountID)
-}
-
-func urlCustomersAccountTransactions(customerID, accountID string) string {
-	return fmt.Sprintf("/customers/%s/accounts/%s/transactions", customerID, accountID)
-}
-
-func urlCustomersTransactionsCreate(customerID, accountID string) string {
-	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/deposit", customerID, accountID)
-}
-
-func urlCustomersTransactionsWithdraw(customerID, accountID string) string {
-	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/withdraw", customerID, accountID)
-}
-
-func urlCustomersTransactionsView(customerID, accountID, tranxID string) string {
-	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/%s", customerID, accountID, tranxID)
-}
 
 // Index handles listing all the customers.
-func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+func (h *Ajor) Index(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
@@ -87,13 +66,12 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "name", Title: "Name", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-		{Field: "email", Title: "Email", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Email"},
-		{Field: "phone_number", Title: "Phone Number", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Phone Number"},
+		{Field: "number", Title: "Account Number", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account Number"},
 		{Field: "sales_rep", Title: "Manager", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Manager"},
 		{Field: "branch", Title: "Branch", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Branch"},
 	}
 
-	mapFunc := func(q *customer.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q *account.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -101,20 +79,17 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 			case "id":
 				v.Value = fmt.Sprintf("%s", q.ID)
 			case "name":
-				v.Value = q.Name
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.ID), v.Value)
-			case "email":
-				v.Value = q.Email
-				v.Formatted = q.Email
-			case "phone_number":
-				v.Value = q.PhoneNumber
-				v.Formatted = q.PhoneNumber
+				v.Value = q.Customer.Name
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.CustomerID), v.Value)
+			case "number":
+				v.Value = q.Number
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlAjorAccountView(q.Number), v.Value)
 			case "sales_rep":
 				v.Value = q.SalesRep
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), v.Value)
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.Customer.SalesRepID), v.Value)
 			case "branch":
 				v.Value = q.Branch
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlBranchesView(q.BranchID), v.Value)
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlBranchesView(q.Customer.BranchID), v.Value)
 			default:
 				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
 			}
@@ -124,6 +99,13 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return resp, nil
 	}
 
+	if err := r.ParseForm(); err != nil {
+		return err
+	}
+	month, _ := strconv.Atoi(r.FormValue("month"))
+	startDate := time.Date(time.Now().Year(), time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	
+
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 
 		var order []string
@@ -131,14 +113,14 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 			order = strings.Split(sorting, ",")
 		}
 
-		res, err := h.CustomerRepo.Find(ctx, claims, customer.FindRequest{
+		res, err := h.AccountRepo.Find(ctx, claims, account.FindRequest{
 			Order: order,
 		})
 		if err != nil {
 			return resp, err
 		}
 
-		for _, a := range res.Customers {
+		for _, a := range res.Accounts {
 			l, err := mapFunc(a, fields)
 			if err != nil {
 				return resp, errors.Wrapf(err, "Failed to map brand for display.")
@@ -168,15 +150,15 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	data := map[string]interface{}{
 		"datatable":      dt.Response(),
-		"urlCustomersCreate": urlCustomersCreate(),
-		"urlCustomersIndex": urlCustomersIndex(),
+		"urlAjorCollect": urlAjorCollect(),
+		"urlAjorIndex": urlAjorIndex(),
 	}
 
-	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-index.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "ajor-index.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // Create handles creating a new customer.
-func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+func (h *Ajor) Collect(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {

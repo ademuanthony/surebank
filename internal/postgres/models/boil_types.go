@@ -55,6 +55,7 @@ func makeCacheKey(cols boil.Columns, nzDefaults []string) string {
 const (
 	AccountTypeDS = "DS"
 	AccountTypeSB = "SB"
+	AccountTypeAJ = "AJ"
 )
 
 // Enum values for payment_method

@@ -3,7 +3,6 @@ package customer
 import (
 	"context"
 	"database/sql"
-	"merryworld/surebank/internal/platform/web/weberror"
 	"time"
 
 	"github.com/pborman/uuid"
@@ -11,7 +10,9 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	
 	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/postgres/models"
 )
