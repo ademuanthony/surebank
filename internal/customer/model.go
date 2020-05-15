@@ -14,6 +14,12 @@ type Repository struct {
 	DbConn *sqlx.DB
 }
 
+var AccountTypes = []string {
+	models.AccountTypeSB,
+	models.AccountTypeDS,
+	models.AccountTypeAJ,
+}
+
 // NewRepository creates a new Repository that defines dependencies for Customer.
 func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{

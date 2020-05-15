@@ -42,6 +42,7 @@ type Transaction struct {
 	Narration      string          `json:"narration" truss:"api-read"`
 	SalesRepID     string          `json:"sales_rep_id" truss:"api-read"`
 	ReceiptNo	   string 		   `json:"receipt_no"`
+	EffectiveDate  time.Time 	   `json:"effective_date"`
 	CreatedAt      time.Time       `json:"created_at" truss:"api-read"`
 	UpdatedAt      time.Time       `json:"updated_at" truss:"api-read"`
 	ArchivedAt     *time.Time      `json:"archived_at,omitempty" truss:"api-hide"`
@@ -60,6 +61,7 @@ func FromModel(rec *models.Transaction) *Transaction {
 		Narration:      rec.Narration,
 		SalesRepID:     rec.SalesRepID,
 		ReceiptNo:  	rec.ReceiptNo,
+		EffectiveDate:  time.Unix(rec.EffectiveData, 0),
 		CreatedAt:      time.Unix(rec.CreatedAt, 0),
 		UpdatedAt:      time.Unix(rec.UpdatedAt, 0),
 	}
@@ -95,6 +97,7 @@ type Response struct {
 	SalesRepID     string            `json:"sales_rep_id" truss:"api-read"`
 	SalesRep       string            `json:"sales_rep,omitempty" truss:"api-read"`
 	ReceiptNo	   string			 `json:"receipt_no"`
+	EffectiveData  web.TimeResponse  `json:"effective_date" truss:"api-read"`  
 	CreatedAt      web.TimeResponse  `json:"created_at" truss:"api-read"`            // CreatedAt contains multiple format options for display.
 	UpdatedAt      web.TimeResponse  `json:"updated_at" truss:"api-read"`            // UpdatedAt contains multiple format options for display.
 	ArchivedAt     *web.TimeResponse `json:"archived_at,omitempty" truss:"api-read"` // ArchivedAt contains multiple format options for display.
@@ -116,6 +119,7 @@ func (m *Transaction) Response(ctx context.Context) *Response {
 		Narration:      m.Narration,
 		ReceiptNo: 		m.ReceiptNo,
 		SalesRepID:     m.SalesRepID,
+		EffectiveData:  web.NewTimeResponse(ctx, m.EffectiveDate),
 		CreatedAt:      web.NewTimeResponse(ctx, m.CreatedAt),
 		UpdatedAt:      web.NewTimeResponse(ctx, m.UpdatedAt),
 	}
