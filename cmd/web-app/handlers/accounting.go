@@ -39,8 +39,8 @@ func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
 	fields := []datatable.DisplayField{
 		{Field: "date", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 		{Field: "income", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-		{Field: "bank_deposit", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-		{Field: "expenditure", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "bank_deposit", Title: "Bank Deposit", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "expenditure", Title: "Expenditure", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 		{Field: "balance", Title: "Balance", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 	}
 
@@ -289,7 +289,9 @@ func (h *Accounting) BankDeposits(ctx context.Context, w http.ResponseWriter,
 			order = strings.Split(sorting, ",")
 		}
 
-		var queries []qm.QueryMod
+		var queries = []qm.QueryMod{
+			qm.Load(models.BankDepositRels.BankAccount),
+		}
 		for _, s := range order {
 			queries = append(queries, qm.OrderBy(s))
 		}
@@ -335,7 +337,7 @@ func (h *Accounting) BankDeposits(ctx context.Context, w http.ResponseWriter,
 	banks, err := models.BankAccounts(qm.OrderBy("account_name")).All(ctx, h.DbConn)
 	if err != nil {
 		return web.RespondError(ctx, w, err)
-	}
+	} 
 
 	data := map[string]interface{}{
 		"datatable":         dt.Response(),
@@ -481,7 +483,7 @@ func (h *Accounting) Expenditures(ctx context.Context, w http.ResponseWriter,
 		"urlBranchesCreate": urlBranchesCreate(),
 	}
 
-	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-deposits.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-expenditures.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // CreateExpenditure handles the json request from creating a new bank expenditure

@@ -171,11 +171,12 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	}
 	app.Handle("GET", "/accounting/banks", accounting.BankAccounts, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/api/v1/accounting/banks", accounting.CreateBankAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/accounting/deposits", accounting.BankAccounts, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	app.Handle("POST", "/api/v1/accounting/deposits", accounting.CreateBankAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/accounting/expenditure", accounting.Expenditures, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	app.Handle("POST", "/api/v1/accounting/expenditure", accounting.CreateExpenditure, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-
+	app.Handle("GET", "/accounting/deposits", accounting.BankDeposits, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/api/v1/accounting/deposits", accounting.CreateBankDeposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/accounting/expenditures", accounting.Expenditures, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/api/v1/accounting/expenditures", accounting.CreateExpenditure, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/accounting", accounting.DailySummaries, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	
 	// Register shop management pages
 	// Brands
 	brands := Brands{

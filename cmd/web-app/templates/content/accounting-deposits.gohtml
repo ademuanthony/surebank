@@ -29,7 +29,7 @@
         </form>
     </div>
 </div>
-
+ 
 <!-- Modal -->
 <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="createModalLabel"
     aria-hidden="true">
@@ -43,17 +43,19 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <select class="form-control" data-target="deposit.bank_id">
-                                {{ range $acc := .Banks }}
-                                <option value="{{ $acc.ID }}">$acc</option>
-                                {{ end }}
-                            </select>
-                        </div>
-                        <div class="col-md-12">
-                            <input type="text" required class="form-control" data-target="deposit.amount">
-                        </div>
+                    <div class="form-group">
+                        <label for="bankName">Bank Account</label>
+                        <select class="form-control" data-target="deposit.bank">
+                            <option></option>
+                            {{ range $acc := .banks }}
+                            <option value="{{ $acc.ID }}">{{ $acc }}</option>
+                            {{ end }}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bankName">Amount</label>
+                        <input type="text" required class="form-control" data-target="deposit.amount">
                     </div>
                 </div>
                 <div class="modal-footer">

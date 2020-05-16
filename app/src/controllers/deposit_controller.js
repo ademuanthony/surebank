@@ -22,7 +22,7 @@ export default class extends Controller {
       return
     }
     const that = this
-    const req = { bank_id: this.bankTarget.value, amount: this.amountTarget.value }
+    const req = { bank_id: this.bankTarget.value, amount: parseFloat(this.amountTarget.value) }
     axios.post('/api/v1/accounting/deposits', req).then(resp => {
       console.log(resp)
       window.location.reload()

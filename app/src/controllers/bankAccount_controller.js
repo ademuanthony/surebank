@@ -26,7 +26,7 @@ export default class extends Controller {
       return
     }
     const that = this
-    const req = { name: this.nameInputTarget.value }
+    const req = { name: this.nameTarget.value, number: this.numberTarget.value, bank: this.bankTarget.value }
     axios.post('/api/v1/accounting/banks', req).then(resp => {
       console.log(resp)
       window.location.reload()
