@@ -238,18 +238,21 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	}
 
 	effectiveDate := now.New(currentDate).BeginningOfDay()
+	var isFirstContribution bool = true
 	if account.AccountType == models.AccountTypeAJ {
 		lastDeposit, err := repo.lastDeposit(ctx, account.ID)
 		if err == nil {
 			if effectiveDate.Year() == time.Unix(lastDeposit.EffectiveData, 0).Year() &&
 			 effectiveDate.Month() == time.Unix(lastDeposit.EffectiveData, 0).Month() {
 				effectiveDate = now.New(time.Unix(lastDeposit.EffectiveData, 0)).Time.Add(24 * time.Hour)
+				isFirstContribution = false
 			}
 		}
 	}
 	m.EffectiveData = effectiveDate.UTC().Unix()
 
 	if err := m.Insert(ctx, tx, boil.Infer()); err != nil {
+		_ = tx.Rollback()
 		return nil, errors.WithMessage(err, "Insert deposit failed")
 	}
 
@@ -299,6 +302,34 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 				// TODO: log critical error. Send message to monitoring account
 				fmt.Println(err)
 			}
+		}
+	}
+
+	if account.AccountType == models.AccountTypeAJ && isFirstContribution {
+		wm := models.Transaction{
+			ID:             uuid.NewRandom().String(),
+			AccountID:      account.ID,
+			OpeningBalance: accountBalanceAtTx(&m),
+			Amount:         req.Amount,
+			Narration:      "Ajor fee deduction",
+			TXType:         TransactionType_Withdrawal.String(),
+			SalesRepID:     claims.Subject,
+			ReceiptNo: 		repo.generateReceiptNumber(ctx),
+			CreatedAt:      currentDate.Unix(),
+			UpdatedAt:      currentDate.Unix(),
+		}
+
+		if err := wm.Insert(ctx, tx, boil.Infer()); err != nil {
+			_ = tx.Rollback()
+			return nil, errors.WithMessage(err, "Insert Ajor fee failed")
+		}
+
+		if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, tx, models.M{
+			models.AccountColumns.Balance: accountBalanceAtTx(&m),
+		}); err != nil {
+	
+			_ = tx.Rollback()
+			return nil, err
 		}
 	}
 
