@@ -260,7 +260,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 		return nil
 	}
 
-	data["accountTypes"] = accountTypes
+	data["accountTypes"] = customer.AccountTypes
 	data["form"] = req
 	data["urlCustomersIndex"] = urlCustomersIndex()
 
@@ -272,7 +272,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 }
 
 // View handles displaying a customer.
-func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Ajor) View(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -383,7 +383,7 @@ func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Req
 }
 
 // Update handles updating a customer.
-func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Ajor) Update(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -472,7 +472,7 @@ func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 }
 
 // Transactions handles listing all the customers transactions across all his accounts.
-func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Ajor) Transactions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
@@ -618,7 +618,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 }
 
 // AddAccount handles add a new customer account.
-func (h *Customers) AddAccount(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Ajor) AddAccount(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -700,7 +700,7 @@ func (h *Customers) AddAccount(ctx context.Context, w http.ResponseWriter, r *ht
 }
 
 // Account handles displaying an account for a customer
-func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Ajor) Account(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -789,7 +789,7 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 }
 
 // AccountTransactions handles listing all the transactions for the selected account.
-func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Ajor) AccountTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
@@ -922,7 +922,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 }
 
 // Deposit handles add a new transaction to account.
-func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Ajor) Deposit(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -1011,7 +1011,7 @@ func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.
 }
 
 // Withraw handles add a new withdrawal to account.
-func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Ajor) Withraw(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -1100,7 +1100,7 @@ func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.
 }
 
 // Transaction handles displaying of a transaction
-func (h *Customers) Transaction(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Ajor) Transaction(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValue, err := webcontext.ContextValues(ctx)
 	if err != nil {

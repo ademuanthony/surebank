@@ -46,7 +46,7 @@
                     <div class="row">
                         <div class="col-md-12">
                             <select class="form-control" data-target="deposit.bank_id">
-                                {{ $acc := range .Banks }}
+                                {{ range $acc := .Banks }}
                                 <option value="{{ $acc.ID }}">$acc</option>
                                 {{ end }}
                             </select>

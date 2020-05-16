@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
@@ -102,8 +100,8 @@ func (h *Ajor) Index(ctx context.Context, w http.ResponseWriter, r *http.Request
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
-	month, _ := strconv.Atoi(r.FormValue("month"))
-	startDate := time.Date(time.Now().Year(), time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	//month, _ := strconv.Atoi(r.FormValue("month"))
+	//startDate := time.Date(time.Now().Year(), time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 	
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
@@ -242,7 +240,7 @@ func (h *Ajor) Collect(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		return nil
 	}
 
-	data["accountTypes"] = accountTypes
+	data["accountTypes"] = customer.AccountTypes
 	data["form"] = req
 	data["urlCustomersIndex"] = urlCustomersIndex()
 

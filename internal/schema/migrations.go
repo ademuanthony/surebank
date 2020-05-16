@@ -1124,7 +1124,7 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 		},
 		// Add effective_data to transaction
 		{
-			ID: "20200414-01",
+			ID: "20200414-02",
 			Migrate: func(tx *sql.Tx) error {
 				q1 := `ALTER TABLE transaction ADD effective_date INT8 NOT NULL DEFAULT 0;`
 				if _, err := tx.Exec(q1); err != nil {
