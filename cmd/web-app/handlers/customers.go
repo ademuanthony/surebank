@@ -260,7 +260,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 		return nil
 	}
 
-	data["accountTypes"] = accountTypes
+	data["accountTypes"] = customer.AccountTypes
 	data["form"] = req
 	data["urlCustomersIndex"] = urlCustomersIndex()
 
