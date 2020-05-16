@@ -276,6 +276,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		Redis:           appCtx.Redis,
 	}
 	app.Handle("GET", "/reports/collections", reports.Transactions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/reports/ajor", reports.Ajor, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
 	// Register sales endpoint
 	sales := Sales{

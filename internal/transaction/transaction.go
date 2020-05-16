@@ -325,7 +325,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		}
 
 		if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, tx, models.M{
-			models.AccountColumns.Balance: accountBalanceAtTx(&m),
+			models.AccountColumns.Balance: accountBalanceAtTx(&wm),
 		}); err != nil {
 	
 			_ = tx.Rollback()

@@ -93,6 +93,78 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	}, nil
 }
 
+// FindAjor gets all the accounts from the database that are of ajor type and have > 0 balance.
+func (repo *Repository) FindAjor(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
+	var queries []QueryMod
+
+	if req.Where != "" {
+		queries = append(queries, Where(req.Where, req.Args...))
+	}
+
+	queries = append(queries, 
+		models.AccountWhere.AccountType.EQ(models.AccountTypeAJ),
+		models.AccountWhere.Balance.GT(0),
+	)
+
+
+	if !req.IncludeArchived {
+		queries = append(queries, And("archived_at is null"))
+	}
+
+	totalCount, err := models.Accounts(queries...).Count(ctx, repo.DbConn)
+	if err != nil {
+		return nil, weberror.WithMessage(ctx, err, "Cannot get account total count")
+	}
+
+	if req.IncludeBranch {
+		queries = append(queries, Load(models.AccountRels.Branch))
+	}
+
+	if req.IncludeCustomer {
+		queries = append(queries, Load(models.AccountRels.Customer))
+	}
+
+	if req.IncludeSalesRep {
+		queries = append(queries, Load(models.AccountRels.SalesRep))
+	}
+
+	if len(req.Order) > 0 {
+		for _, s := range req.Order {
+			queries = append(queries, OrderBy(s))
+		}
+	}
+
+	if req.Limit != nil {
+		queries = append(queries, Limit(int(*req.Limit)))
+	}
+
+	if req.Offset != nil {
+		queries = append(queries, Offset(int(*req.Offset)))
+	}
+
+	accountSlice, err := models.Accounts(queries...).All(ctx, repo.DbConn)
+	if err != nil {
+		if err.Error() == sql.ErrNoRows.Error() {
+			return &PagedResponseList{}, nil
+		}
+		return nil, weberror.NewError(ctx, err, 500)
+	}
+
+	var result Accounts
+	for _, rec := range accountSlice {
+		result = append(result, FromModel(rec))
+	}
+
+	if len(result) == 0 {
+		return &PagedResponseList{}, nil
+	}
+
+	return &PagedResponseList{
+		Accounts:   result.Response(ctx),
+		TotalCount: totalCount,
+	}, nil
+}
+
 // ReadByID gets the specified branch by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*Account, error) {
 	queries := []QueryMod{

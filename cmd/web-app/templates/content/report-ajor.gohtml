@@ -1,0 +1,40 @@
+{{define "title"}}Categories{{end}}
+{{define "content"}}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Ajor Report</li>
+    </ol>
+</nav>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+
+    <h1 class="h3 mb-0 text-gray-800">Ajor Report</h1>
+</div>
+
+    <div class="row">
+        <div class="col">
+            <form method="post">
+                <div class="card shadow">
+                    <div class="table-responsive dataTable_card">
+                        {{ template "partials/datatable/html" . }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{{end}}
+{{define "style"}}
+    {{ template "partials/datatable/style" . }}
+{{ end }}
+{{define "js"}}
+    {{ template "partials/datatable/js" . }}
+
+    <script>
+        $(document).ready(function(){
+            //$("#dataTable_filter").hide();
+        });
+    </script>
+
+{{end}}

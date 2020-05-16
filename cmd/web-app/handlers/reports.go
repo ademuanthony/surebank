@@ -197,3 +197,108 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "report-transactions.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
+// Ajor handles listing all the Ajor account types
+func (h *Reports) Ajor(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	var data = make(map[string]interface{})
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err 
+	}
+
+	fields := []datatable.DisplayField{
+		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
+		{Field: "customer", Title: "Name", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
+		{Field: "number", Title: "Account Number", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
+		{Field: "target", Title: "Daily Contribution", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
+		{Field: "balance", Title: "Account Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
+		{Field: "sales_rep_id", Title: "Account Manager", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
+		{Field: "created_at", Title: "Registration Date", Visible: true, Searchable: false, Orderable: true, Filterable: false},
+	}
+
+	mapFunc := func(q *account.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+		for i := 0; i < len(cols); i++ {
+			col := cols[i]
+			var v datatable.ColumnValue
+			switch col.Field {
+			case "id":
+				v.Value = fmt.Sprintf("%s", q.ID)
+			case "customer":
+				v.Value = q.Customer.Name
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.CustomerID), q.Customer.Name)
+			case "number":
+				v.Value = q.Number
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(q.CustomerID, q.ID), q.Number)
+			case "target":
+				v.Value = fmt.Sprintf("%f", q.Balance)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("%.2f", q.Balance)
+			case "balance":
+				v.Value = fmt.Sprintf("%f", q.Balance)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("%.2f", q.Balance)
+			case "sales_rep_id":
+				v.Value = q.SalesRepID
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)
+			case "created_at":
+				v.Value = q.CreatedAt.Local
+				v.Formatted = v.Value
+			default:
+				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
+			}
+			resp = append(resp, v)
+		}
+
+		return resp, nil
+	}
+
+	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
+
+		res, err := h.AccountRepo.FindAjor(ctx, claims, account.FindRequest{
+			Order: order,
+			IncludeBranch: true,
+			IncludeCustomer: true,
+			IncludeSalesRep: true,
+		})
+		if err != nil {
+			return resp, err
+		}
+
+		for _, a := range res.Accounts {
+			l, err := mapFunc(a, fields)
+			if err != nil {
+				return resp, errors.Wrapf(err, "Failed to map Ajor accounts for display.")
+			}
+
+			resp = append(resp, l)
+		}
+
+		return resp, nil
+	}
+
+	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
+	if err != nil {
+		return err
+	}
+
+	if dt.HasCache() {
+		return nil
+	}
+
+	if ok, err := dt.Render(); ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	data["datatable"] = dt.Response()
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "report-ajor.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
