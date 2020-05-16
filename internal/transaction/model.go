@@ -97,7 +97,7 @@ type Response struct {
 	SalesRepID     string            `json:"sales_rep_id" truss:"api-read"`
 	SalesRep       string            `json:"sales_rep,omitempty" truss:"api-read"`
 	ReceiptNo	   string			 `json:"receipt_no"`
-	EffectiveData  web.TimeResponse  `json:"effective_date" truss:"api-read"`  
+	EffectiveDate  web.TimeResponse  `json:"effective_date" truss:"api-read"`  
 	CreatedAt      web.TimeResponse  `json:"created_at" truss:"api-read"`            // CreatedAt contains multiple format options for display.
 	UpdatedAt      web.TimeResponse  `json:"updated_at" truss:"api-read"`            // UpdatedAt contains multiple format options for display.
 	ArchivedAt     *web.TimeResponse `json:"archived_at,omitempty" truss:"api-read"` // ArchivedAt contains multiple format options for display.
@@ -119,7 +119,7 @@ func (m *Transaction) Response(ctx context.Context) *Response {
 		Narration:      m.Narration,
 		ReceiptNo: 		m.ReceiptNo,
 		SalesRepID:     m.SalesRepID,
-		EffectiveData:  web.NewTimeResponse(ctx, m.EffectiveDate),
+		EffectiveDate:  web.NewTimeResponse(ctx, m.EffectiveDate),
 		CreatedAt:      web.NewTimeResponse(ctx, m.CreatedAt),
 		UpdatedAt:      web.NewTimeResponse(ctx, m.UpdatedAt),
 	}

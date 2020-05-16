@@ -97,6 +97,7 @@
                         <tr>
                             <th>Amount</th>
                             <th>Date</th>
+                            <th>Effective Date</th>
                             <th>Type</th>
                             <th>Narration</th>
                             <th>Account</th>
@@ -110,6 +111,7 @@
                             <tr>
                                 <td><a href="/customers/{{ $.customer.ID }}/accounts/{{ $tran.AccountID}}/transactions/{{ $tran.ID }}">{{ $tran.Amount }}</a></td>
                                 <td>{{ $tran.CreatedAt.Local }}</td>
+                                <td>{{ $tran.EffectiveDate.LocalDate }}</td>
                                 <td>{{ $tran.Type }}</td>
                                 <td>{{ FormatNarration $tran.Narration }}</td>
                                 <td><a href="/accounts/{{ $tran.AccountID }}">{{ $tran.AccountNumber }}</a></td>

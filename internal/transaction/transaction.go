@@ -18,6 +18,7 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
 	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
@@ -176,7 +177,7 @@ func (repo *Repository) AccountBalance(ctx context.Context, _ auth.Claims, accou
 }
 
 // Create inserts a new transaction into the database.
-func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req CreateRequest, now time.Time) (*Transaction, error) {
+func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time) (*Transaction, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Create")
 	defer span.Finish()
 	if claims.Audience == "" {
@@ -197,15 +198,15 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	}
 
 	// If now empty set it to the current time.
-	if now.IsZero() {
-		now = time.Now()
+	if currentDate.IsZero() {
+		currentDate = time.Now()
 	}
 
 	// Always store the time as UTC.
-	now = now.UTC()
+	currentDate = currentDate.UTC()
 	// Postgres truncates times to milliseconds when storing. We and do the same
 	// here so the value we return is consistent with what we store.
-	now = now.Truncate(time.Millisecond)
+	currentDate = currentDate.Truncate(time.Millisecond)
 
 	repo.accNumMtx.Lock()
 	defer repo.accNumMtx.Unlock()
@@ -232,9 +233,21 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		TXType:         req.Type.String(),
 		SalesRepID:     claims.Subject,
 		ReceiptNo: 		repo.generateReceiptNumber(ctx),
-		CreatedAt:      now.Unix(),
-		UpdatedAt:      now.Unix(),
+		CreatedAt:      currentDate.Unix(),
+		UpdatedAt:      currentDate.Unix(),
 	}
+
+	effectiveDate := now.New(currentDate).BeginningOfDay()
+	if account.AccountType == models.AccountTypeAJ {
+		lastDeposit, err := repo.lastDeposit(ctx, account.ID)
+		if err == nil {
+			if effectiveDate.Year() == time.Unix(lastDeposit.EffectiveData, 0).Year() &&
+			 effectiveDate.Month() == time.Unix(lastDeposit.EffectiveData, 0).Month() {
+				effectiveDate = now.New(time.Unix(lastDeposit.EffectiveData, 0)).Time.Add(24 * time.Hour)
+			}
+		}
+	}
+	m.EffectiveData = effectiveDate.UTC().Unix()
 
 	if err := m.Insert(ctx, tx, boil.Infer()); err != nil {
 		return nil, errors.WithMessage(err, "Insert deposit failed")
@@ -248,36 +261,49 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, err
 	}
 
-	if err = SaveDailySummary(ctx, req.Amount, 0, 0, now, tx); err != nil {
+	if err = SaveDailySummary(ctx, req.Amount, 0, 0, currentDate, tx); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, err
+	if account.AccountType == models.AccountTypeAJ { 
+		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ajor_received",
+				map[string]interface{}{
+					"Name":    account.R.Customer.Name,
+					"EffectiveDate": web.NewTimeResponse(ctx, time.Unix(m.EffectiveData, 0)).LocalDate,
+					"Amount":  req.Amount,
+					"Balance": m.OpeningBalance + req.Amount,
+				}); err != nil {
+				// TODO: log critical error. Send message to monitoring account
+				fmt.Println(err)
+			}
+	}else {
+		// send SMS notification
+		if req.Type == TransactionType_Deposit {
+			if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_received",
+				map[string]interface{}{
+					"Name":    account.R.Customer.Name,
+					"Amount":  req.Amount,
+					"Balance": m.OpeningBalance + req.Amount,
+				}); err != nil {
+				// TODO: log critical error. Send message to monitoring account
+				fmt.Println(err)
+			}
+		} else {
+			if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_withdrawn",
+				map[string]interface{}{
+					"Name":    account.R.Customer.Name,
+					"Amount":  req.Amount,
+					"Balance": m.OpeningBalance + req.Amount,
+				}); err != nil {
+				// TODO: log critical error. Send message to monitoring account
+				fmt.Println(err)
+			}
+		}
 	}
 
-	// send SMS notification
-	if req.Type == TransactionType_Deposit {
-		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_received",
-			map[string]interface{}{
-				"Name":    account.R.Customer.Name,
-				"Amount":  req.Amount,
-				"Balance": m.OpeningBalance + req.Amount,
-			}); err != nil {
-			// TODO: log critical error. Send message to monitoring account
-			fmt.Println(err)
-		}
-	} else {
-		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_withdrawn",
-			map[string]interface{}{
-				"Name":    account.R.Customer.Name,
-				"Amount":  req.Amount,
-				"Balance": m.OpeningBalance + req.Amount,
-			}); err != nil {
-			// TODO: log critical error. Send message to monitoring account
-			fmt.Println(err)
-		}
+	if err = tx.Commit(); err != nil {
+		return nil, err
 	}
 
 	return &Transaction{
@@ -344,6 +370,15 @@ func (repo *Repository) receiptExists(ctx context.Context, receipt string) bool 
 func (repo *Repository) lastTransaction(ctx context.Context, accountID string) (*models.Transaction, error) {
 	return models.Transactions(
 		models.TransactionWhere.AccountID.EQ(accountID),
+		OrderBy(fmt.Sprintf("%s desc", models.TransactionColumns.CreatedAt)),
+		Limit(1),
+	).One(ctx, repo.DbConn)
+}
+
+func (repo *Repository) lastDeposit(ctx context.Context, accountID string) (*models.Transaction, error) {
+	return models.Transactions(
+		models.TransactionWhere.AccountID.EQ(accountID),
+		models.TransactionWhere.TXType.EQ(TransactionType_Deposit.String()),
 		OrderBy(fmt.Sprintf("%s desc", models.TransactionColumns.CreatedAt)),
 		Limit(1),
 	).One(ctx, repo.DbConn)

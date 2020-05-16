@@ -272,7 +272,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 }
 
 // View handles displaying a customer.
-func (h *Ajor) View(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -383,7 +383,7 @@ func (h *Ajor) View(ctx context.Context, w http.ResponseWriter, r *http.Request,
 }
 
 // Update handles updating a customer.
-func (h *Ajor) Update(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -472,7 +472,7 @@ func (h *Ajor) Update(ctx context.Context, w http.ResponseWriter, r *http.Reques
 }
 
 // Transactions handles listing all the customers transactions across all his accounts.
-func (h *Ajor) Transactions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
@@ -485,6 +485,7 @@ func (h *Ajor) Transactions(ctx context.Context, w http.ResponseWriter, r *http.
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "amount", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
 		{Field: "created_at", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
+		{Field: "effective_date", Title: "Effective Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
 		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
@@ -505,6 +506,9 @@ func (h *Ajor) Transactions(ctx context.Context, w http.ResponseWriter, r *http.
 			case "created_at":
 				v.Value = q.CreatedAt.Local
 				v.Formatted = q.CreatedAt.Local
+			case "effective_date":
+				v.Value = q.EffectiveDate.Local
+				v.Formatted = q.EffectiveDate.LocalDate
 			case "narration":
 				values := strings.Split(q.Narration, ":")
 				if len(values) > 1 {
@@ -618,7 +622,7 @@ func (h *Ajor) Transactions(ctx context.Context, w http.ResponseWriter, r *http.
 }
 
 // AddAccount handles add a new customer account.
-func (h *Ajor) AddAccount(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Customers) AddAccount(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -700,7 +704,7 @@ func (h *Ajor) AddAccount(ctx context.Context, w http.ResponseWriter, r *http.Re
 }
 
 // Account handles displaying an account for a customer
-func (h *Ajor) Account(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -789,7 +793,7 @@ func (h *Ajor) Account(ctx context.Context, w http.ResponseWriter, r *http.Reque
 }
 
 // AccountTransactions handles listing all the transactions for the selected account.
-func (h *Ajor) AccountTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
@@ -812,6 +816,7 @@ func (h *Ajor) AccountTransactions(ctx context.Context, w http.ResponseWriter, r
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "amount", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
 		{Field: "created_at", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
+		{Field: "effective_date", Title: "Effective Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
 		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
@@ -832,6 +837,9 @@ func (h *Ajor) AccountTransactions(ctx context.Context, w http.ResponseWriter, r
 			case "created_at":
 				v.Value = q.CreatedAt.Local
 				v.Formatted = q.CreatedAt.Local
+			case "effective_date":
+				v.Value = q.EffectiveDate.LocalDate
+				v.Formatted = q.EffectiveDate.LocalDate
 			case "narration":
 				values := strings.Split(q.Narration, ":")
 				if len(values) > 1 {
@@ -922,7 +930,7 @@ func (h *Ajor) AccountTransactions(ctx context.Context, w http.ResponseWriter, r
 }
 
 // Deposit handles add a new transaction to account.
-func (h *Ajor) Deposit(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -1011,7 +1019,7 @@ func (h *Ajor) Deposit(ctx context.Context, w http.ResponseWriter, r *http.Reque
 }
 
 // Withraw handles add a new withdrawal to account.
-func (h *Ajor) Withraw(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
@@ -1100,7 +1108,7 @@ func (h *Ajor) Withraw(ctx context.Context, w http.ResponseWriter, r *http.Reque
 }
 
 // Transaction handles displaying of a transaction
-func (h *Ajor) Transaction(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+func (h *Customers) Transaction(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	ctxValue, err := webcontext.ContextValues(ctx)
 	if err != nil {
