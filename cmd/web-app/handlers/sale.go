@@ -25,7 +25,7 @@ type Sales struct {
 	Repository *sale.Repository
 	ShopRepo   *shop.Repository
 	Redis      *redis.Client
-	Renderer   web.Renderer
+	Renderer   web.Renderer 
 }
 
 func urlSalesIndex() string {

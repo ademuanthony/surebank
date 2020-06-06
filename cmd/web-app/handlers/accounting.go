@@ -20,8 +20,8 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/jinzhu/now"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 )
 
@@ -337,7 +337,7 @@ func (h *Accounting) BankDeposits(ctx context.Context, w http.ResponseWriter,
 	banks, err := models.BankAccounts(qm.OrderBy("account_name")).All(ctx, h.DbConn)
 	if err != nil {
 		return web.RespondError(ctx, w, err)
-	} 
+	}
 
 	data := map[string]interface{}{
 		"datatable":         dt.Response(),

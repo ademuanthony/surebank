@@ -10,8 +10,8 @@ import (
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/boil"
+	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
 	"merryworld/surebank/internal/inventory"
@@ -133,7 +133,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 	}
 
 	repo.mutex.Lock()
-	defer  repo.mutex.Unlock()
+	defer repo.mutex.Unlock()
 
 	salesRep, err := models.Users(models.UserWhere.ID.EQ(claims.Subject)).One(ctx, repo.DbConn)
 	if err != nil {
@@ -164,12 +164,12 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 			Ref:       fmt.Sprintf("Sale to Customer(%s), %s", req.CustomerName, saleID),
 		}, now, tx); err != nil {
 			_ = tx.Rollback()
-			return nil, weberror.NewError(ctx, weberror.WithMessagef(ctx, err,"Cannot make stock deduction for %s", prod.Name), 400)
+			return nil, weberror.NewError(ctx, weberror.WithMessagef(ctx, err, "Cannot make stock deduction for %s", prod.Name), 400)
 		}
 
 		itemSlice = append(itemSlice, &models.SaleItem{
 			ID:            uuid.NewRandom().String(),
-			SaleID: saleID,
+			SaleID:        saleID,
 			ProductID:     item.ProductID,
 			Quantity:      item.Quantity,
 			UnitPrice:     prod.Price,
@@ -264,7 +264,7 @@ func (repo *Repository) generateReceiptNumber(ctx context.Context) string {
 	return receipt
 }
 
-func (repo *Repository) saleExist(ctx context.Context, receiptNumber string) bool  {
+func (repo *Repository) saleExist(ctx context.Context, receiptNumber string) bool {
 	exist, _ := models.Sales(models.SaleWhere.ReceiptNumber.EQ(receiptNumber)).Exists(ctx, repo.DbConn)
 	return exist
 }
@@ -299,7 +299,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	_,err = models.Sales(models.SaleWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.SaleColumns.ArchivedAt: now})
+	_, err = models.Sales(models.SaleWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.SaleColumns.ArchivedAt: now})
 
 	return nil
 }

@@ -5,16 +5,17 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/pborman/uuid"
-	"github.com/pkg/errors"
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/postgres/models"
+
+	"github.com/pborman/uuid"
+	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
+	. "github.com/volatiletech/sqlboiler/queries/qm"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 // Product
@@ -92,8 +93,6 @@ func ProductFromModel(product *models.Product) *Product {
 			p.Category = product.R.Category.Name
 		}
 	}
-
-
 
 	return p
 }
@@ -281,7 +280,7 @@ func (repo *Repository) ReadProductByID(ctx context.Context, _ auth.Claims, id s
 	}
 	productModel, err := models.Products(queries...).One(ctx, repo.DbConn)
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
 	return ProductFromModel(productModel), nil
@@ -351,7 +350,7 @@ func (repo *Repository) CreateProduct(ctx context.Context, claims auth.Claims, r
 
 	tx, err := repo.DbConn.Begin()
 	if err != nil {
-		return nil, errors.WithStack(errors.WithMessage(err,"create product failed, cannot start db transaction"))
+		return nil, errors.WithStack(errors.WithMessage(err, "create product failed, cannot start db transaction"))
 	}
 
 	prodModel := s.ToModel()
@@ -367,12 +366,12 @@ func (repo *Repository) CreateProduct(ctx context.Context, claims auth.Claims, r
 		}
 		if err = pCat.Insert(ctx, tx, boil.Infer()); err != nil {
 			_ = tx.Rollback()
-			return nil, errors.WithStack(errors.WithMessage(err,"create product failed, cannot link product category"))
+			return nil, errors.WithStack(errors.WithMessage(err, "create product failed, cannot link product category"))
 		}
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, errors.WithStack(errors.WithMessage(err,"create product failed, cannot commit db transaction"))
+		return nil, errors.WithStack(errors.WithMessage(err, "create product failed, cannot commit db transaction"))
 	}
 
 	return &s, nil
@@ -466,7 +465,7 @@ func (repo *Repository) UpdateProduct(ctx context.Context, claims auth.Claims, r
 		return nil
 	}
 
-	_,err = models.Products(models.ProductWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
+	_, err = models.Products(models.ProductWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
 	return nil
 }
@@ -500,7 +499,7 @@ func (repo *Repository) AddProductToCategory(ctx context.Context, claims auth.Cl
 	if exists, _ := models.ProductCategories(
 		models.ProductCategoryWhere.ProductID.EQ(req.ProductID),
 		models.ProductCategoryWhere.CategoryID.EQ(req.CategoryID),
-		).Exists(ctx, repo.DbConn); !exists {
+	).Exists(ctx, repo.DbConn); !exists {
 		return errors.New("product already linked to the selected category")
 	}
 
@@ -530,14 +529,14 @@ func (repo *Repository) AddProductToCategory(ctx context.Context, claims auth.Cl
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	cols := models.M{models.ProductColumns.UpdatedAt: now, models.ProductColumns.UpdatedByID: claims.Subject,}
+	cols := models.M{models.ProductColumns.UpdatedAt: now, models.ProductColumns.UpdatedByID: claims.Subject}
 	if _, err := models.Products(models.ProductWhere.ID.EQ(req.ProductID)).UpdateAll(ctx, tx, cols); err != nil {
 		_ = tx.Rollback()
 		return errors.WithStack(errors.WithMessage(err, "cannot link product, cannot update product"))
 	}
 
 	if err = tx.Commit(); err != nil {
-		return errors.WithStack(errors.WithMessage(err,"cannot link product, cannot commit db transaction"))
+		return errors.WithStack(errors.WithMessage(err, "cannot link product, cannot commit db transaction"))
 	}
 
 	return nil
@@ -588,14 +587,14 @@ func (repo *Repository) RemoveProductFromCategory(ctx context.Context, claims au
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	cols := models.M{models.ProductColumns.UpdatedAt: now, models.ProductColumns.UpdatedByID: claims.Subject,}
+	cols := models.M{models.ProductColumns.UpdatedAt: now, models.ProductColumns.UpdatedByID: claims.Subject}
 	if _, err := models.Products(models.ProductWhere.ID.EQ(req.ProductID)).UpdateAll(ctx, tx, cols); err != nil {
 		_ = tx.Rollback()
 		return errors.WithStack(errors.WithMessage(err, "cannot link product, cannot update product"))
 	}
 
 	if err = tx.Commit(); err != nil {
-		return errors.WithStack(errors.WithMessage(err,"cannot link product, cannot commit db transaction"))
+		return errors.WithStack(errors.WithMessage(err, "cannot link product, cannot commit db transaction"))
 	}
 
 	return nil

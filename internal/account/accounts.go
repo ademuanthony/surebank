@@ -9,8 +9,8 @@ import (
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/boil"
+	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
 	"merryworld/surebank/internal/platform/auth"
@@ -101,11 +101,10 @@ func (repo *Repository) FindAjor(ctx context.Context, _ auth.Claims, req FindReq
 		queries = append(queries, Where(req.Where, req.Args...))
 	}
 
-	queries = append(queries, 
+	queries = append(queries,
 		models.AccountWhere.AccountType.EQ(models.AccountTypeAJ),
 		models.AccountWhere.Balance.GT(0),
 	)
-
 
 	if !req.IncludeArchived {
 		queries = append(queries, And("archived_at is null"))
@@ -192,6 +191,7 @@ func (repo *Repository) AccountsCount(ctx context.Context, claims auth.Claims) (
 
 	return models.Accounts(queries...).Count(ctx, repo.DbConn)
 }
+
 // Create inserts a new account into the database.
 func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req CreateRequest, now time.Time) (*Account, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.Create")
@@ -325,7 +325,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	cols[models.CustomerColumns.UpdatedAt] = now
 
-	_,err = models.Accounts(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
+	_, err = models.Accounts(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
 	if err != nil {
 		return weberror.NewError(ctx, err, 500)
@@ -364,7 +364,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	_,err = models.Accounts(models.AccountWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.AccountColumns.ArchivedAt: now})
+	_, err = models.Accounts(models.AccountWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.AccountColumns.ArchivedAt: now})
 
 	if err != nil {
 		return weberror.NewError(ctx, err, 500)

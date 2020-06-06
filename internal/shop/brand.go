@@ -11,8 +11,8 @@ import (
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/boil"
+	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
@@ -25,8 +25,8 @@ type Brand struct {
 
 func (m Brand) toModel() models.Brand {
 	return models.Brand{
-		ID:          m.ID,
-		Name:        m.Name,
+		ID:   m.ID,
+		Name: m.Name,
 	}
 }
 
@@ -118,7 +118,6 @@ type BrandFindRequest struct {
 	IncludeArchived bool          `json:"include-archived" example:"false"`
 }
 
-
 func (repo Repository) FindBrand(ctx context.Context, req BrandFindRequest) (Brands, error) {
 	var queries []QueryMod
 
@@ -151,7 +150,7 @@ func (repo Repository) FindBrand(ctx context.Context, req BrandFindRequest) (Bra
 func (repo *Repository) ReadBrandByID(ctx context.Context, _ auth.Claims, id string) (*Brand, error) {
 	brandModel, err := models.FindBrand(ctx, repo.DbConn, id)
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
 	return &Brand{
@@ -172,7 +171,7 @@ func (repo *Repository) CreateBrand(ctx context.Context, claims auth.Claims, req
 	}
 
 	exists, err := models.Brands(models.BrandWhere.Name.EQ(req.Name)).Exists(ctx, repo.DbConn)
-	if err != nil && err.Error() != sql.ErrNoRows.Error(){
+	if err != nil && err.Error() != sql.ErrNoRows.Error() {
 		return nil, err
 	}
 
@@ -186,8 +185,8 @@ func (repo *Repository) CreateBrand(ctx context.Context, claims auth.Claims, req
 	}
 
 	s := models.Brand{
-		ID:          uuid.NewRandom().String(),
-		Name:        req.Name,
+		ID:   uuid.NewRandom().String(),
+		Name: req.Name,
 	}
 
 	if err := s.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
@@ -195,8 +194,8 @@ func (repo *Repository) CreateBrand(ctx context.Context, claims auth.Claims, req
 	}
 
 	return &Brand{
-		ID:          s.ID,
-		Name:        req.Name,
+		ID:   s.ID,
+		Name: req.Name,
 	}, nil
 }
 
@@ -245,7 +244,7 @@ func (repo *Repository) UpdateBrand(ctx context.Context, claims auth.Claims, req
 		return nil
 	}
 
-	_,err = models.Brands(models.BrandWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
+	_, err = models.Brands(models.BrandWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
 	return nil
 }

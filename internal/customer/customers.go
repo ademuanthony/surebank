@@ -7,13 +7,13 @@ import (
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/boil"
+	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
-	
+
 	"merryworld/surebank/internal/platform/auth"
-	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
 )
 
@@ -220,7 +220,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	cols[models.CustomerColumns.UpdatedAt] = now
 
-	_,err = models.Customers(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
+	_, err = models.Customers(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
 	return nil
 }
@@ -255,7 +255,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	_,err = models.Customers(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.CustomerColumns.ArchivedAt: now})
+	_, err = models.Customers(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.CustomerColumns.ArchivedAt: now})
 
 	return nil
 }

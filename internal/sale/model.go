@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/null"
 
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/inventory"
@@ -317,11 +317,11 @@ type PagedResponseList struct {
 
 // MakeSalesRequest contains the payload for capturing a new sale
 type MakeSalesRequest struct {
-	PaymentMethod string `json:"payment_method" validate:"required"`
-	AccountNumber string `json:"account_number"`
-	AmountTender float64 `json:"amount_tender"`
-	CustomerName string  `json:"customer_name"`
-	PhoneNumber  string  `json:"phone_number"`
+	PaymentMethod string  `json:"payment_method" validate:"required"`
+	AccountNumber string  `json:"account_number"`
+	AmountTender  float64 `json:"amount_tender"`
+	CustomerName  string  `json:"customer_name"`
+	PhoneNumber   string  `json:"phone_number"`
 
 	Items []struct {
 		ProductID string `json:"product_id"`

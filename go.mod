@@ -49,11 +49,9 @@ require (
 	github.com/tdewolff/test v1.0.6 // indirect
 	github.com/tinylib/msgp v1.1.0 // indirect
 	github.com/urfave/cli v1.22.2
-	github.com/volatiletech/null/v8 v8.1.0
-	github.com/volatiletech/randomize v0.0.1
+	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
-	github.com/volatiletech/sqlboiler/v4 v4.1.1
-	github.com/volatiletech/strmangle v0.0.1
+	github.com/volatiletech/sqlboiler/v4 v4.1.1 // indirect
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
 	gitlab.com/geeks-accelerator/oss/devops v1.0.59
 	golang.org/x/crypto v0.0.0-20200109152110-61a87790db17

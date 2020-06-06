@@ -9,8 +9,8 @@ import (
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/boil"
+	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
 	"merryworld/surebank/internal/platform/auth"
@@ -130,7 +130,7 @@ func (repo *Repository) AddStock(ctx context.Context, claims auth.Claims, req Ad
 		return nil, errors.WithStack(ErrForbidden)
 	}
 
-	salesRep, err := models.FindUser(ctx, repo.DbConn, claims.Subject,)
+	salesRep, err := models.FindUser(ctx, repo.DbConn, claims.Subject)
 	if err != nil {
 		return nil, errors.WithStack(ErrForbidden)
 	}
@@ -210,7 +210,7 @@ func (repo *Repository) MakeStockDeduction(ctx context.Context, claims auth.Clai
 		return nil, errors.WithStack(ErrForbidden)
 	}
 
-	salesRep, err := models.FindUser(ctx, tx, claims.Subject,)
+	salesRep, err := models.FindUser(ctx, tx, claims.Subject)
 	if err != nil {
 		return nil, errors.WithStack(ErrForbidden)
 	}
@@ -342,7 +342,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return err
 	}
 
-	_,err = models.Inventories(models.InventoryWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, models.M{models.InventoryColumns.ArchivedAt: now})
+	_, err = models.Inventories(models.InventoryWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, models.M{models.InventoryColumns.ArchivedAt: now})
 
 	var txAmount = tranx.Quantity
 	if tranx.TXType == transaction.TransactionType_Withdrawal.String() {
@@ -371,8 +371,8 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	return nil
 }
 
-func (repo *Repository) Report(ctx context.Context, claims auth.Claims, req ReportRequest) (*PagedStockInfo, error)  {
-	salesRep, err := models.FindUser(ctx, repo.DbConn, claims.Subject,)
+func (repo *Repository) Report(ctx context.Context, claims auth.Claims, req ReportRequest) (*PagedStockInfo, error) {
+	salesRep, err := models.FindUser(ctx, repo.DbConn, claims.Subject)
 	if err != nil {
 		return nil, errors.WithStack(ErrForbidden)
 	}
@@ -429,4 +429,3 @@ func (repo *Repository) Report(ctx context.Context, claims auth.Claims, req Repo
 
 	return &result, nil
 }
-

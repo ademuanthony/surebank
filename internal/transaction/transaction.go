@@ -12,9 +12,9 @@ import (
 	"github.com/jinzhu/now"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
 	"merryworld/surebank/internal/platform/auth"
@@ -34,7 +34,7 @@ var (
 
 // Find gets all the transaction from the database based on the request params.
 func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRequest) (*PagedResponseList, error) {
-	var queries = []QueryMod {
+	var queries = []QueryMod{
 		Load(models.TransactionRels.SalesRep),
 		Load(models.TransactionRels.Account),
 	}
@@ -232,7 +232,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		Narration:      req.Narration,
 		TXType:         req.Type.String(),
 		SalesRepID:     claims.Subject,
-		ReceiptNo: 		repo.generateReceiptNumber(ctx),
+		ReceiptNo:      repo.generateReceiptNumber(ctx),
 		CreatedAt:      currentDate.Unix(),
 		UpdatedAt:      currentDate.Unix(),
 	}
@@ -243,7 +243,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		lastDeposit, err := repo.lastDeposit(ctx, account.ID)
 		if err == nil {
 			if effectiveDate.Year() == time.Unix(lastDeposit.EffectiveData, 0).Year() &&
-			 effectiveDate.Month() == time.Unix(lastDeposit.EffectiveData, 0).Month() {
+				effectiveDate.Month() == time.Unix(lastDeposit.EffectiveData, 0).Month() {
 				effectiveDate = now.New(time.Unix(lastDeposit.EffectiveData, 0)).Time.Add(24 * time.Hour)
 				isFirstContribution = false
 			}
@@ -269,18 +269,18 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, err
 	}
 
-	if account.AccountType == models.AccountTypeAJ { 
+	if account.AccountType == models.AccountTypeAJ {
 		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ajor_received",
-				map[string]interface{}{
-					"Name":    account.R.Customer.Name,
-					"EffectiveDate": web.NewTimeResponse(ctx, time.Unix(m.EffectiveData, 0)).LocalDate,
-					"Amount":  req.Amount,
-					"Balance": m.OpeningBalance + req.Amount,
-				}); err != nil {
-				// TODO: log critical error. Send message to monitoring account
-				fmt.Println(err)
-			}
-	}else {
+			map[string]interface{}{
+				"Name":          account.R.Customer.Name,
+				"EffectiveDate": web.NewTimeResponse(ctx, time.Unix(m.EffectiveData, 0)).LocalDate,
+				"Amount":        req.Amount,
+				"Balance":       m.OpeningBalance + req.Amount,
+			}); err != nil {
+			// TODO: log critical error. Send message to monitoring account
+			fmt.Println(err)
+		}
+	} else {
 		// send SMS notification
 		if req.Type == TransactionType_Deposit {
 			if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_received",
@@ -314,7 +314,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 			Narration:      "Ajor fee deduction",
 			TXType:         TransactionType_Withdrawal.String(),
 			SalesRepID:     claims.Subject,
-			ReceiptNo: 		repo.generateReceiptNumber(ctx),
+			ReceiptNo:      repo.generateReceiptNumber(ctx),
 			CreatedAt:      currentDate.Unix(),
 			UpdatedAt:      currentDate.Unix(),
 		}
@@ -327,7 +327,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, tx, models.M{
 			models.AccountColumns.Balance: accountBalanceAtTx(&wm),
 		}); err != nil {
-	
+
 			_ = tx.Rollback()
 			return nil, err
 		}
@@ -352,10 +352,10 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 
 // Withdraw inserts a new withdrawal transaction into the database.
 func (repo *Repository) Withdraw(ctx context.Context, claims auth.Claims, req WithdrawRequest, now time.Time) (*Transaction, error) {
-	createReq := MakeDeductionRequest {
+	createReq := MakeDeductionRequest{
 		AccountNumber: req.AccountNumber,
-		Amount: req.Amount,
-		Narration: fmt.Sprintf("%s - %s", req.PaymentMethod, req.Narration),
+		Amount:        req.Amount,
+		Narration:     fmt.Sprintf("%s - %s", req.PaymentMethod, req.Narration),
 	}
 	tx, err := repo.DbConn.Begin()
 	if err != nil {
@@ -368,9 +368,9 @@ func (repo *Repository) Withdraw(ctx context.Context, claims auth.Claims, req Wi
 		if len(req.Bank) > 0 && len(req.BankAccountNumber) > 0 {
 			createReq.Narration += fmt.Sprintf("%s - %s", req.Bank, req.BankAccountNumber)
 		}
-		
+
 	}
-	
+
 	txn, err := repo.MakeDeduction(ctx, claims, createReq, now, tx)
 	if err != nil {
 		_ = tx.Rollback()
@@ -480,7 +480,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 		return err
 	}
 
-	_,err = models.Transactions(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, cols)
+	_, err = models.Transactions(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, cols)
 
 	if req.Amount != nil {
 		tranx, err := models.FindTransaction(ctx, repo.DbConn, req.ID)
@@ -561,7 +561,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return err
 	}
 
-	_,err = models.Transactions(models.TransactionWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, models.M{models.TransactionColumns.ArchivedAt: now})
+	_, err = models.Transactions(models.TransactionWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, models.M{models.TransactionColumns.ArchivedAt: now})
 
 	var txAmount = tranx.Amount
 	if tranx.TXType == TransactionType_Withdrawal.String() {
@@ -669,14 +669,14 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 	}
 
 	if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_withdrawn",
-			map[string]interface{}{
-				"Name":    account.R.Customer.Name,
-				"Amount":  req.Amount,
-				"Balance": m.OpeningBalance + req.Amount,
-			}); err != nil {
-			// TODO: log critical error. Send message to monitoring account
-			fmt.Println(err)
-		}
+		map[string]interface{}{
+			"Name":    account.R.Customer.Name,
+			"Amount":  req.Amount,
+			"Balance": m.OpeningBalance + req.Amount,
+		}); err != nil {
+		// TODO: log critical error. Send message to monitoring account
+		fmt.Println(err)
+	}
 
 	return FromModel(&m), nil
 }
@@ -695,9 +695,9 @@ func SaveDailySummary(ctx context.Context, income, expenditure, bankDeposit floa
 	}
 
 	model := models.DailySummary{
-		Date: today,
+		Date:        today,
 		BankDeposit: bankDeposit,
-		Income: income,
+		Income:      income,
 		Expenditure: expenditure,
 	}
 

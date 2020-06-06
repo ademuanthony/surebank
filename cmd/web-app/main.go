@@ -58,7 +58,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/boil"
 	"gitlab.com/geeks-accelerator/oss/devops/pkg/devdeploy"
 	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
@@ -104,7 +104,7 @@ func main() {
 			ReadTimeout  time.Duration `default:"5s" envconfig:"READ_TIMEOUT"`
 			WriteTimeout time.Duration `default:"5s" envconfig:"WRITE_TIMEOUT"`
 		}
-		Service struct { 
+		Service struct {
 			Name        string   `default:"web-app" envconfig:"SERVICE_NAME"`
 			BaseUrl     string   `default:"" envconfig:"BASE_URL"  example:"http://example.saasstartupkit.com"`
 			HostNames   []string `envconfig:"HOST_NAMES" example:"www.example.saasstartupkit.com"`
@@ -131,8 +131,8 @@ func main() {
 			SMSSender         string `default:"BulkSMSNG" envconfig:"SMS_SENDER"`
 			SMSProvider       string `default:"bulksmsnigeria" envconfig:"SMS_Provider"`
 			// TODO: remove default value
-			SMSAuthToken      string `default:"ikxmyun7ZDLdmC2RugtlMvstHoEulfG44CXxRDPafv5fLP9edkfRNmtLNrKY" envconfig:"SMS_Auth_TOKEN"`
-			WebApiBaseUrl     string `default:"http://127.0.0.1:3001" envconfig:"WEB_API_BASE_URL"  example:"http://api.example.saasstartupkit.com"`
+			SMSAuthToken  string `default:"ikxmyun7ZDLdmC2RugtlMvstHoEulfG44CXxRDPafv5fLP9edkfRNmtLNrKY" envconfig:"SMS_Auth_TOKEN"`
+			WebApiBaseUrl string `default:"http://127.0.0.1:3001" envconfig:"WEB_API_BASE_URL"  example:"http://api.example.saasstartupkit.com"`
 		}
 		Redis struct {
 			Host            string        `default:":6379" envconfig:"HOST"`
