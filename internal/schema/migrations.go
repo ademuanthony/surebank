@@ -1120,9 +1120,9 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 			},
 			Rollback: func(tx *sql.Tx) error {
 				return nil
-			},
+			}, 
 		},
-		// Add effective_data to transaction
+		// Add effective_date to transaction
 		{
 			ID: "20200414-02",
 			Migrate: func(tx *sql.Tx) error {
