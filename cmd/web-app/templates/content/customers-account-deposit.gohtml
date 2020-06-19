@@ -35,6 +35,20 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="selectPaymentMethod">Payment Method</label>
+                            <div class="form-control-select-wrapper">
+                                <select id="selectPaymentMethod" name="PaymentMethod" placeholder="Payment Method" required
+                                        class="form-control form-control-select-box {{ ValidationFieldClass $.validationErrors "PaymentMethod" }}">
+                                    <option></option>
+                                    {{ range $i := $.paymentMethods }}
+                                        <option value="{{ $i }}" {{ if eq $.form.PaymentMethod $i }}selected="selected"{{ end }}>{{ $i }}</option>
+                                    {{ end }}
+                                </select>
+                                {{template "invalid-feedback" dict "fieldName" "PaymentMethod" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
                             <label for="inputTarget">Narration</label>
                             <input type="text" id="inputTarget"
                                    class="form-control {{ ValidationFieldClass $.validationErrors "Narration" }}"

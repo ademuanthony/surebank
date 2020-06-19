@@ -272,6 +272,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		OpeningBalance: accountBalanceAtTx(lastTransaction),
 		Amount:         req.Amount,
 		Narration:      req.Narration,
+		PaymentMethod: req.PaymentMethod,
 		TXType:         req.Type.String(),
 		SalesRepID:     claims.Subject,
 		ReceiptNo:      repo.generateReceiptNumber(ctx),

@@ -44,6 +44,7 @@ type Transaction struct {
 	OpeningBalance float64         `json:"opening_balance" exmaple:"34500.01"`
 	Amount         float64         `json:"amount" truss:"api-read"`
 	Narration      string          `json:"narration" truss:"api-read"`
+	PaymentMethod      string          `json:"payment_method" truss:"api-read"`
 	SalesRepID     string          `json:"sales_rep_id" truss:"api-read"`
 	ReceiptNo	   string 		   `json:"receipt_no"`
 	EffectiveDate  time.Time 	   `json:"effective_date"`
@@ -63,6 +64,7 @@ func FromModel(rec *models.Transaction) *Transaction {
 		OpeningBalance: rec.OpeningBalance,
 		Amount:         rec.Amount,
 		Narration:      rec.Narration,
+		PaymentMethod: rec.PaymentMethod,
 		SalesRepID:     rec.SalesRepID,
 		ReceiptNo:  	rec.ReceiptNo,
 		EffectiveDate:  time.Unix(rec.EffectiveDate, 0).UTC(),
@@ -98,6 +100,7 @@ type Response struct {
 	OpeningBalance float64           `json:"opening_balance" truss:"api-read"`
 	Amount         float64           `json:"amount" truss:"api-read"`
 	Narration      string            `json:"narration" truss:"api-read"`
+	PaymentMethod      string          `json:"payment_method" truss:"api-read"`
 	SalesRepID     string            `json:"sales_rep_id" truss:"api-read"`
 	SalesRep       string            `json:"sales_rep,omitempty" truss:"api-read"`
 	ReceiptNo	   string			 `json:"receipt_no"`
@@ -121,6 +124,7 @@ func (m *Transaction) Response(ctx context.Context) *Response {
 		OpeningBalance: m.OpeningBalance,
 		Amount:         m.Amount,
 		Narration:      m.Narration,
+		PaymentMethod: m.PaymentMethod,
 		ReceiptNo: 		m.ReceiptNo,
 		SalesRepID:     m.SalesRepID,
 		EffectiveDate:  web.NewTimeResponse(ctx, m.EffectiveDate),
@@ -172,6 +176,7 @@ type CreateRequest struct {
 	AccountNumber string          `json:"account_number" validate:"required"`
 	Amount        float64         `json:"amount" validate:"required,gt=0"`
 	Narration     string          `json:"narration"`
+	PaymentMethod string 		  `json:"payment_method"`
 }
 
 // WithdrawRequest contains information needed to make a new Transaction.
@@ -195,6 +200,7 @@ type MakeDeductionRequest struct {
 type CreateDepositRequest struct {
 	AccountNumber string  `json:"account_number" validate:"required"`
 	Amount        float64 `json:"amount" validate:"required,gt=0"`
+	PaymentMethod      string          `json:"payment_method" validate:"required" truss:"api-read"`
 	Narration     string  `json:"narration"`
 }
 
@@ -246,6 +252,9 @@ const (
 	TransactionType_Deposit TransactionType = "deposit"
 	// TransactionType_Withdrawal defines the type of withdrawal transaction.
 	TransactionType_Withdrawal TransactionType = "withdrawal"
+
+	PaymentMethod_Cash string = "cash"
+	PaymentMethod_Bank string = "bank_deposit"
 )
 
 // TransactionType_Values provides list of valid TransactionType values.
@@ -288,4 +297,8 @@ func (s TransactionType) Value() (driver.Value, error) {
 // String converts the TransactionType value to a string.
 func (s TransactionType) String() string {
 	return string(s)
+}
+
+var PaymentMethods = []string{
+	PaymentMethod_Bank, PaymentMethod_Cash,
 }

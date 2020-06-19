@@ -27,6 +27,17 @@
                 </select>
             </div>
             <div class="col">
+                <label for="sales_rep_id">Payment Method</label><br/>
+                <select id="selectPaymentMethod" name="payment_method" placeholder="Payment Method"
+                                        class="form-control form-control-select-box">
+                    <option></option>
+                    {{ $paymentMethod := .paymentMethod }}
+                    {{ range $i := $.paymentMethods }}
+                    <option value="{{ $i }}" {{ if CompStringInt $paymentMethod $i }}selected="selected"{{ end }}>{{ $i }}</option>
+                    {{ end }}
+                </select>
+            </div>
+            <div class="col">
                 <label for="startDate">Start Date</label><br/>
                 <input id="startDate" name="start_date" value="{{ .startDate }}">
             </div>

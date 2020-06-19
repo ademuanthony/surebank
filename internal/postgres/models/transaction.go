@@ -36,6 +36,7 @@ type Transaction struct {
 	ArchivedAt     null.Int64 `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
 	ReceiptNo      string     `boil:"receipt_no" json:"receipt_no" toml:"receipt_no" yaml:"receipt_no"`
 	EffectiveDate  int64      `boil:"effective_date" json:"effective_date" toml:"effective_date" yaml:"effective_date"`
+	PaymentMethod  string     `boil:"payment_method" json:"payment_method" toml:"payment_method" yaml:"payment_method"`
 
 	R *transactionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L transactionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -54,6 +55,7 @@ var TransactionColumns = struct {
 	ArchivedAt     string
 	ReceiptNo      string
 	EffectiveDate  string
+	PaymentMethod  string
 }{
 	ID:             "id",
 	AccountID:      "account_id",
@@ -67,6 +69,7 @@ var TransactionColumns = struct {
 	ArchivedAt:     "archived_at",
 	ReceiptNo:      "receipt_no",
 	EffectiveDate:  "effective_date",
+	PaymentMethod:  "payment_method",
 }
 
 // Generated where
@@ -84,6 +87,7 @@ var TransactionWhere = struct {
 	ArchivedAt     whereHelpernull_Int64
 	ReceiptNo      whereHelperstring
 	EffectiveDate  whereHelperint64
+	PaymentMethod  whereHelperstring
 }{
 	ID:             whereHelperstring{field: "\"transaction\".\"id\""},
 	AccountID:      whereHelperstring{field: "\"transaction\".\"account_id\""},
@@ -97,6 +101,7 @@ var TransactionWhere = struct {
 	ArchivedAt:     whereHelpernull_Int64{field: "\"transaction\".\"archived_at\""},
 	ReceiptNo:      whereHelperstring{field: "\"transaction\".\"receipt_no\""},
 	EffectiveDate:  whereHelperint64{field: "\"transaction\".\"effective_date\""},
+	PaymentMethod:  whereHelperstring{field: "\"transaction\".\"payment_method\""},
 }
 
 // TransactionRels is where relationship names are stored.
@@ -123,9 +128,9 @@ func (*transactionR) NewStruct() *transactionR {
 type transactionL struct{}
 
 var (
-	transactionAllColumns            = []string{"id", "account_id", "tx_type", "opening_balance", "amount", "narration", "sales_rep_id", "created_at", "updated_at", "archived_at", "receipt_no", "effective_date"}
+	transactionAllColumns            = []string{"id", "account_id", "tx_type", "opening_balance", "amount", "narration", "sales_rep_id", "created_at", "updated_at", "archived_at", "receipt_no", "effective_date", "payment_method"}
 	transactionColumnsWithoutDefault = []string{"id", "tx_type", "opening_balance", "sales_rep_id", "created_at", "updated_at", "archived_at"}
-	transactionColumnsWithDefault    = []string{"account_id", "amount", "narration", "receipt_no", "effective_date"}
+	transactionColumnsWithDefault    = []string{"account_id", "amount", "narration", "receipt_no", "effective_date", "payment_method"}
 	transactionPrimaryKeyColumns     = []string{"id"}
 )
 

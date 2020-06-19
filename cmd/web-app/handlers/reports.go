@@ -51,6 +51,7 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 		{Field: "amount", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
 		{Field: "created_at", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
+		{Field: "payment_method", Title: "Payment Method", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
 		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
 		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
@@ -68,8 +69,8 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 				p := message.NewPrinter(language.English)
 				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlCustomersTransactionsView(q.CustomerID, q.AccountID, q.ID), q.Amount)
 			case "created_at":
-				v.Value = q.CreatedAt.Local
-				v.Formatted = q.CreatedAt.Local
+				v.Value = q.CreatedAt.LocalDate
+				v.Formatted = q.CreatedAt.LocalDate
 			case "narration":
 				values := strings.Split(q.Narration, ":")
 				if len(values) > 1 {
@@ -81,6 +82,9 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 					v.Value = q.Narration
 					v.Formatted = q.Narration
 				}
+			case "payment_method": 
+				v.Value = q.PaymentMethod
+				v.Formatted = q.PaymentMethod
 			case "account":
 				v.Value = q.AccountNumber
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(q.CustomerID, q.AccountID), v.Value)
@@ -107,6 +111,12 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 		txWhere = append(txWhere, "sales_rep_id = $1")
 		txArgs = append(txArgs, v)
 		data["salesRepID"] = v
+	}
+
+	if v := r.URL.Query().Get("payment_method"); v != "" {
+		txWhere = append(txWhere, fmt.Sprintf("payment_method = $%d", len(txArgs) + 1))
+		txArgs = append(txArgs, v)
+		data["paymentMethod"] = v
 	}
 
 	if v := r.URL.Query().Get("start_date"); v != "" {
@@ -193,6 +203,7 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 		return err
 	}
 
+	data["paymentMethods"] = transaction.PaymentMethods
 	data["users"] = users
 	data["total"] = total
 	data["datatable"] = dt.Response()

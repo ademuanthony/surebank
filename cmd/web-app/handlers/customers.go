@@ -487,6 +487,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 		{Field: "created_at", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "effective_date", Title: "Effective Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
+		{Field: "payment_method", Title: "Payment Method", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Payment Method"},
 		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
 		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
@@ -524,6 +525,9 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 					v.Value = q.Narration
 					v.Formatted = q.Narration
 				}
+			case "payment_method":
+				v.Value = q.PaymentMethod
+				v.Formatted = q.PaymentMethod
 			case "account":
 				v.Value = q.AccountNumber
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(customerID, q.AccountID), v.Value)
@@ -824,6 +828,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		{Field: "created_at", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "effective_date", Title: "Effective Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
+		{Field: "payment_method", Title: "Payment Method", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Payment Method"},
 		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
 		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
@@ -861,6 +866,9 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 					v.Value = q.Narration
 					v.Formatted = q.Narration
 				}
+			case "payment_method":
+				v.Value = q.PaymentMethod
+				v.Formatted = q.PaymentMethod 
 			case "account":
 				v.Value = q.AccountNumber
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(cust.ID, q.AccountID), v.Value)
@@ -1019,6 +1027,7 @@ func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.
 	data["form"] = req
 	data["account"] = acc
 	data["customer"] = customerRes
+	data["paymentMethods"] = transaction.PaymentMethods
 	data["urlCustomersIndex"] = urlCustomersIndex()
 	data["urlCustomersView"] = urlCustomersView(customerID)
 	data["urlCustomersAccountsView"] = urlCustomersAccountsView(customerID, accountID)
