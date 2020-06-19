@@ -23,7 +23,7 @@ import (
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/customer"
-	"merryworld/surebank/internal/transaction"
+	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/mid"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/flag"
@@ -32,6 +32,7 @@ import (
 	"merryworld/surebank/internal/signup"
 	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/tenant/account_preference"
+	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"
 	"merryworld/surebank/internal/user_account/invite"
@@ -476,7 +477,8 @@ func main() {
 	chklstRepo := checklist.NewRepository(masterDb)
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
-	depositRepo := transaction.NewRepository(masterDb, notifySMS)
+	commissionRepo := dscommission.NewRepository(masterDb)
+	depositRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -493,6 +495,7 @@ func main() {
 		ChecklistRepo:   chklstRepo,
 		CustomerRepo:    customerRepo,
 		AccountRepo:     accountRepo,
+		CommissionRepo: commissionRepo,
 		DepositRepo:     depositRepo,
 		Authenticator:   authenticator,
 	}

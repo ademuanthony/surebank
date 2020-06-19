@@ -3,13 +3,9 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/jinzhu/now"
-	"github.com/pkg/errors"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
+	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/datatable"
 	"merryworld/surebank/internal/platform/web"
@@ -19,6 +15,12 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/jinzhu/now"
+	"github.com/pkg/errors"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 )
 
 // Customers represents the Customers API method handler set.
@@ -28,6 +30,7 @@ type Reports struct {
 	TransactionRepo *transaction.Repository
 	ShopRepo        *shop.Repository
 	UserRepos		*user.Repository
+	CommissionRepo	*dscommission.Repository
 	Renderer        web.Renderer
 	Redis           *redis.Client
 }
@@ -197,8 +200,8 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "report-transactions.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
-// Ajor handles listing all the Ajor account types
-func (h *Reports) Ajor(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+// Ds handles listing of all the Ds account types
+func (h *Reports) Ds(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	var data = make(map[string]interface{})
 
@@ -260,7 +263,7 @@ func (h *Reports) Ajor(ctx context.Context, w http.ResponseWriter, r *http.Reque
 			order = strings.Split(sorting, ",")
 		}
 
-		res, err := h.AccountRepo.FindAjor(ctx, claims, account.FindRequest{
+		res, err := h.AccountRepo.FindDs(ctx, claims, account.FindRequest{
 			Order: order,
 			IncludeBranch: true,
 			IncludeCustomer: true,
@@ -273,7 +276,7 @@ func (h *Reports) Ajor(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		for _, a := range res.Accounts {
 			l, err := mapFunc(a, fields)
 			if err != nil {
-				return resp, errors.Wrapf(err, "Failed to map Ajor accounts for display.")
+				return resp, errors.Wrapf(err, "Failed to map DS accounts for display.")
 			}
 
 			resp = append(resp, l)
@@ -300,5 +303,132 @@ func (h *Reports) Ajor(ctx context.Context, w http.ResponseWriter, r *http.Reque
 
 	data["datatable"] = dt.Response()
 
-	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "report-ajor.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "report-ds.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// DsCommissions handles listing of all the Ds Commissions
+func (h *Reports) DsCommissions(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	var data = make(map[string]interface{})
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	fields := []datatable.DisplayField{
+		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
+		{Field: "customer", Title: "Name", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
+		{Field: "number", Title: "Account Number", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
+		{Field: "amount", Title: "Daily Contribution", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
+		{Field: "effective_date", Title: "Effective Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
+		{Field: "date", Title: "Created At", Visible: true, Searchable: true, Orderable: true, Filterable: false},
+	}
+
+	mapFunc := func(q *dscommission.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+		for i := 0; i < len(cols); i++ {
+			col := cols[i]
+			var v datatable.ColumnValue
+			switch col.Field {
+			case "id":
+				v.Value = fmt.Sprintf("%s", q.ID)
+			case "customer": 
+				v.Value = q.CustomerName
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.CustomerID), q.CustomerName)
+			case "number":
+				v.Value = q.AccountNumber
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(q.CustomerID, q.AccountID), q.AccountNumber)
+			case "amount":
+				v.Value = fmt.Sprintf("%f", q.Amount)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("%.2f", q.Amount)
+			case "effective_date":
+				v.Value = q.EffectiveDate.Local
+				v.Formatted = v.Value
+			case "date":
+				v.Value = q.Date.Local
+				v.Formatted = v.Value
+			default:
+				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
+			}
+			resp = append(resp, v)
+		}
+
+		return resp, nil
+	}
+
+	var txWhere []string
+	var txArgs []interface{}
+
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		date, err := time.Parse("01/02/2006", v)
+		if err != nil {
+			return err
+		}
+		date = date.Truncate(time.Millisecond)
+		date = now.New(date).BeginningOfDay().Add(-1 * time.Hour)
+		txWhere = append(txWhere, fmt.Sprintf("effective_date >= $%d", len(txArgs) + 1))
+		txArgs = append(txArgs, date.UTC().Unix())
+		data["startDate"] = v
+	}
+
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		date, err := time.Parse("01/02/2006", v)
+		if err != nil {
+			return err
+		}
+		date = date.Truncate(time.Millisecond)
+		date = now.New(date).EndOfDay().Add(-1 * time.Hour)
+		txWhere = append(txWhere, fmt.Sprintf("effective_date <= $%d", len(txArgs) + 1))
+		txArgs = append(txArgs, date.Unix())
+		data["endDate"] = v
+	}
+
+	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
+
+		res, err := h.CommissionRepo.Find(ctx, claims, dscommission.FindRequest{
+			Order: order, Where: strings.Join(txWhere, " AND "), Args: txArgs,
+			IncludeCustomer: true,
+			IncludeAccount: true,
+		})
+		if err != nil {
+			return resp, err
+		} 
+
+		for _, a := range res.Items {
+			l, err := mapFunc(a, fields)
+			if err != nil {
+				return resp, errors.Wrapf(err, "Failed to map DS commission for display.")
+			}
+ 
+			resp = append(resp, l)
+		}
+
+		return resp, nil
+	}
+
+	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
+	if err != nil {
+		return err
+	}
+
+	if dt.HasCache() {
+		return nil
+	}
+
+	if ok, err := dt.Render(); ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	data["datatable"] = dt.Response()
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "report-ds-commissions.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }

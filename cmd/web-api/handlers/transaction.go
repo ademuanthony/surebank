@@ -177,7 +177,7 @@ func (h *Transactions) Create(ctx context.Context, w http.ResponseWriter, r *htt
 		return web.RespondJsonError(ctx, w, err)
 	}
 
-	res, err := h.Repository.Create(ctx, claims, transaction.CreateRequest{
+	res, err := h.Repository.Deposit(ctx, claims, transaction.CreateRequest{
 		Type:          transaction.TransactionType_Deposit,
 		AccountNumber: req.AccountNumber,
 		Amount:        req.Amount,

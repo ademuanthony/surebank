@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/sale"
 	"net"
@@ -490,7 +491,8 @@ func main() {
 	branchRepo := branch.NewRepository(masterDb)
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
-	transactionRepo := transaction.NewRepository(masterDb, notifySMS)
+	commissionRepo := dscommission.NewRepository(masterDb)
+	transactionRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS)
 	inventoryRepo := inventory.NewRepository(masterDb)
 	saleRepo := sale.NewRepository(masterDb, shopRepo, inventoryRepo, transactionRepo)
 
@@ -514,6 +516,7 @@ func main() {
 		ChecklistRepo:   chklstRepo,
 		CustomerRepo:    customerRepo,
 		AccountRepo:     accountRepo,
+		CommissionRepo: commissionRepo,
 		TransactionRepo: transactionRepo,
 		Authenticator:   authenticator,
 		AwsSession:      awsSession,

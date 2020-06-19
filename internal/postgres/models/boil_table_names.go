@@ -12,6 +12,7 @@ var TableNames = struct {
 	Category        string
 	Customer        string
 	DailySummary    string
+	DSCommission    string
 	Expenditure     string
 	Inventory       string
 	Payment         string
@@ -30,6 +31,7 @@ var TableNames = struct {
 	Category:        "category",
 	Customer:        "customer",
 	DailySummary:    "daily_summary",
+	DSCommission:    "ds_commission",
 	Expenditure:     "expenditure",
 	Inventory:       "inventory",
 	Payment:         "payment",

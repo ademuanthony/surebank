@@ -17,7 +17,7 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/pkg/errors"
 )
-
+ 
 // Account represents the Account API method handler set.
 type Account struct {
 	AccountRepo     *tenant.Repository

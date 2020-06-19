@@ -93,8 +93,8 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	}, nil
 }
 
-// FindAjor gets all the accounts from the database that are of ajor type and have > 0 balance.
-func (repo *Repository) FindAjor(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
+// FindDs gets all the accounts from the database that are of DS type and have > 0 balance.
+func (repo *Repository) FindDs(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -102,7 +102,7 @@ func (repo *Repository) FindAjor(ctx context.Context, _ auth.Claims, req FindReq
 	}
 
 	queries = append(queries,
-		models.AccountWhere.AccountType.EQ(models.AccountTypeAJ),
+		models.AccountWhere.AccountType.EQ(models.AccountTypeDS),
 		models.AccountWhere.Balance.GT(0),
 	)
 

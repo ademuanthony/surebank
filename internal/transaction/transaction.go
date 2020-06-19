@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -176,8 +177,39 @@ func (repo *Repository) AccountBalance(ctx context.Context, _ auth.Claims, accou
 	return accountBalanceAtTx(lastTx), nil
 }
 
-// Create inserts a new transaction into the database.
-func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time) (*Transaction, error) {
+func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time) (*Transaction, error) {
+	account, err := models.Accounts(models.AccountWhere.Number.EQ(req.AccountNumber),
+		Load(models.AccountRels.Customer)).One(ctx, repo.DbConn)
+	if err != nil {
+		return nil, weberror.NewErrorMessage(ctx, err, http.StatusBadRequest, "Invalid account number")
+	}
+
+	if account.AccountType != models.AccountTypeDS {
+		return repo.create(ctx, claims, req, currentDate)
+	}
+
+	if math.Mod(req.Amount, account.Target) != 0 {
+		return nil, weberror.NewError(ctx, fmt.Errorf("Amount must be a multiple of %f", account.Target), 400)
+	}
+
+	if req.Amount / account.Target > 5 {
+		return nil, weberror.NewError(ctx, fmt.Errorf("Please pay for max of 5 days at a time, one day is %f", account.Target), 400)
+	}
+
+	var tx *Transaction
+	reqAmount := req.Amount
+	req.Amount = account.Target
+	for reqAmount > 0 {
+		tx, err = repo.create(ctx, claims, req, currentDate)
+		reqAmount -= account.Target
+		currentDate = currentDate.Add(4 * time.Second)
+	}
+	return tx, err
+
+}
+
+// create inserts a new transaction into the database.
+func (repo *Repository) create(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time) (*Transaction, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Create")
 	defer span.Finish()
 	if claims.Audience == "" {
@@ -201,6 +233,16 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	if currentDate.IsZero() {
 		currentDate = time.Now()
 	}
+
+	effectiveDate := now.New(currentDate).BeginningOfDay()
+	if account.AccountType == models.AccountTypeDS {
+		lastDeposit, err := repo.lastDeposit(ctx, account.ID)
+		if err == nil {
+			effectiveDate = now.New(time.Unix(lastDeposit.EffectiveDate, 0)).Time.Add(24 * time.Hour)
+		}
+	}
+
+	effectiveDate = effectiveDate.UTC()
 
 	// Always store the time as UTC.
 	currentDate = currentDate.UTC()
@@ -235,21 +277,13 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		ReceiptNo:      repo.generateReceiptNumber(ctx),
 		CreatedAt:      currentDate.Unix(),
 		UpdatedAt:      currentDate.Unix(),
+		EffectiveDate:  effectiveDate.Unix(),
 	}
 
-	effectiveDate := now.New(currentDate).BeginningOfDay()
-	var isFirstContribution bool = true
-	if account.AccountType == models.AccountTypeAJ {
-		lastDeposit, err := repo.lastDeposit(ctx, account.ID)
-		if err == nil {
-			if effectiveDate.Year() == time.Unix(lastDeposit.EffectiveData, 0).Year() &&
-				effectiveDate.Month() == time.Unix(lastDeposit.EffectiveData, 0).Month() {
-				effectiveDate = now.New(time.Unix(lastDeposit.EffectiveData, 0)).Time.Add(24 * time.Hour)
-				isFirstContribution = false
-			}
-		}
+	isFirstContribution, err := repo.CommissionRepo.StartingNewCircle(ctx, account.ID, effectiveDate)
+	if err != nil {
+		return nil, err
 	}
-	m.EffectiveData = effectiveDate.UTC().Unix()
 
 	if err := m.Insert(ctx, tx, boil.Infer()); err != nil {
 		_ = tx.Rollback()
@@ -269,20 +303,20 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, err
 	}
 
-	if account.AccountType == models.AccountTypeAJ {
-		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ajor_received",
-			map[string]interface{}{
-				"Name":          account.R.Customer.Name,
-				"EffectiveDate": web.NewTimeResponse(ctx, time.Unix(m.EffectiveData, 0)).LocalDate,
-				"Amount":        req.Amount,
-				"Balance":       m.OpeningBalance + req.Amount,
-			}); err != nil {
-			// TODO: log critical error. Send message to monitoring account
-			fmt.Println(err)
-		}
-	} else {
-		// send SMS notification
-		if req.Type == TransactionType_Deposit {
+	// send SMS notification
+	if req.Type == TransactionType_Deposit {
+		if account.AccountType == models.AccountTypeDS {
+			if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ds_received",
+				map[string]interface{}{
+					"Name":          account.R.Customer.Name,
+					"EffectiveDate": web.NewTimeResponse(ctx, time.Unix(m.EffectiveDate, 0)).LocalDate,
+					"Amount":        req.Amount,
+					"Balance":       m.OpeningBalance + req.Amount,
+				}); err != nil {
+				// TODO: log critical error. Send message to monitoring account
+				fmt.Println(err)
+			}
+		} else {
 			if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_received",
 				map[string]interface{}{
 					"Name":    account.R.Customer.Name,
@@ -292,42 +326,55 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 				// TODO: log critical error. Send message to monitoring account
 				fmt.Println(err)
 			}
-		} else {
-			if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_withdrawn",
-				map[string]interface{}{
-					"Name":    account.R.Customer.Name,
-					"Amount":  req.Amount,
-					"Balance": m.OpeningBalance + req.Amount,
-				}); err != nil {
-				// TODO: log critical error. Send message to monitoring account
-				fmt.Println(err)
-			}
+		}
+	} else {
+		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_withdrawn",
+			map[string]interface{}{
+				"Name":    account.R.Customer.Name,
+				"Amount":  req.Amount,
+				"Balance": m.OpeningBalance + req.Amount,
+			}); err != nil {
+			// TODO: log critical error. Send message to monitoring account
+			fmt.Println(err)
 		}
 	}
 
-	if account.AccountType == models.AccountTypeAJ && isFirstContribution {
+	if req.Type == TransactionType_Deposit && account.AccountType == models.AccountTypeDS && isFirstContribution {
 		wm := models.Transaction{
 			ID:             uuid.NewRandom().String(),
 			AccountID:      account.ID,
 			OpeningBalance: accountBalanceAtTx(&m),
 			Amount:         req.Amount,
-			Narration:      "Ajor fee deduction",
+			Narration:      "DS fee deduction",
 			TXType:         TransactionType_Withdrawal.String(),
 			SalesRepID:     claims.Subject,
 			ReceiptNo:      repo.generateReceiptNumber(ctx),
-			CreatedAt:      currentDate.Unix(),
+			CreatedAt:      currentDate.Add(2 * time.Second).Unix(),
 			UpdatedAt:      currentDate.Unix(),
 		}
 
 		if err := wm.Insert(ctx, tx, boil.Infer()); err != nil {
 			_ = tx.Rollback()
-			return nil, errors.WithMessage(err, "Insert Ajor fee failed")
+			return nil, errors.WithMessage(err, "Insert DS fee failed")
 		}
 
 		if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, tx, models.M{
 			models.AccountColumns.Balance: accountBalanceAtTx(&wm),
 		}); err != nil {
 
+			_ = tx.Rollback()
+			return nil, err
+		}
+
+		commission := models.DSCommission{
+			ID:            uuid.NewRandom().String(),
+			AccountID:     account.ID,
+			CustomerID:    account.CustomerID,
+			Amount:        req.Amount,
+			Date:          currentDate.Unix(),
+			EffectiveDate: effectiveDate.Unix(),
+		}
+		if err := commission.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
 			_ = tx.Rollback()
 			return nil, err
 		}

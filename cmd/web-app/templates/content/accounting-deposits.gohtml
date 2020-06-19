@@ -48,7 +48,7 @@
                         <select class="form-control" data-target="deposit.bank">
                             <option></option>
                             {{ range $acc := .banks }}
-                            <option value="{{ $acc.ID }}">{{ $acc }}</option>
+                            <option value="{{ $acc.ID }}">{{ $acc.AccountName }}</option>
                             {{ end }}
                         </select>
                     </div>
@@ -56,6 +56,11 @@
                     <div class="form-group">
                         <label for="bankName">Amount</label>
                         <input type="text" required class="form-control" data-target="deposit.amount">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bankName">Customer Information</label>
+                        <input type="text" required class="form-control" data-target="deposit.info">
                     </div>
                 </div>
                 <div class="modal-footer">

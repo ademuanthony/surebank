@@ -8,7 +8,7 @@ import (
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/customer"
-	"merryworld/surebank/internal/transaction"
+	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/mid"
 	saasSwagger "merryworld/surebank/internal/mid/saas-swagger"
 	"merryworld/surebank/internal/platform/auth"
@@ -18,6 +18,7 @@ import (
 	"merryworld/surebank/internal/signup"
 	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/tenant/account_preference"
+	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"
 	"merryworld/surebank/internal/user_account/invite"
@@ -43,6 +44,7 @@ type AppContext struct {
 	CustomerRepo      *customer.Repository
 	AccountRepo 	  *account.Repository
 	DepositRepo		  *transaction.Repository
+	CommissionRepo	  *dscommission.Repository
 	Authenticator     *auth.Authenticator
 	PreAppMiddleware  []web.Middleware
 	PostAppMiddleware []web.Middleware

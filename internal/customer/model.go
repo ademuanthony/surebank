@@ -17,7 +17,6 @@ type Repository struct {
 var AccountTypes = []string {
 	models.AccountTypeSB,
 	models.AccountTypeDS,
-	models.AccountTypeAJ,
 }
 
 // NewRepository creates a new Repository that defines dependencies for Customer.

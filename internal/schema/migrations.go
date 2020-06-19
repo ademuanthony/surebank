@@ -1235,6 +1235,46 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		// Create table ds_commission
+		{
+			ID: "20200619-01",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS ds_commission (
+					id char(36) NOT NULL,
+					account_id char(36) NOT NULL DEFAULT '' REFERENCES account(id),
+					customer_id char(36) NOT NULL REFERENCES customer(id),
+					amount FLOAT8 NOT NULL,
+					date INT8 NOT NULL,
+					PRIMARY KEY (id)
+				) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS ds_commission`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
+
+		// Add effective_date to ds_commission
+		{
+			ID: "20200619-02",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE ds_commission ADD effective_date INT8 NOT NULL DEFAULT 0;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
 		// TODO: store dates in unix
 	}
 }

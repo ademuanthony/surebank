@@ -22,5 +22,6 @@
 	    "bank_account",
 	    "bank_deposit",
 	    "expenditure",
-	    "daily_summary"
+	    "daily_summary",
+        "ds_commission"
             ]

@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
-	"gopkg.in/go-playground/validator.v9"
+	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/platform/notify"
 	"sync"
 	"time"
+
+	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/jmoiron/sqlx"
 
@@ -20,14 +22,16 @@ import (
 // Repository defines the required dependencies for Transaction.
 type Repository struct {
 	DbConn    *sqlx.DB
+	CommissionRepo *dscommission.Repository
 	notifySMS notify.SMS
 	accNumMtx sync.Mutex
 }
 
 // NewRepository creates a new Repository that defines dependencies for Transaction.
-func NewRepository(db *sqlx.DB, notifySMS notify.SMS) *Repository {
+func NewRepository(db *sqlx.DB, commissionRepo *dscommission.Repository, notifySMS notify.SMS) *Repository {
 	return &Repository{
 		DbConn:    db,
+		CommissionRepo: commissionRepo,
 		notifySMS: notifySMS,
 	}
 }
@@ -61,9 +65,9 @@ func FromModel(rec *models.Transaction) *Transaction {
 		Narration:      rec.Narration,
 		SalesRepID:     rec.SalesRepID,
 		ReceiptNo:  	rec.ReceiptNo,
-		EffectiveDate:  time.Unix(rec.EffectiveData, 0),
-		CreatedAt:      time.Unix(rec.CreatedAt, 0),
-		UpdatedAt:      time.Unix(rec.UpdatedAt, 0),
+		EffectiveDate:  time.Unix(rec.EffectiveDate, 0).UTC(),
+		CreatedAt:      time.Unix(rec.CreatedAt, 0).UTC(),
+		UpdatedAt:      time.Unix(rec.UpdatedAt, 0).UTC(),
 	}
 
 	if rec.R != nil {

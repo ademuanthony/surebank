@@ -251,6 +251,7 @@ func (h *Accounting) BankDeposits(ctx context.Context, w http.ResponseWriter,
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "bank", Title: "Bank", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 		{Field: "amount", Title: "Amount", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "info", Title: "Customer Information", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 		{Field: "date", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 	}
 
@@ -267,6 +268,9 @@ func (h *Accounting) BankDeposits(ctx context.Context, w http.ResponseWriter,
 				v.Value = bankInfo
 				v.Formatted = v.Value
 			case "amount":
+				v.Value = fmt.Sprintf("%.2f", q.Amount)
+				v.Formatted = v.Value
+			case "info":
 				v.Value = fmt.Sprintf("%.2f", q.Amount)
 				v.Formatted = v.Value
 			case "date":
@@ -402,6 +406,7 @@ func (h *Accounting) Expenditures(ctx context.Context, w http.ResponseWriter,
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "amount", Title: "Amount", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
+		{Field: "memo", Title: "Memo", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 		{Field: "date", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 	}
 
@@ -414,6 +419,9 @@ func (h *Accounting) Expenditures(ctx context.Context, w http.ResponseWriter,
 				v.Value = fmt.Sprintf("%s", q.ID)
 			case "amount":
 				v.Value = fmt.Sprintf("%.2f", q.Amount)
+				v.Formatted = v.Value
+			case "memo":
+				v.Value = "dummy"
 				v.Formatted = v.Value
 			case "date":
 				dt := web.NewTimeResponse(ctx, time.Unix(q.Date, 0))

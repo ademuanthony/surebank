@@ -21,24 +21,24 @@ var (
 	_ = queries.Equal
 )
 
-func testTransactions(t *testing.T) {
+func testDSCommissions(t *testing.T) {
 	t.Parallel()
 
-	query := Transactions()
+	query := DSCommissions()
 
 	if query.Query == nil {
 		t.Error("expected a query, got nothing")
 	}
 }
 
-func testTransactionsDelete(t *testing.T) {
+func testDSCommissionsDelete(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -54,7 +54,7 @@ func testTransactionsDelete(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Transactions().Count(ctx, tx)
+	count, err := DSCommissions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -64,14 +64,14 @@ func testTransactionsDelete(t *testing.T) {
 	}
 }
 
-func testTransactionsQueryDeleteAll(t *testing.T) {
+func testDSCommissionsQueryDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -81,13 +81,13 @@ func testTransactionsQueryDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	if rowsAff, err := Transactions().DeleteAll(ctx, tx); err != nil {
+	if rowsAff, err := DSCommissions().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Transactions().Count(ctx, tx)
+	count, err := DSCommissions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,14 +97,14 @@ func testTransactionsQueryDeleteAll(t *testing.T) {
 	}
 }
 
-func testTransactionsSliceDeleteAll(t *testing.T) {
+func testDSCommissionsSliceDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -114,7 +114,7 @@ func testTransactionsSliceDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := TransactionSlice{o}
+	slice := DSCommissionSlice{o}
 
 	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
@@ -122,7 +122,7 @@ func testTransactionsSliceDeleteAll(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Transactions().Count(ctx, tx)
+	count, err := DSCommissions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -132,14 +132,14 @@ func testTransactionsSliceDeleteAll(t *testing.T) {
 	}
 }
 
-func testTransactionsExists(t *testing.T) {
+func testDSCommissionsExists(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -149,23 +149,23 @@ func testTransactionsExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := TransactionExists(ctx, tx, o.ID)
+	e, err := DSCommissionExists(ctx, tx, o.ID)
 	if err != nil {
-		t.Errorf("Unable to check if Transaction exists: %s", err)
+		t.Errorf("Unable to check if DSCommission exists: %s", err)
 	}
 	if !e {
-		t.Errorf("Expected TransactionExists to return true, but got false.")
+		t.Errorf("Expected DSCommissionExists to return true, but got false.")
 	}
 }
 
-func testTransactionsFind(t *testing.T) {
+func testDSCommissionsFind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -175,24 +175,24 @@ func testTransactionsFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	transactionFound, err := FindTransaction(ctx, tx, o.ID)
+	dsCommissionFound, err := FindDSCommission(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if transactionFound == nil {
+	if dsCommissionFound == nil {
 		t.Error("want a record, got nil")
 	}
 }
 
-func testTransactionsBind(t *testing.T) {
+func testDSCommissionsBind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -202,19 +202,19 @@ func testTransactionsBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err = Transactions().Bind(ctx, tx, o); err != nil {
+	if err = DSCommissions().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
 
-func testTransactionsOne(t *testing.T) {
+func testDSCommissionsOne(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -224,38 +224,38 @@ func testTransactionsOne(t *testing.T) {
 		t.Error(err)
 	}
 
-	if x, err := Transactions().One(ctx, tx); err != nil {
+	if x, err := DSCommissions().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
 	}
 }
 
-func testTransactionsAll(t *testing.T) {
+func testDSCommissionsAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	transactionOne := &Transaction{}
-	transactionTwo := &Transaction{}
-	if err = randomize.Struct(seed, transactionOne, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	dsCommissionOne := &DSCommission{}
+	dsCommissionTwo := &DSCommission{}
+	if err = randomize.Struct(seed, dsCommissionOne, dsCommissionDBTypes, false, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
-	if err = randomize.Struct(seed, transactionTwo, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	if err = randomize.Struct(seed, dsCommissionTwo, dsCommissionDBTypes, false, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = transactionOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = dsCommissionOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = transactionTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = dsCommissionTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := Transactions().All(ctx, tx)
+	slice, err := DSCommissions().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -265,31 +265,31 @@ func testTransactionsAll(t *testing.T) {
 	}
 }
 
-func testTransactionsCount(t *testing.T) {
+func testDSCommissionsCount(t *testing.T) {
 	t.Parallel()
 
 	var err error
 	seed := randomize.NewSeed()
-	transactionOne := &Transaction{}
-	transactionTwo := &Transaction{}
-	if err = randomize.Struct(seed, transactionOne, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	dsCommissionOne := &DSCommission{}
+	dsCommissionTwo := &DSCommission{}
+	if err = randomize.Struct(seed, dsCommissionOne, dsCommissionDBTypes, false, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
-	if err = randomize.Struct(seed, transactionTwo, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	if err = randomize.Struct(seed, dsCommissionTwo, dsCommissionDBTypes, false, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = transactionOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = dsCommissionOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = transactionTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = dsCommissionTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Transactions().Count(ctx, tx)
+	count, err := DSCommissions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,14 +299,14 @@ func testTransactionsCount(t *testing.T) {
 	}
 }
 
-func testTransactionsInsert(t *testing.T) {
+func testDSCommissionsInsert(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -316,7 +316,7 @@ func testTransactionsInsert(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Transactions().Count(ctx, tx)
+	count, err := DSCommissions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -326,24 +326,24 @@ func testTransactionsInsert(t *testing.T) {
 	}
 }
 
-func testTransactionsInsertWhitelist(t *testing.T) {
+func testDSCommissionsInsertWhitelist(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(ctx, tx, boil.Whitelist(transactionColumnsWithoutDefault...)); err != nil {
+	if err = o.Insert(ctx, tx, boil.Whitelist(dsCommissionColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Transactions().Count(ctx, tx)
+	count, err := DSCommissions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -353,17 +353,17 @@ func testTransactionsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testTransactionToOneAccountUsingAccount(t *testing.T) {
+func testDSCommissionToOneAccountUsingAccount(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local Transaction
+	var local DSCommission
 	var foreign Account
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	if err := randomize.Struct(seed, &local, dsCommissionDBTypes, false, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, accountDBTypes, false, accountColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Account struct: %s", err)
@@ -387,8 +387,8 @@ func testTransactionToOneAccountUsingAccount(t *testing.T) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
-	slice := TransactionSlice{&local}
-	if err = local.L.LoadAccount(ctx, tx, false, (*[]*Transaction)(&slice), nil); err != nil {
+	slice := DSCommissionSlice{&local}
+	if err = local.L.LoadAccount(ctx, tx, false, (*[]*DSCommission)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.Account == nil {
@@ -404,32 +404,32 @@ func testTransactionToOneAccountUsingAccount(t *testing.T) {
 	}
 }
 
-func testTransactionToOneUserUsingSalesRep(t *testing.T) {
+func testDSCommissionToOneCustomerUsingCustomer(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local Transaction
-	var foreign User
+	var local DSCommission
+	var foreign Customer
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	if err := randomize.Struct(seed, &local, dsCommissionDBTypes, false, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
-	if err := randomize.Struct(seed, &foreign, userDBTypes, false, userColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize User struct: %s", err)
+	if err := randomize.Struct(seed, &foreign, customerDBTypes, false, customerColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Customer struct: %s", err)
 	}
 
 	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	local.SalesRepID = foreign.ID
+	local.CustomerID = foreign.ID
 	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.SalesRep().One(ctx, tx)
+	check, err := local.Customer().One(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -438,35 +438,35 @@ func testTransactionToOneUserUsingSalesRep(t *testing.T) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
-	slice := TransactionSlice{&local}
-	if err = local.L.LoadSalesRep(ctx, tx, false, (*[]*Transaction)(&slice), nil); err != nil {
+	slice := DSCommissionSlice{&local}
+	if err = local.L.LoadCustomer(ctx, tx, false, (*[]*DSCommission)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.SalesRep == nil {
+	if local.R.Customer == nil {
 		t.Error("struct should have been eager loaded")
 	}
 
-	local.R.SalesRep = nil
-	if err = local.L.LoadSalesRep(ctx, tx, true, &local, nil); err != nil {
+	local.R.Customer = nil
+	if err = local.L.LoadCustomer(ctx, tx, true, &local, nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.SalesRep == nil {
+	if local.R.Customer == nil {
 		t.Error("struct should have been eager loaded")
 	}
 }
 
-func testTransactionToOneSetOpAccountUsingAccount(t *testing.T) {
+func testDSCommissionToOneSetOpAccountUsingAccount(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Transaction
+	var a DSCommission
 	var b, c Account
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, dsCommissionDBTypes, false, strmangle.SetComplement(dsCommissionPrimaryKeyColumns, dsCommissionColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	if err = randomize.Struct(seed, &b, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
@@ -493,7 +493,7 @@ func testTransactionToOneSetOpAccountUsingAccount(t *testing.T) {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.Transactions[0] != &a {
+		if x.R.DSCommissions[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
 		if a.AccountID != x.ID {
@@ -512,24 +512,24 @@ func testTransactionToOneSetOpAccountUsingAccount(t *testing.T) {
 		}
 	}
 }
-func testTransactionToOneSetOpUserUsingSalesRep(t *testing.T) {
+func testDSCommissionToOneSetOpCustomerUsingCustomer(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Transaction
-	var b, c User
+	var a DSCommission
+	var b, c Customer
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, dsCommissionDBTypes, false, strmangle.SetComplement(dsCommissionPrimaryKeyColumns, dsCommissionColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &b, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &b, customerDBTypes, false, strmangle.SetComplement(customerPrimaryKeyColumns, customerColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &c, customerDBTypes, false, strmangle.SetComplement(customerPrimaryKeyColumns, customerColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -540,44 +540,44 @@ func testTransactionToOneSetOpUserUsingSalesRep(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*User{&b, &c} {
-		err = a.SetSalesRep(ctx, tx, i != 0, x)
+	for i, x := range []*Customer{&b, &c} {
+		err = a.SetCustomer(ctx, tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if a.R.SalesRep != x {
+		if a.R.Customer != x {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.SalesRepTransactions[0] != &a {
+		if x.R.DSCommissions[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.SalesRepID != x.ID {
-			t.Error("foreign key was wrong value", a.SalesRepID)
+		if a.CustomerID != x.ID {
+			t.Error("foreign key was wrong value", a.CustomerID)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.SalesRepID))
-		reflect.Indirect(reflect.ValueOf(&a.SalesRepID)).Set(zero)
+		zero := reflect.Zero(reflect.TypeOf(a.CustomerID))
+		reflect.Indirect(reflect.ValueOf(&a.CustomerID)).Set(zero)
 
 		if err = a.Reload(ctx, tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.SalesRepID != x.ID {
-			t.Error("foreign key was wrong value", a.SalesRepID, x.ID)
+		if a.CustomerID != x.ID {
+			t.Error("foreign key was wrong value", a.CustomerID, x.ID)
 		}
 	}
 }
 
-func testTransactionsReload(t *testing.T) {
+func testDSCommissionsReload(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -592,14 +592,14 @@ func testTransactionsReload(t *testing.T) {
 	}
 }
 
-func testTransactionsReloadAll(t *testing.T) {
+func testDSCommissionsReloadAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -609,21 +609,21 @@ func testTransactionsReloadAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := TransactionSlice{o}
+	slice := DSCommissionSlice{o}
 
 	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
 
-func testTransactionsSelect(t *testing.T) {
+func testDSCommissionsSelect(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -633,7 +633,7 @@ func testTransactionsSelect(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice, err := Transactions().All(ctx, tx)
+	slice, err := DSCommissions().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -644,25 +644,25 @@ func testTransactionsSelect(t *testing.T) {
 }
 
 var (
-	transactionDBTypes = map[string]string{`ID`: `character`, `AccountID`: `character`, `TXType`: `character varying`, `OpeningBalance`: `double precision`, `Amount`: `double precision`, `Narration`: `character varying`, `SalesRepID`: `character`, `CreatedAt`: `bigint`, `UpdatedAt`: `bigint`, `ArchivedAt`: `bigint`, `ReceiptNo`: `character varying`, `EffectiveDate`: `bigint`}
-	_                  = bytes.MinRead
+	dsCommissionDBTypes = map[string]string{`ID`: `character`, `AccountID`: `character`, `CustomerID`: `character`, `Amount`: `double precision`, `Date`: `bigint`, `EffectiveDate`: `bigint`}
+	_                   = bytes.MinRead
 )
 
-func testTransactionsUpdate(t *testing.T) {
+func testDSCommissionsUpdate(t *testing.T) {
 	t.Parallel()
 
-	if 0 == len(transactionPrimaryKeyColumns) {
+	if 0 == len(dsCommissionPrimaryKeyColumns) {
 		t.Skip("Skipping table with no primary key columns")
 	}
-	if len(transactionAllColumns) == len(transactionPrimaryKeyColumns) {
+	if len(dsCommissionAllColumns) == len(dsCommissionPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -672,7 +672,7 @@ func testTransactionsUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Transactions().Count(ctx, tx)
+	count, err := DSCommissions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -681,8 +681,8 @@ func testTransactionsUpdate(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
@@ -692,18 +692,18 @@ func testTransactionsUpdate(t *testing.T) {
 	}
 }
 
-func testTransactionsSliceUpdateAll(t *testing.T) {
+func testDSCommissionsSliceUpdateAll(t *testing.T) {
 	t.Parallel()
 
-	if len(transactionAllColumns) == len(transactionPrimaryKeyColumns) {
+	if len(dsCommissionAllColumns) == len(dsCommissionPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Transaction{}
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := &DSCommission{}
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -713,7 +713,7 @@ func testTransactionsSliceUpdateAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Transactions().Count(ctx, tx)
+	count, err := DSCommissions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -722,18 +722,18 @@ func testTransactionsSliceUpdateAll(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, transactionDBTypes, true, transactionPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	if err = randomize.Struct(seed, o, dsCommissionDBTypes, true, dsCommissionPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	// Remove Primary keys and unique columns from what we plan to update
 	var fields []string
-	if strmangle.StringSliceMatch(transactionAllColumns, transactionPrimaryKeyColumns) {
-		fields = transactionAllColumns
+	if strmangle.StringSliceMatch(dsCommissionAllColumns, dsCommissionPrimaryKeyColumns) {
+		fields = dsCommissionAllColumns
 	} else {
 		fields = strmangle.SetComplement(
-			transactionAllColumns,
-			transactionPrimaryKeyColumns,
+			dsCommissionAllColumns,
+			dsCommissionPrimaryKeyColumns,
 		)
 	}
 
@@ -751,7 +751,7 @@ func testTransactionsSliceUpdateAll(t *testing.T) {
 		}
 	}
 
-	slice := TransactionSlice{o}
+	slice := DSCommissionSlice{o}
 	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
@@ -759,29 +759,29 @@ func testTransactionsSliceUpdateAll(t *testing.T) {
 	}
 }
 
-func testTransactionsUpsert(t *testing.T) {
+func testDSCommissionsUpsert(t *testing.T) {
 	t.Parallel()
 
-	if len(transactionAllColumns) == len(transactionPrimaryKeyColumns) {
+	if len(dsCommissionAllColumns) == len(dsCommissionPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
-	o := Transaction{}
-	if err = randomize.Struct(seed, &o, transactionDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	o := DSCommission{}
+	if err = randomize.Struct(seed, &o, dsCommissionDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert Transaction: %s", err)
+		t.Errorf("Unable to upsert DSCommission: %s", err)
 	}
 
-	count, err := Transactions().Count(ctx, tx)
+	count, err := DSCommissions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -790,15 +790,15 @@ func testTransactionsUpsert(t *testing.T) {
 	}
 
 	// Attempt the UPDATE side of an UPSERT
-	if err = randomize.Struct(seed, &o, transactionDBTypes, false, transactionPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	if err = randomize.Struct(seed, &o, dsCommissionDBTypes, false, dsCommissionPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize DSCommission struct: %s", err)
 	}
 
 	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert Transaction: %s", err)
+		t.Errorf("Unable to upsert DSCommission: %s", err)
 	}
 
-	count, err = Transactions().Count(ctx, tx)
+	count, err = DSCommissions().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

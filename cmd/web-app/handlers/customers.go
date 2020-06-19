@@ -483,7 +483,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
-		{Field: "amount", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
+		{Field: "amount", Title: "Amount", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
 		{Field: "created_at", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "effective_date", Title: "Effective Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
@@ -502,7 +502,11 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 			case "amount":
 				v.Value = fmt.Sprintf("%f", q.Amount)
 				p := message.NewPrinter(language.English)
-				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlCustomersTransactionsView(customerID, q.AccountID, q.ID), q.Amount)
+				var sign string
+				if q.Type == transaction.TransactionType_Withdrawal {
+					sign = "-"
+				}
+				v.Formatted = p.Sprintf("<a href='%s'>%s%.2f</a>", urlCustomersTransactionsView(customerID, q.AccountID, q.ID), sign, q.Amount)
 			case "created_at":
 				v.Value = q.CreatedAt.Local
 				v.Formatted = q.CreatedAt.Local
@@ -563,6 +567,8 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 		var order []string
 		if len(sorting) > 0 {
 			order = strings.Split(sorting, ",")
+		} else {
+			order = append(order, "created_at DESC")
 		}
 
 		var res = &transaction.PagedResponseList{}
@@ -814,7 +820,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
-		{Field: "amount", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
+		{Field: "amount", Title: "Amount", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
 		{Field: "created_at", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "effective_date", Title: "Effective Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
 		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
@@ -833,13 +839,17 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 			case "amount":
 				v.Value = fmt.Sprintf("%f", q.Amount)
 				p := message.NewPrinter(language.English)
-				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlCustomersTransactionsView(cust.ID, acc.ID, q.ID), q.Amount)
+				var sign string 
+				if q.Type == transaction.TransactionType_Withdrawal {
+					sign = "-"
+				}
+				v.Formatted = p.Sprintf("<a href='%s'>%s%.2f</a>", urlCustomersTransactionsView(cust.ID, acc.ID, q.ID), sign, q.Amount)
 			case "created_at":
 				v.Value = q.CreatedAt.Local
 				v.Formatted = q.CreatedAt.Local
 			case "effective_date":
 				v.Value = q.EffectiveDate.LocalDate
-				v.Formatted = q.EffectiveDate.LocalDate
+				v.Formatted = q.EffectiveDate.LocalDate 
 			case "narration":
 				values := strings.Split(q.Narration, ":")
 				if len(values) > 1 {
@@ -875,6 +885,8 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		var order []string
 		if len(sorting) > 0 {
 			order = strings.Split(sorting, ",")
+		} else {
+			order = append(order, "created_at DESC")
 		}
 
 		var res = &transaction.PagedResponseList{}
@@ -968,7 +980,7 @@ func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.
 			req.AccountNumber = acc.Number
 			req.Type = transaction.TransactionType_Deposit
 
-			_, err = h.TransactionRepo.Create(ctx, claims, *req, ctxValues.Now)
+			_, err = h.TransactionRepo.Deposit(ctx, claims, *req, ctxValues.Now)
 			if err != nil {
 				switch errors.Cause(err) {
 				default:
@@ -986,7 +998,7 @@ func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.
 				"Deposit Added",
 				"Deposit successfully Added.")
 
-			return true, web.Redirect(ctx, w, r, urlCustomersView(customerID), http.StatusFound)
+			return true, web.Redirect(ctx, w, r, urlCustomersAccountsView(customerID, accountID), http.StatusFound)
 		}
 
 		return false, nil
@@ -1075,7 +1087,7 @@ func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.
 				"Withdrawal Added",
 				"Withdrawal successfully Added.")
 
-			return true, web.Redirect(ctx, w, r, urlCustomersView(customerID), http.StatusFound)
+			return true, web.Redirect(ctx, w, r, urlCustomersAccountsView(customerID, accountID), http.StatusFound)
 		}
 
 		return false, nil

@@ -178,23 +178,26 @@ var AccountWhere = struct {
 
 // AccountRels is where relationship names are stored.
 var AccountRels = struct {
-	Branch       string
-	Customer     string
-	SalesRep     string
-	Transactions string
+	Branch        string
+	Customer      string
+	SalesRep      string
+	DSCommissions string
+	Transactions  string
 }{
-	Branch:       "Branch",
-	Customer:     "Customer",
-	SalesRep:     "SalesRep",
-	Transactions: "Transactions",
+	Branch:        "Branch",
+	Customer:      "Customer",
+	SalesRep:      "SalesRep",
+	DSCommissions: "DSCommissions",
+	Transactions:  "Transactions",
 }
 
 // accountR is where relationships are stored.
 type accountR struct {
-	Branch       *Branch
-	Customer     *Customer
-	SalesRep     *User
-	Transactions TransactionSlice
+	Branch        *Branch
+	Customer      *Customer
+	SalesRep      *User
+	DSCommissions DSCommissionSlice
+	Transactions  TransactionSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -341,6 +344,27 @@ func (o *Account) SalesRep(mods ...qm.QueryMod) userQuery {
 
 	query := Users(queryMods...)
 	queries.SetFrom(query.Query, "\"users\"")
+
+	return query
+}
+
+// DSCommissions retrieves all the ds_commission's DSCommissions with an executor.
+func (o *Account) DSCommissions(mods ...qm.QueryMod) dsCommissionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"ds_commission\".\"account_id\"=?", o.ID),
+	)
+
+	query := DSCommissions(queryMods...)
+	queries.SetFrom(query.Query, "\"ds_commission\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"ds_commission\".*"})
+	}
 
 	return query
 }
@@ -645,6 +669,94 @@ func (accountL) LoadSalesRep(ctx context.Context, e boil.ContextExecutor, singul
 	return nil
 }
 
+// LoadDSCommissions allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadDSCommissions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount interface{}, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		object = maybeAccount.(*Account)
+	} else {
+		slice = *maybeAccount.(*[]*Account)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`ds_commission`), qm.WhereIn(`ds_commission.account_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load ds_commission")
+	}
+
+	var resultSlice []*DSCommission
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice ds_commission")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on ds_commission")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for ds_commission")
+	}
+
+	if singular {
+		object.R.DSCommissions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &dsCommissionR{}
+			}
+			foreign.R.Account = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.AccountID {
+				local.R.DSCommissions = append(local.R.DSCommissions, foreign)
+				if foreign.R == nil {
+					foreign.R = &dsCommissionR{}
+				}
+				foreign.R.Account = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadTransactions allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (accountL) LoadTransactions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount interface{}, mods queries.Applicator) error {
@@ -871,6 +983,59 @@ func (o *Account) SetSalesRep(ctx context.Context, exec boil.ContextExecutor, in
 		related.R.SalesRepAccounts = append(related.R.SalesRepAccounts, o)
 	}
 
+	return nil
+}
+
+// AddDSCommissions adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.DSCommissions.
+// Sets related.R.Account appropriately.
+func (o *Account) AddDSCommissions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*DSCommission) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.AccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"ds_commission\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, dsCommissionPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.AccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			DSCommissions: related,
+		}
+	} else {
+		o.R.DSCommissions = append(o.R.DSCommissions, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &dsCommissionR{
+				Account: o,
+			}
+		} else {
+			rel.R.Account = o
+		}
+	}
 	return nil
 }
 

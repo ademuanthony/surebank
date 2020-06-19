@@ -6,6 +6,7 @@ import (
 	"log"
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
+	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/sale"
 	"merryworld/surebank/internal/transaction"
@@ -15,9 +16,6 @@ import (
 	"time"
 
 	"merryworld/surebank/internal/branch"
-	"merryworld/surebank/internal/shop"
-	"merryworld/surebank/internal/tenant"
-	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/geonames"
 	"merryworld/surebank/internal/mid"
@@ -25,12 +23,16 @@ import (
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/shop"
 	"merryworld/surebank/internal/signup"
+	"merryworld/surebank/internal/tenant"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"
 	"merryworld/surebank/internal/user_account/invite"
 	"merryworld/surebank/internal/user_auth"
 	"merryworld/surebank/internal/webroute"
+
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/ikeikeikeike/go-sitemap-generator/v2/stm"
 	"github.com/jmoiron/sqlx"
@@ -59,12 +61,13 @@ type AppContext struct {
 	ChecklistRepo     *checklist.Repository
 	GeoRepo           *geonames.Repository
 	ShopRepo          *shop.Repository
-	InventoryRepo	  *inventory.Repository
+	InventoryRepo     *inventory.Repository
 	BranchRepo        *branch.Repository
 	CustomerRepo      *customer.Repository
 	AccountRepo       *account.Repository
+	CommissionRepo    *dscommission.Repository
 	TransactionRepo   *transaction.Repository
-	SaleRepo		  *sale.Repository
+	SaleRepo          *sale.Repository
 	Authenticator     *auth.Authenticator
 	StaticDir         string
 	TemplateDir       string
@@ -162,10 +165,10 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/branches/create", branches.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/branches", branches.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/api/v1/branches", branches.APICreate, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	
+
 	// Accounting
 	accounting := Accounting{
-		DbConn:     appCtx.MasterDB.DB,
+		DbConn:   appCtx.MasterDB.DB,
 		Redis:    appCtx.Redis,
 		Renderer: appCtx.Renderer,
 	}
@@ -176,7 +179,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/accounting/expenditures", accounting.Expenditures, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/api/v1/accounting/expenditures", accounting.CreateExpenditure, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/accounting", accounting.DailySummaries, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	
+
 	// Register shop management pages
 	// Brands
 	brands := Brands{
@@ -239,11 +242,11 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 
 	// Customers
 	custs := Customers{
-		CustomerRepo: appCtx.CustomerRepo,
-		AccountRepo: appCtx.AccountRepo,
+		CustomerRepo:    appCtx.CustomerRepo,
+		AccountRepo:     appCtx.AccountRepo,
 		TransactionRepo: appCtx.TransactionRepo,
-		Redis:    appCtx.Redis,
-		Renderer: appCtx.Renderer,
+		Redis:           appCtx.Redis,
+		Renderer:        appCtx.Renderer,
 	}
 	app.Handle("POST", "/customers/:customer_id/update", custs.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/customers/:customer_id/update", custs.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
@@ -251,9 +254,9 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("POST", "/customers/:customer_id/add-account", custs.AddAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers/:customer_id/accounts/:account_id/transactions/deposit", custs.Deposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/customers/:customer_id/accounts/:account_id/transactions/deposit", custs.Deposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	app.Handle("GET", "/customers/:customer_id/accounts/:account_id/transactions/withdraw", 
+	app.Handle("GET", "/customers/:customer_id/accounts/:account_id/transactions/withdraw",
 		custs.Withraw, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	app.Handle("POST", "/customers/:customer_id/accounts/:account_id/transactions/withdraw", 
+	app.Handle("POST", "/customers/:customer_id/accounts/:account_id/transactions/withdraw",
 		custs.Withraw, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers/:customer_id/accounts/:account_id/transactions", custs.AccountTransactions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/customers/:customer_id/accounts/:account_id/transactions/:transaction_id", custs.Transaction, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
@@ -269,6 +272,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	reports := Reports{
 		CustomerRepo:    appCtx.CustomerRepo,
 		AccountRepo:     appCtx.AccountRepo,
+		CommissionRepo:  appCtx.CommissionRepo,
 		TransactionRepo: appCtx.TransactionRepo,
 		ShopRepo:        appCtx.ShopRepo,
 		UserRepos:       appCtx.UserRepo,
@@ -276,7 +280,8 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		Redis:           appCtx.Redis,
 	}
 	app.Handle("GET", "/reports/collections", reports.Transactions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	app.Handle("GET", "/reports/ajor", reports.Ajor, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/reports/ds/commissions", reports.DsCommissions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/reports/ds", reports.Ds, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
 	// Register sales endpoint
 	sales := Sales{
@@ -296,7 +301,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		AuthRepo:        appCtx.AuthRepo,
 		InviteRepo:      appCtx.InviteRepo,
 		GeoRepo:         appCtx.GeoRepo,
-		BranchRepo: 	 appCtx.BranchRepo,
+		BranchRepo:      appCtx.BranchRepo,
 		Redis:           appCtx.Redis,
 		Renderer:        appCtx.Renderer,
 	}

@@ -431,6 +431,84 @@ func testCustomerToManyAccounts(t *testing.T) {
 	}
 }
 
+func testCustomerToManyDSCommissions(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Customer
+	var b, c DSCommission
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, customerDBTypes, true, customerColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Customer struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, dsCommissionDBTypes, false, dsCommissionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, dsCommissionDBTypes, false, dsCommissionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.CustomerID = a.ID
+	c.CustomerID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.DSCommissions().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.CustomerID == b.CustomerID {
+			bFound = true
+		}
+		if v.CustomerID == c.CustomerID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := CustomerSlice{&a}
+	if err = a.L.LoadDSCommissions(ctx, tx, false, (*[]*Customer)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.DSCommissions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.DSCommissions = nil
+	if err = a.L.LoadDSCommissions(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.DSCommissions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testCustomerToManyAddOpAccounts(t *testing.T) {
 	var err error
 
@@ -498,6 +576,81 @@ func testCustomerToManyAddOpAccounts(t *testing.T) {
 		}
 
 		count, err := a.Accounts().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testCustomerToManyAddOpDSCommissions(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Customer
+	var b, c, d, e DSCommission
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, customerDBTypes, false, strmangle.SetComplement(customerPrimaryKeyColumns, customerColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*DSCommission{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, dsCommissionDBTypes, false, strmangle.SetComplement(dsCommissionPrimaryKeyColumns, dsCommissionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*DSCommission{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddDSCommissions(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.CustomerID {
+			t.Error("foreign key was wrong value", a.ID, first.CustomerID)
+		}
+		if a.ID != second.CustomerID {
+			t.Error("foreign key was wrong value", a.ID, second.CustomerID)
+		}
+
+		if first.R.Customer != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Customer != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.DSCommissions[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.DSCommissions[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.DSCommissions().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
