@@ -1260,12 +1260,25 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
-
 		// Add effective_date to ds_commission
 		{
 			ID: "20200619-02",
 			Migrate: func(tx *sql.Tx) error {
 				q1 := `ALTER TABLE ds_commission ADD effective_date INT8 NOT NULL DEFAULT 0;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
+		// Add phone_number to users
+		{
+			ID: "20200619-03",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE users ADD phone_number char(36) NOT NULL DEFAULT '';`
 				if _, err := tx.Exec(q1); err != nil {
 					return errors.Wrapf(err, "Query failed %s", q1)
 				}

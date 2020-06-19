@@ -37,7 +37,7 @@ var (
 )
 
 // userMapColumns is the list of columns needed for mapRowsToUser
-var userMapColumns = "id,first_name,last_name,email,password_salt,password_hash,password_reset,timezone,created_at,updated_at,archived_at"
+var userMapColumns = "id,first_name,last_name,email,phone_number,password_salt,password_hash,password_reset,timezone,created_at,updated_at,archived_at"
 
 // mapRowsToUser takes the SQL rows and maps it to the UserAccount struct
 // with the columns defined by userMapColumns
@@ -46,7 +46,7 @@ func mapRowsToUser(rows *sql.Rows) (*User, error) {
 		u   User
 		err error
 	)
-	err = rows.Scan(&u.ID, &u.FirstName, &u.LastName, &u.Email, &u.PasswordSalt, &u.PasswordHash, &u.PasswordReset, &u.Timezone, &u.CreatedAt, &u.UpdatedAt, &u.ArchivedAt)
+	err = rows.Scan(&u.ID, &u.FirstName, &u.LastName, &u.Email, &u.PhoneNumber, &u.PasswordSalt, &u.PasswordHash, &u.PasswordReset, &u.Timezone, &u.CreatedAt, &u.UpdatedAt, &u.ArchivedAt)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -272,6 +272,31 @@ func UniqueEmail(ctx context.Context, dbConn *sqlx.DB, email, userId string) (bo
 	return true, nil
 }
 
+// Validation an phone number is unique excluding the current user ID.
+func UniquePhoneNumber(ctx context.Context, dbConn *sqlx.DB, phoneNumber, userId string) (bool, error) {
+	query := sqlbuilder.NewSelectBuilder().Select("id").From(userTableName)
+	query.Where(query.And(
+		query.Equal("phone_number", phoneNumber),
+		query.NotEqual("id", userId),
+	))
+	queryStr, args := query.Build()
+	queryStr = dbConn.Rebind(queryStr)
+
+	var existingId string
+	err := dbConn.QueryRowContext(ctx, queryStr, args...).Scan(&existingId)
+	if err != nil && err != sql.ErrNoRows {
+		err = errors.Wrapf(err, "query - %s", query.String())
+		return false, err
+	}
+
+	// When an ID was found in the db, the email is not unique.
+	if existingId != "" {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 // Create inserts a new user into the database.
 func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req UserCreateRequest, now time.Time) (*User, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.user.Create")
@@ -288,8 +313,14 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req User
 	if err != nil {
 		return nil, err
 	}
-	ctx = context.WithValue(ctx, webcontext.KeyTagUnique, uniq)
-
+	// Validation email address is unique in the database.
+	uniqPhone, err := UniquePhoneNumber(ctx, repo.DbConn, req.PhoneNumber, "")
+	if err != nil {
+		return nil, err
+	}
+	// ctx = context.WithValue(ctx, webcontext.KeyTagUnique, uniq && uniqPhone)
+	ctx = webcontext.ContextAddUniqueValue(ctx, req, "Email", uniq)
+	ctx = webcontext.ContextAddUniqueValue(ctx, req, "PhoneNumber", uniqPhone)
 	// Validate the request.
 	err = v.StructCtx(ctx, req)
 	if err != nil {
@@ -332,6 +363,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req User
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		Email:        req.Email,
+		PhoneNumber: req.PhoneNumber,
 		Timezone:     req.Timezone,
 		PasswordHash: passwordHash,
 		PasswordSalt: passwordSalt,
@@ -342,8 +374,8 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req User
 	// Build the insert SQL statement.
 	query := sqlbuilder.NewInsertBuilder()
 	query.InsertInto(userTableName)
-	query.Cols("id", "branch_id", "first_name", "last_name", "email", "password_hash", "password_salt", "timezone", "created_at", "updated_at")
-	query.Values(u.ID, u.BranchID, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.PasswordSalt, u.Timezone, u.CreatedAt, u.UpdatedAt)
+	query.Cols("id", "branch_id", "first_name", "last_name", "email", "phone_number", "password_hash", "password_salt", "timezone", "created_at", "updated_at")
+	query.Values(u.ID, u.BranchID, u.FirstName, u.LastName, u.Email, u.PhoneNumber, u.PasswordHash, u.PasswordSalt, u.Timezone, u.CreatedAt, u.UpdatedAt)
 
 	// Execute the query with the provided context.
 	sql, args := query.Build()
@@ -490,22 +522,53 @@ func (repo *Repository) ReadByEmail(ctx context.Context, claims auth.Claims, ema
 	return u, nil
 }
 
+// ReadByPhone gets the specified user from the database.
+func (repo *Repository) ReadByPhone(ctx context.Context, claims auth.Claims, email string, includedArchived bool) (*User, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.user.ReadByPhone")
+	defer span.Finish()
+
+	// Filter base select query by phone_number
+	query := selectQuery()
+	query.Where(query.Equal("phone_number", email))
+
+	res, err := find(ctx, claims, repo.DbConn, query, []interface{}{}, includedArchived)
+	if err != nil {
+		return nil, err
+	} else if res == nil || len(res) == 0 {
+		err = errors.WithMessagef(ErrNotFound, "user %s not found", email)
+		return nil, err
+	}
+	u := res[0]
+
+	return u, nil
+}
+
 // Update replaces a user in the database.
 func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req UserUpdateRequest, now time.Time) error {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.user.Update")
 	defer span.Finish()
 
+	uniqPhone, uniqEmail := true, true
 	// Validation email address is unique in the database.
 	if req.Email != nil {
-		// Validation email address is unique in the database.
 		uniq, err := UniqueEmail(ctx, repo.DbConn, *req.Email, req.ID)
 		if err != nil {
 			return err
 		}
-		ctx = context.WithValue(ctx, webcontext.KeyTagUnique, uniq)
-	} else {
-		ctx = context.WithValue(ctx, webcontext.KeyTagUnique, true)
+		uniqEmail = uniq
+		ctx = webcontext.ContextAddUniqueValue(ctx, req, "Email", uniqEmail)
 	}
+	// Validation phone number is unique in the database.
+	if req.PhoneNumber != nil {
+		uniq, err := UniquePhoneNumber(ctx, repo.DbConn, *req.PhoneNumber, req.ID)
+		if err != nil {
+			return err
+		}
+		uniqPhone = uniq
+	}
+	// ctx = context.WithValue(ctx, webcontext.KeyTagUnique, uniqPhone && uniqEmail)
+	ctx = webcontext.ContextAddUniqueValue(ctx, req, "Email", uniqEmail)
+	ctx = webcontext.ContextAddUniqueValue(ctx, req, "PhoneNumber", uniqPhone)
 
 	// Validate the request.
 	v := webcontext.Validator()
@@ -545,6 +608,9 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req User
 	}
 	if req.Email != nil {
 		fields = append(fields, query.Assign("email", req.Email))
+	}
+	if req.PhoneNumber != nil {
+		fields = append(fields, query.Assign("phone_number", req.PhoneNumber))
 	}
 	if req.Timezone != nil && *req.Timezone != "" {
 		fields = append(fields, query.Assign("timezone", *req.Timezone))

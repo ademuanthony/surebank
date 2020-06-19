@@ -10,13 +10,13 @@ import (
 	"strings"
 	"time"
 
-	"merryworld/surebank/internal/platform/notify"
-	"merryworld/surebank/internal/platform/web"
-	"merryworld/surebank/internal/platform/web/webcontext"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sudo-suhas/symcrypto"
+	"merryworld/surebank/internal/platform/notify"
+	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/webcontext"
 )
 
 // Repository defines the required dependencies for User.
@@ -39,11 +39,13 @@ func NewRepository(db *sqlx.DB, resetUrl func(string) string, notify notify.Emai
 
 // User represents someone with access to our system.
 type User struct {
-	ID            string          `json:"id" validate:"required,uuid" example:"d69bdef7-173f-4d29-b52c-3edc60baf6a2"`
-	BranchID	  string 		  `json:"branch_id" validate:"required,uuid" example:"d69bdef7-23r4-4d29-b52c-3edc60baf6a2"`
-	FirstName     string          `json:"first_name" validate:"required" example:"Gabi"`
-	LastName      string          `json:"last_name" validate:"required" example:"May"`
-	Email         string          `json:"email" validate:"required,email,unique" example:"gabi@geeksinthewoods.com"`
+	ID          string `json:"id" validate:"required,uuid" example:"d69bdef7-173f-4d29-b52c-3edc60baf6a2"`
+	BranchID    string `json:"branch_id" validate:"required,uuid" example:"d69bdef7-23r4-4d29-b52c-3edc60baf6a2"`
+	FirstName   string `json:"first_name" validate:"required" example:"Gabi"`
+	LastName    string `json:"last_name" validate:"required" example:"May"`
+	Email       string `json:"email" validate:"required,email,unique" example:"gabi@geeksinthewoods.com"`
+	PhoneNumber string `json:"phone_number" validate:"required,unique" example:"08035146243"`
+
 	PasswordSalt  string          `json:"-" validate:"required"`
 	PasswordHash  []byte          `json:"-" validate:"required"`
 	PasswordReset *sql.NullString `json:"-"`
@@ -59,12 +61,13 @@ func (m User) FullName() string {
 
 func FromModel(usr *models.User) *User {
 	u := &User{
-		ID:            usr.ID,
-		BranchID:      usr.BranchID,
-		FirstName:     usr.FirstName,
-		LastName:      usr.LastName,
-		Email:         usr.Email,
-		CreatedAt:     usr.CreatedAt,
+		ID:          usr.ID,
+		BranchID:    usr.BranchID,
+		FirstName:   usr.FirstName,
+		LastName:    usr.LastName,
+		Email:       usr.Email,
+		PhoneNumber: usr.PhoneNumber,
+		CreatedAt:   usr.CreatedAt,
 	}
 
 	if usr.Timezone.Valid {
@@ -80,16 +83,17 @@ func FromModel(usr *models.User) *User {
 
 // UserResponse represents someone with access to our system that is returned for display.
 type UserResponse struct {
-	ID         string               `json:"id" example:"d69bdef7-173f-4d29-b52c-3edc60baf6a2"`
-	Name       string               `json:"name" example:"Gabi"`
-	FirstName  string               `json:"first_name" example:"Gabi"`
-	LastName   string               `json:"last_name" example:"May"`
-	Email      string               `json:"email" example:"gabi@geeksinthewoods.com"`
-	Timezone   string               `json:"timezone" example:"America/Anchorage"`
-	CreatedAt  web.TimeResponse     `json:"created_at"`            // CreatedAt contains multiple format options for display.
-	UpdatedAt  web.TimeResponse     `json:"updated_at"`            // UpdatedAt contains multiple format options for display.
-	ArchivedAt *web.TimeResponse    `json:"archived_at,omitempty"` // ArchivedAt contains multiple format options for display.
-	Gravatar   web.GravatarResponse `json:"gravatar"`
+	ID          string               `json:"id" example:"d69bdef7-173f-4d29-b52c-3edc60baf6a2"`
+	Name        string               `json:"name" example:"Gabi"`
+	FirstName   string               `json:"first_name" example:"Gabi"`
+	LastName    string               `json:"last_name" example:"May"`
+	Email       string               `json:"email" example:"gabi@geeksinthewoods.com"`
+	PhoneNumber string               `json:"phone_number" example:"080xxxxxxxx"`
+	Timezone    string               `json:"timezone" example:"America/Anchorage"`
+	CreatedAt   web.TimeResponse     `json:"created_at"`            // CreatedAt contains multiple format options for display.
+	UpdatedAt   web.TimeResponse     `json:"updated_at"`            // UpdatedAt contains multiple format options for display.
+	ArchivedAt  *web.TimeResponse    `json:"archived_at,omitempty"` // ArchivedAt contains multiple format options for display.
+	Gravatar    web.GravatarResponse `json:"gravatar"`
 }
 
 // Response transforms User and UserResponse that is used for display.
@@ -100,14 +104,15 @@ func (m *User) Response(ctx context.Context) *UserResponse {
 	}
 
 	r := &UserResponse{
-		ID:        m.ID,
-		Name:      m.FirstName + " " + m.LastName,
-		FirstName: m.FirstName,
-		LastName:  m.LastName,
-		Email:     m.Email,
-		CreatedAt: web.NewTimeResponse(ctx, m.CreatedAt),
-		UpdatedAt: web.NewTimeResponse(ctx, m.UpdatedAt),
-		Gravatar:  web.NewGravatarResponse(ctx, m.Email),
+		ID:          m.ID,
+		Name:        m.FirstName + " " + m.LastName,
+		FirstName:   m.FirstName,
+		LastName:    m.LastName,
+		Email:       m.Email,
+		PhoneNumber: m.PhoneNumber,
+		CreatedAt:   web.NewTimeResponse(ctx, m.CreatedAt),
+		UpdatedAt:   web.NewTimeResponse(ctx, m.UpdatedAt),
+		Gravatar:    web.NewGravatarResponse(ctx, m.Email),
 	}
 
 	if m.Timezone != nil {
@@ -151,10 +156,11 @@ func (m *Users) Response(ctx context.Context) []*UserResponse {
 
 // UserCreateRequest contains information needed to create a new User.
 type UserCreateRequest struct {
-	BranchID		string `json:"branch_id" validate:"required" example:"717cbfd4-b228-48f6-92bc-cc054a4e13f6"`
+	BranchID        string  `json:"branch_id" validate:"required" example:"717cbfd4-b228-48f6-92bc-cc054a4e13f6"`
 	FirstName       string  `json:"first_name" validate:"required" example:"Gabi"`
 	LastName        string  `json:"last_name" validate:"required" example:"May"`
 	Email           string  `json:"email" validate:"required,email,unique" example:"gabi@geeksinthewoods.com"`
+	PhoneNumber     string  `json:"phone_number" validate:"required,unique" example:"0803xxxxxxx"`
 	Password        string  `json:"password" validate:"required" example:"SecretString"`
 	PasswordConfirm string  `json:"password_confirm" validate:"required,eqfield=Password" example:"SecretString"`
 	Timezone        *string `json:"timezone,omitempty" validate:"omitempty" example:"America/Anchorage"`
@@ -178,11 +184,12 @@ type UserReadRequest struct {
 // we do not want to use pointers to basic types but we make exceptions around
 // marshalling/unmarshalling.
 type UserUpdateRequest struct {
-	ID        string  `json:"id" validate:"required,uuid" example:"d69bdef7-173f-4d29-b52c-3edc60baf6a2"`
-	FirstName *string `json:"first_name,omitempty" validate:"omitempty" example:"Gabi May Not"`
-	LastName  *string `json:"last_name,omitempty" validate:"omitempty" example:"Gabi May Not"`
-	Email     *string `json:"email,omitempty" validate:"omitempty,email,unique" example:"gabi.may@geeksinthewoods.com"`
-	Timezone  *string `json:"timezone,omitempty" validate:"omitempty" example:"America/Anchorage"`
+	ID          string  `json:"id" validate:"required,uuid" example:"d69bdef7-173f-4d29-b52c-3edc60baf6a2"`
+	FirstName   *string `json:"first_name,omitempty" validate:"omitempty" example:"Gabi May Not"`
+	LastName    *string `json:"last_name,omitempty" validate:"omitempty" example:"Gabi May Not"`
+	Email       *string `json:"email,omitempty" validate:"omitempty,email,unique" example:"gabi.may@geeksinthewoods.com"`
+	PhoneNumber *string `json:"omitempty" validate:"omitempty,unique" example:"0803xxxxxxx"`
+	Timezone    *string `json:"timezone,omitempty" validate:"omitempty" example:"America/Anchorage"`
 }
 
 // UserUpdatePasswordRequest defines what information is required to update a user password.

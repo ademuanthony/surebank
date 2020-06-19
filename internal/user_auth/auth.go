@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"
 
@@ -53,10 +53,15 @@ func (repo *Repository) Authenticate(ctx context.Context, req AuthenticateReques
 
 	u, err := repo.User.ReadByEmail(ctx, auth.Claims{}, req.Email, false)
 	if err != nil {
-		if errors.Cause(err) == user.ErrNotFound {
-			err = errors.WithStack(ErrAuthenticationFailure)
+		if errors.Cause(err) != user.ErrNotFound {
 			return Token{}, err
-		} else {
+		}
+
+		u, err = repo.User.ReadByPhone(ctx, auth.Claims{}, req.Email, false)
+		if err != nil {
+			if errors.Cause(err) == user.ErrNotFound {
+				return Token{}, ErrAuthenticationFailure
+			}
 			return Token{}, err
 		}
 	}

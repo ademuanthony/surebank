@@ -3,11 +3,11 @@ package user_auth
 import (
 	"time"
 
-	"merryworld/surebank/internal/tenant/account_preference"
+	"github.com/jmoiron/sqlx"
 	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/tenant/account_preference"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"
-	"github.com/jmoiron/sqlx"
 )
 
 // Repository defines the required dependencies for User Auth.
@@ -32,9 +32,9 @@ func NewRepository(db *sqlx.DB, tknGen TokenGenerator, user *user.Repository, us
 
 // AuthenticateRequest defines what information is required to authenticate a user.
 type AuthenticateRequest struct {
-	Email     string `json:"email" validate:"required,email" example:"gabi.may@geeksinthewoods.com"`
-	Password  string `json:"password" validate:"required" example:"NeverTellSecret"`
-	AccountID string `json:"account_id" validate:"omitempty,uuid" example:"c4653bf9-5978-48b7-89c5-95704aebb7e2"`
+	Email string `json:"email" validate:"required" example:"gabi.may@geeksinthewoods.com"`
+	Password           string `json:"password" validate:"required" example:"NeverTellSecret"`
+	AccountID          string `json:"account_id" validate:"omitempty,uuid" example:"c4653bf9-5978-48b7-89c5-95704aebb7e2"`
 }
 
 // OAuth2PasswordRequest defines what information is required to authenticate a user.

@@ -535,6 +535,7 @@ func (h *Users) Update(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		req.FirstName = &usr.FirstName
 		req.LastName = &usr.LastName
 		req.Email = &usr.Email
+		req.PhoneNumber = &usr.PhoneNumber
 		req.Timezone = usr.Timezone
 		req.Roles = usrAcc.Roles
 	}

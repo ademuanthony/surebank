@@ -48,6 +48,13 @@
                             {{template "invalid-feedback" dict "fieldName" "UserUpdateRequest.Email" "validationDefaults" $.userValidationDefaults "validationErrors" $.validationErrors }}
                         </div>
                         <div class="form-group">
+                            <label for="inputEmail">Phone Number</label>
+                            <input type="text"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "UserUpdateRequest.PhoneNumber" }}"
+                                   placeholder="enter Phone Number" name="PhoneNumber" value="{{ .form.PhoneNumber }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "UserUpdateRequest.Email" "validationDefaults" $.userValidationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+                        <div class="form-group">
                             <label for="inputTimezone">Timezone</label>
                             <select class="form-control {{ ValidationFieldClass $.validationErrors "UserUpdateRequest.Timezone" }}" name="Timezone">
                                 <option value="">Not set</option>
