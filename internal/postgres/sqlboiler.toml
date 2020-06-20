@@ -23,5 +23,6 @@
 	    "bank_deposit",
 	    "expenditure",
 	    "daily_summary",
-        "ds_commission"
+        "ds_commission",
+        "reps_expense"
             ]

@@ -114,6 +114,7 @@ var UserRels = struct {
 	ArchivedByProducts   string
 	CreatedByProducts    string
 	UpdatedByProducts    string
+	SalesRepRepsExpenses string
 	ArchivedBySales      string
 	CreatedBySales       string
 	UpdatedBySales       string
@@ -127,6 +128,7 @@ var UserRels = struct {
 	ArchivedByProducts:   "ArchivedByProducts",
 	CreatedByProducts:    "CreatedByProducts",
 	UpdatedByProducts:    "UpdatedByProducts",
+	SalesRepRepsExpenses: "SalesRepRepsExpenses",
 	ArchivedBySales:      "ArchivedBySales",
 	CreatedBySales:       "CreatedBySales",
 	UpdatedBySales:       "UpdatedBySales",
@@ -143,6 +145,7 @@ type userR struct {
 	ArchivedByProducts   ProductSlice
 	CreatedByProducts    ProductSlice
 	UpdatedByProducts    ProductSlice
+	SalesRepRepsExpenses RepsExpenseSlice
 	ArchivedBySales      SaleSlice
 	CreatedBySales       SaleSlice
 	UpdatedBySales       SaleSlice
@@ -411,6 +414,27 @@ func (o *User) UpdatedByProducts(mods ...qm.QueryMod) productQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"product\".*"})
+	}
+
+	return query
+}
+
+// SalesRepRepsExpenses retrieves all the reps_expense's RepsExpenses with an executor via sales_rep_id column.
+func (o *User) SalesRepRepsExpenses(mods ...qm.QueryMod) repsExpenseQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"reps_expense\".\"sales_rep_id\"=?", o.ID),
+	)
+
+	query := RepsExpenses(queryMods...)
+	queries.SetFrom(query.Query, "\"reps_expense\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"reps_expense\".*"})
 	}
 
 	return query
@@ -1201,6 +1225,94 @@ func (userL) LoadUpdatedByProducts(ctx context.Context, e boil.ContextExecutor, 
 					foreign.R = &productR{}
 				}
 				foreign.R.UpdatedBy = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadSalesRepRepsExpenses allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadSalesRepRepsExpenses(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		object = maybeUser.(*User)
+	} else {
+		slice = *maybeUser.(*[]*User)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(qm.From(`reps_expense`), qm.WhereIn(`reps_expense.sales_rep_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load reps_expense")
+	}
+
+	var resultSlice []*RepsExpense
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice reps_expense")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on reps_expense")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for reps_expense")
+	}
+
+	if singular {
+		object.R.SalesRepRepsExpenses = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &repsExpenseR{}
+			}
+			foreign.R.SalesRep = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.SalesRepID {
+				local.R.SalesRepRepsExpenses = append(local.R.SalesRepRepsExpenses, foreign)
+				if foreign.R == nil {
+					foreign.R = &repsExpenseR{}
+				}
+				foreign.R.SalesRep = local
 				break
 			}
 		}
@@ -2044,6 +2156,59 @@ func (o *User) AddUpdatedByProducts(ctx context.Context, exec boil.ContextExecut
 			}
 		} else {
 			rel.R.UpdatedBy = o
+		}
+	}
+	return nil
+}
+
+// AddSalesRepRepsExpenses adds the given related objects to the existing relationships
+// of the user, optionally inserting them as new records.
+// Appends related to o.R.SalesRepRepsExpenses.
+// Sets related.R.SalesRep appropriately.
+func (o *User) AddSalesRepRepsExpenses(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*RepsExpense) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.SalesRepID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"reps_expense\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"sales_rep_id"}),
+				strmangle.WhereClause("\"", "\"", 2, repsExpensePrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.SalesRepID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			SalesRepRepsExpenses: related,
+		}
+	} else {
+		o.R.SalesRepRepsExpenses = append(o.R.SalesRepRepsExpenses, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &repsExpenseR{
+				SalesRep: o,
+			}
+		} else {
+			rel.R.SalesRep = o
 		}
 	}
 	return nil

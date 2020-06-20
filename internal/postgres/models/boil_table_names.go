@@ -18,6 +18,7 @@ var TableNames = struct {
 	Payment         string
 	Product         string
 	ProductCategory string
+	RepsExpense     string
 	Sale            string
 	SaleItem        string
 	Transaction     string
@@ -37,6 +38,7 @@ var TableNames = struct {
 	Payment:         "payment",
 	Product:         "product",
 	ProductCategory: "product_category",
+	RepsExpense:     "reps_expense",
 	Sale:            "sale",
 	SaleItem:        "sale_item",
 	Transaction:     "transaction",

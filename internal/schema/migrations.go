@@ -1302,6 +1302,31 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		// Create table reps_expense
+		{
+			ID: "20200619-05",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `CREATE TABLE IF NOT EXISTS reps_expense (
+					id char(36) NOT NULL,
+					sales_rep_id char(36) NOT NULL REFERENCES users(id),
+					amount FLOAT8 NOT NULL,
+					reason varchar(200) NOT NULL,
+					date INT8 NOT NULL,
+					PRIMARY KEY (id)
+				) ;`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				q1 := `DROP TABLE IF EXISTS reps_expense`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+		},
 		// TODO: store dates in unix
 	}
 }

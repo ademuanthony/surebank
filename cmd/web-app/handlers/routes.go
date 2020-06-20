@@ -7,6 +7,7 @@ import (
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/dscommission"
+	"merryworld/surebank/internal/expenditure"
 	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/sale"
 	"merryworld/surebank/internal/transaction"
@@ -68,6 +69,7 @@ type AppContext struct {
 	CommissionRepo    *dscommission.Repository
 	TransactionRepo   *transaction.Repository
 	SaleRepo          *sale.Repository
+	ExpendituresRepo  *expenditure.Repository
 	Authenticator     *auth.Authenticator
 	StaticDir         string
 	TemplateDir       string
@@ -180,6 +182,16 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("POST", "/api/v1/accounting/expenditures", accounting.CreateExpenditure, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/accounting", accounting.DailySummaries, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
+	// /accounting/reps-expenditure
+	repsExpenditure := Expenditures{
+		ExpendituresRepo:   appCtx.ExpendituresRepo,
+		Redis:    appCtx.Redis,
+		Renderer: appCtx.Renderer,
+	}
+	app.Handle("GET", "/accounting/reps-expenditures", repsExpenditure.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("DELETE", "/api/v1/accounting/reps-expenditures/:id", repsExpenditure.Delete, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/api/v1/accounting/reps-expenditures", repsExpenditure.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	
 	// Register shop management pages
 	// Brands
 	brands := Brands{

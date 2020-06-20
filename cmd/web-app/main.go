@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"log"
 	"merryworld/surebank/internal/dscommission"
+	"merryworld/surebank/internal/expenditure"
 	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/sale"
 	"net"
@@ -495,6 +496,7 @@ func main() {
 	transactionRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS)
 	inventoryRepo := inventory.NewRepository(masterDb)
 	saleRepo := sale.NewRepository(masterDb, shopRepo, inventoryRepo, transactionRepo)
+	expendituresRepo := expenditure.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
@@ -524,6 +526,7 @@ func main() {
 		BranchRepo:      branchRepo,
 		InventoryRepo:   inventoryRepo,
 		SaleRepo:        saleRepo,
+		ExpendituresRepo: expendituresRepo,
 	}
 
 	// =========================================================================
