@@ -51,7 +51,7 @@ func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
 			switch col.Field {
 			case "date":
 				dt := web.NewTimeResponse(ctx, time.Unix(q.Date, 0))
-				v.Value = dt.Local
+				v.Value = dt.LocalDate
 				v.Formatted = v.Value
 			case "income":
 				v.Value = fmt.Sprintf("%.2f", q.Income)
@@ -124,7 +124,7 @@ func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
 		"urlBranchesCreate": urlBranchesCreate(),
 	}
 
-	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-deposits.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-summary.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // BankAccounts handles listing all the Bank Accounts.
