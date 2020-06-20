@@ -170,9 +170,10 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 
 	// Accounting
 	accounting := Accounting{
-		DbConn:   appCtx.MasterDB.DB,
-		Redis:    appCtx.Redis,
-		Renderer: appCtx.Renderer,
+		DbConn:    appCtx.MasterDB.DB,
+		UserRepos: appCtx.UserRepo,
+		Redis:     appCtx.Redis,
+		Renderer:  appCtx.Renderer,
 	}
 	app.Handle("GET", "/accounting/banks", accounting.BankAccounts, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/api/v1/accounting/banks", accounting.CreateBankAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
@@ -180,18 +181,20 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("POST", "/api/v1/accounting/deposits", accounting.CreateBankDeposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/accounting/expenditures", accounting.Expenditures, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/api/v1/accounting/expenditures", accounting.CreateExpenditure, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/accounting/resp-summaries", accounting.RepsSummaries, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/accounting", accounting.DailySummaries, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
 	// /accounting/reps-expenditure
 	repsExpenditure := Expenditures{
-		ExpendituresRepo:   appCtx.ExpendituresRepo,
-		Redis:    appCtx.Redis,
-		Renderer: appCtx.Renderer,
+		ExpendituresRepo: appCtx.ExpendituresRepo,
+		UserRepos:        appCtx.UserRepo,
+		Redis:            appCtx.Redis,
+		Renderer:         appCtx.Renderer,
 	}
 	app.Handle("GET", "/accounting/reps-expenditures", repsExpenditure.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("DELETE", "/api/v1/accounting/reps-expenditures/:id", repsExpenditure.Delete, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("POST", "/api/v1/accounting/reps-expenditures", repsExpenditure.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	
+
 	// Register shop management pages
 	// Brands
 	brands := Brands{

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"merryworld/surebank/internal/expenditure"
 	"merryworld/surebank/internal/platform/auth"
@@ -12,7 +13,9 @@ import (
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/user"
 
+	"github.com/jinzhu/now"
 	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -22,8 +25,9 @@ import (
 // Expenditures represents the Expenditures API method handler set.
 type Expenditures struct {
 	ExpendituresRepo *expenditure.Repository
-	Redis    *redis.Client
-	Renderer web.Renderer
+	UserRepos		 *user.Repository
+	Redis            *redis.Client
+	Renderer         web.Renderer
 }
 
 func urlExpendituresIndex() string {
@@ -37,6 +41,47 @@ func (h *Expenditures) Index(ctx context.Context, w http.ResponseWriter, r *http
 	if err != nil {
 		return err
 	}
+
+	data := map[string]interface{}{}
+	var txWhere []string
+	var txArgs []interface{}
+	var startDate, endDate string
+	// todo sales rep filtering
+	if v := r.URL.Query().Get("sales_rep_id"); v != "" {
+		data["salesRepID"] = v
+		txWhere = append(txWhere, "sales_rep_id = $1")
+		txArgs = append(txArgs, v)
+	}
+
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		startDate = v
+	} else {
+		startDate = time.Now().Format("01/02/2006")
+	}
+	date, err := time.Parse("01/02/2006", startDate)
+	if err != nil {
+		date = time.Now()
+	}
+	date = date.Truncate(time.Millisecond)
+	date = now.New(date).BeginningOfDay().Add(-1 * time.Hour)
+	txWhere = append(txWhere, fmt.Sprintf("date >= $%d", len(txArgs)+1))
+	txArgs = append(txArgs, date.UTC().Unix())
+	data["startDate"] = startDate
+
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		endDate = v
+	} else {
+		endDate = time.Now().Format("01/02/2006")
+	}
+	date, err = time.Parse("01/02/2006", endDate)
+	if err != nil {
+		date = time.Now()
+	}
+	date = date.Truncate(time.Millisecond)
+	date = now.New(date).EndOfDay().Add(-1 * time.Hour)
+	txWhere = append(txWhere, fmt.Sprintf("date <= $%d", len(txArgs)+1))
+	txArgs = append(txArgs, date.Unix())
+	data["endDate"] = endDate
 
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
@@ -87,8 +132,10 @@ func (h *Expenditures) Index(ctx context.Context, w http.ResponseWriter, r *http
 		}
 
 		res, err := h.ExpendituresRepo.Find(ctx, claims, expenditure.FindRequest{
-			Order: order,
+			Order:           order,
 			IncludeSalesRep: true,
+			Where:           strings.Join(txWhere, " AND "),
+			Args:            txArgs,
 		})
 		if err != nil {
 			return resp, err
@@ -121,12 +168,17 @@ func (h *Expenditures) Index(ctx context.Context, w http.ResponseWriter, r *http
 		}
 		return nil
 	}
-
-	data := map[string]interface{}{
-		"datatable":      dt.Response(),
-		"urlBrandsCreate": urlBrandsCreate(),
-		"urlBrandsIndex": urlBrandsIndex(),
+	users, err := h.UserRepos.Find(ctx, claims, user.UserFindRequest{
+		Order: []string{"first_name", "last_name"},
+	})
+	if err != nil {
+		return err
 	}
+	
+	data["datatable"] = dt.Response()
+	data["users"] = users
+	data["urlBrandsCreate"] = urlBrandsCreate()
+	data["urlBrandsIndex"] = urlBrandsIndex()
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-reps-expenditures.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
@@ -168,12 +220,11 @@ func (h *Expenditures) Delete(ctx context.Context, w http.ResponseWriter, r *htt
 		return err
 	}
 
-	id := params["id"] 
+	id := params["id"]
 
-	err = h.ExpendituresRepo.Delete(ctx, claims, expenditure.DeleteRequest{ ID: id })
+	err = h.ExpendituresRepo.Delete(ctx, claims, expenditure.DeleteRequest{ID: id})
 	if err != nil {
 		return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 	}
 	return web.RespondJson(ctx, w, true, http.StatusOK)
 }
-

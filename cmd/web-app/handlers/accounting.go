@@ -10,18 +10,22 @@ import (
 	"time"
 
 	"merryworld/surebank/internal/accounting"
+	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/datatable"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
 	"merryworld/surebank/internal/transaction"
+	"merryworld/surebank/internal/user"
 
 	"github.com/gofrs/uuid"
 	"github.com/jinzhu/now"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 )
 
@@ -30,6 +34,7 @@ type Accounting struct {
 	Redis    *redis.Client
 	Renderer web.Renderer
 	DbConn   *sql.DB
+	UserRepos *user.Repository
 }
 
 // DailySummaries handles listing all the daily summaries.
@@ -125,6 +130,171 @@ func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-summary.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// RepsSummaries handles listing all the expenditures.
+func (h *Accounting) RepsSummaries(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	
+	data := map[string]interface{}{}
+	var salesRepID, startDate, endDate string
+	// todo sales rep filtering
+	if v := r.URL.Query().Get("sales_rep_id"); v != "" {
+		data["salesRepID"] = v
+		salesRepID = v
+	}
+
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		startDate = v
+	} else {
+		startDate = time.Now().Format("01/02/2006")
+	}
+	data["startDate"] = startDate
+
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		endDate = v
+	} else {
+		endDate = time.Now().Format("01/02/2006")
+	}
+	data["endDate"] = endDate
+
+	fields := []datatable.DisplayField{
+		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
+		{Field: "sales_rep", Title: "Sales Rep", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Sales Rep"},
+		{Field: "income", Title: "Income", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Sales Rep"},
+		{Field: "expenditure", Title: "Expenditure", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Sales Rep"},
+		{Field: "balance", Title: "Balance", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Sales Rep"},
+	}
+
+	mapFunc := func(q accounting.RepsSummary, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+		incomeUrlTemplate := `/reports/collections?sales_rep_id=%s&start_date=%s&end_date=%s`
+		expenditureUrlTemplate := `/accounting/reps-expenditures?sales_rep_id=%s&start_date=%s&end_date=%s`
+		for i := 0; i < len(cols); i++ {
+			col := cols[i]
+			var v datatable.ColumnValue
+			switch col.Field {
+			case "id":
+				v.Value = fmt.Sprintf("%s", q.SalesRepID)
+			case "sales_rep":
+				v.Value = q.SalesRep
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), v.Value)
+			case "income":
+				var amount float64
+				if q.Income.Valid {
+					amount = q.Income.Float64
+				}
+				v.Value = fmt.Sprintf("%f", amount)
+				p := message.NewPrinter(language.English)
+				url := fmt.Sprintf(incomeUrlTemplate, q.SalesRepID, startDate, endDate)
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", url, p.Sprintf("%.2f", amount))
+			case "expenditure":
+				var amount float64
+				if q.Expenditure.Valid {
+					amount = q.Expenditure.Float64
+				}
+				v.Value = fmt.Sprintf("%f", amount)
+				p := message.NewPrinter(language.English)
+				url := fmt.Sprintf(expenditureUrlTemplate, q.SalesRepID, startDate, endDate)
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", url, p.Sprintf("%.2f", amount))
+			case "balance":
+				balance := q.Income.Float64 - q.Expenditure.Float64
+				v.Value = fmt.Sprintf("%f", balance)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("%.2f", balance)
+			default:
+				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
+			}
+			resp = append(resp, v)
+		}
+
+		return resp, nil
+	}
+
+	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+		var userWhere string = "WHERE archived_at IS NULL"
+		if salesRepID != "" {
+			userWhere += fmt.Sprintf(" AND u.id = '%s'", salesRepID)
+		}
+		var incomeWhere, expenditureWhere string
+		if startDate != "" {
+			date, err := time.Parse("01/02/2006", startDate)
+			if err != nil {
+				date = time.Now()
+			}
+			date = date.Truncate(time.Millisecond)
+			date = now.New(date).BeginningOfDay().Add(-1 * time.Hour)
+			incomeWhere = fmt.Sprintf(" AND created_at >= %d ", date.UTC().Unix())
+			expenditureWhere = fmt.Sprintf(" AND date >= %d ", date.UTC().Unix())
+		}
+		if endDate != "" {
+			date, err := time.Parse("01/02/2006", endDate)
+			if err != nil {
+				date = time.Now()
+			}
+			date = date.Truncate(time.Millisecond)
+			date = now.New(date).EndOfDay().Add(-1 * time.Hour)
+			incomeWhere += fmt.Sprintf(" AND created_at <= %d ", date.UTC().Unix())
+			expenditureWhere += fmt.Sprintf(" AND date <= %d ", date.UTC().Unix())
+		}
+
+		statement := fmt.Sprintf(`select 
+		u.id as sales_rep_id, 
+		concat(u.first_name, ' ', u.last_name) as sales_rep,
+		(SELECT SUM(amount) FROM transaction 
+			 WHERE tx_type = 'deposit' AND payment_method = 'cash' AND sales_rep_id = u.id %s ) AS income,
+		(SELECT SUM(amount) FROM reps_expense 
+			 WHERE sales_rep_id = u.id %s) AS expenditure
+		from users u %s
+		
+		order by u.first_name, u.last_name;`, incomeWhere, expenditureWhere, userWhere)
+
+		var summaries []accounting.RepsSummary
+		err = models.NewQuery(qm.SQL(statement)).Bind(ctx, h.DbConn, &summaries)
+
+		for _, a := range summaries {
+			l, err := mapFunc(a, fields)
+			if err != nil {
+				return resp, errors.Wrapf(err, "Failed to map reps summary for display.")
+			}
+
+			resp = append(resp, l)
+		}
+
+		return resp, nil
+	}
+
+	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
+	if err != nil {
+		return err
+	}
+
+	if dt.HasCache() {
+		return nil
+	}
+
+	if ok, err := dt.Render(); ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	users, err := h.UserRepos.Find(ctx, claims, user.UserFindRequest{
+		Order: []string{"first_name", "last_name"},
+	})
+	if err != nil {
+		return err
+	}
+	
+	data["datatable"] = dt.Response()
+	data["users"] = users
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "accounting-reps-summaries.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // BankAccounts handles listing all the Bank Accounts.
