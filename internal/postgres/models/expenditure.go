@@ -26,6 +26,7 @@ type Expenditure struct {
 	ID     string  `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Amount float64 `boil:"amount" json:"amount" toml:"amount" yaml:"amount"`
 	Date   int64   `boil:"date" json:"date" toml:"date" yaml:"date"`
+	Reason string  `boil:"reason" json:"reason" toml:"reason" yaml:"reason"`
 
 	R *expenditureR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L expenditureL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -35,10 +36,12 @@ var ExpenditureColumns = struct {
 	ID     string
 	Amount string
 	Date   string
+	Reason string
 }{
 	ID:     "id",
 	Amount: "amount",
 	Date:   "date",
+	Reason: "reason",
 }
 
 // Generated where
@@ -47,10 +50,12 @@ var ExpenditureWhere = struct {
 	ID     whereHelperstring
 	Amount whereHelperfloat64
 	Date   whereHelperint64
+	Reason whereHelperstring
 }{
 	ID:     whereHelperstring{field: "\"expenditure\".\"id\""},
 	Amount: whereHelperfloat64{field: "\"expenditure\".\"amount\""},
 	Date:   whereHelperint64{field: "\"expenditure\".\"date\""},
+	Reason: whereHelperstring{field: "\"expenditure\".\"reason\""},
 }
 
 // ExpenditureRels is where relationship names are stored.
@@ -70,9 +75,9 @@ func (*expenditureR) NewStruct() *expenditureR {
 type expenditureL struct{}
 
 var (
-	expenditureAllColumns            = []string{"id", "amount", "date"}
+	expenditureAllColumns            = []string{"id", "amount", "date", "reason"}
 	expenditureColumnsWithoutDefault = []string{"id", "amount", "date"}
-	expenditureColumnsWithDefault    = []string{}
+	expenditureColumnsWithDefault    = []string{"reason"}
 	expenditurePrimaryKeyColumns     = []string{"id"}
 )
 

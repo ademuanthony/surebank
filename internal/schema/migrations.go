@@ -1327,6 +1327,20 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		// Add reason to expenditure
+		{
+			ID: "20200620-01",
+			Migrate: func(tx *sql.Tx) error {
+				q1 := `ALTER TABLE expenditure ADD reason varchar(200) NOT NULL DEFAULT '';`
+				if _, err := tx.Exec(q1); err != nil {
+					return errors.Wrapf(err, "Query failed %s", q1)
+				}
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
 		// TODO: store dates in unix
 	}
 }

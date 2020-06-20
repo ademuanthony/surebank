@@ -591,7 +591,7 @@ func (h *Accounting) Expenditures(ctx context.Context, w http.ResponseWriter,
 				v.Value = fmt.Sprintf("%.2f", q.Amount)
 				v.Formatted = v.Value
 			case "memo":
-				v.Value = "dummy"
+				v.Value = q.Reason
 				v.Formatted = v.Value
 			case "date":
 				dt := web.NewTimeResponse(ctx, time.Unix(q.Date, 0))
@@ -694,6 +694,7 @@ func (h *Accounting) CreateExpenditure(ctx context.Context, w http.ResponseWrite
 	model := models.Expenditure{
 		ID:     id.String(),
 		Amount: req.Amount,
+		Reason: req.Memo,
 		Date:   ctxValues.Now.Unix(),
 	}
 	err = model.Insert(ctx, tx, boil.Infer())

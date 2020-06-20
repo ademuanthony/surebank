@@ -20,7 +20,7 @@ type CreateBankDeposit struct {
 // CreateExpenditure holds req for creating a new bank expenditure
 type CreateExpenditure struct {
 	Amount float64 `json:"amount" validate:"required"`
-	Info   string  `json:"info"`
+	Memo   string  `json:"memo"`
 }
 
 type RepsSummary struct {

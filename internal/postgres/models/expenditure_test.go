@@ -427,7 +427,7 @@ func testExpendituresSelect(t *testing.T) {
 }
 
 var (
-	expenditureDBTypes = map[string]string{`ID`: `character`, `Amount`: `double precision`, `Date`: `bigint`}
+	expenditureDBTypes = map[string]string{`ID`: `character`, `Amount`: `double precision`, `Date`: `bigint`, `Reason`: `character varying`}
 	_                  = bytes.MinRead
 )
 
