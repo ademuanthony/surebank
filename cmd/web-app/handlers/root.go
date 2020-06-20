@@ -4,22 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
-	"merryworld/surebank/internal/platform/web/weberror"
-	"merryworld/surebank/internal/shop"
-	"merryworld/surebank/internal/transaction"
-
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/shop"
+	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/webroute"
 
 	"github.com/ikeikeikeike/go-sitemap-generator/v2/stm"
 	"github.com/pkg/errors"
 	"github.com/sethgrid/pester"
-	"io/ioutil"
-	"net/http"
 )
 
 // Root represents the Root API method handler set.
@@ -68,12 +68,32 @@ func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *htt
 		return weberror.WithMessage(ctx, err, "Cannot get total deposit for the day")
 	}
 
+	
+	statement := "select SUM(balance) total from account WHERE account_type = 'DS'"
+	var dsBalance float64
+	rows := h.CustomerRepo.DbConn.QueryRow(statement)
+	err = rows.Scan(&dsBalance)
+	if err != nil {
+		return weberror.WithMessage(ctx, err, "Cannot get total DS balance")
+	}
+
+	statement = "select SUM(balance) total from account WHERE account_type = 'SB'"
+	var sbBalance float64
+	rows = h.CustomerRepo.DbConn.QueryRow(statement)
+	err = rows.Scan(&sbBalance)
+	if err != nil {
+		return weberror.WithMessage(ctx, err, "Cannot get total DS balance")
+	}
+
 	data := map[string]interface{} {
 		"customerCount": customerCount,
 		"accountCount": accountCount,
 		"todayDeposit": todayDeposit,
 		"thisWeekDeposit": thisWeekDeposit,
+		"dsBalance": dsBalance,
+		"sbBalance": sbBalance,
 	}
+	
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "root-dashboard.gohtml",
 		web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
