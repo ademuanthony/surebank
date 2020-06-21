@@ -64,13 +64,13 @@ func urlUsersUpdate(userID string) string {
 // UserCreateRequest extends the UserCreateRequest with a list of roles.
 type UserCreateRequest struct {
 	user.UserCreateRequest
-	Roles user_account.UserAccountRoles `json:"roles" validate:"required,dive,oneof=admin user" enums:"admin,user" swaggertype:"array,string" example:"admin"`
+	Roles user_account.UserAccountRoles `json:"roles" validate:"required,dive,oneof=super_admin admin user" enums:"super_admin,admin,user" swaggertype:"array,string" example:"admin"`
 }
 
 // UserUpdateRequest extends the UserUpdateRequest with a list of roles.
 type UserUpdateRequest struct {
 	user.UserUpdateRequest
-	Roles user_account.UserAccountRoles `json:"roles" validate:"required,dive,oneof=admin user" enums:"admin,user" swaggertype:"array,string" example:"admin"`
+	Roles user_account.UserAccountRoles `json:"roles" validate:"required,dive,oneof=super_admin admin user" enums:"super_admin,admin,user" swaggertype:"array,string" example:"admin"`
 }
 
 // Index handles listing all the users for the current account.

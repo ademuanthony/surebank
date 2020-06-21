@@ -57,7 +57,7 @@ func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *htt
 	if err != nil {
 		return weberror.WithMessage(ctx, err, "Cannot get accounts count")
 	}
-
+ 
 	thisWeekDeposit, err := h.TransactionRepo.ThisWeekDepositAmount(ctx, claims)
 	if err != nil {
 		return weberror.WithMessage(ctx, err, "Cannot get total deposit for the week")

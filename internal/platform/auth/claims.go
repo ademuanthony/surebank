@@ -11,6 +11,7 @@ import (
 
 // These are the expected values for Claims.Roles.
 const (
+	RoleSuperAdmin = "super_admin"
 	RoleAdmin = "admin"
 	RoleUser  = "user"
 )
@@ -80,7 +81,7 @@ func NewClaimPreferences(timezone *time.Location, datetimeFormat, dateFormat, ti
 func (c Claims) Valid() error {
 	for _, r := range c.Roles {
 		switch r {
-		case RoleAdmin, RoleUser: // Role is valid.
+		case RoleSuperAdmin, RoleAdmin, RoleUser: // Role is valid.
 		default:
 			return fmt.Errorf("invalid role %q", r)
 		}

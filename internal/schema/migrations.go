@@ -1341,6 +1341,33 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+		// Add super_admin role to user_account_role_t
+		{
+			ID: "20200620-03",
+			Migrate: func(tx *sql.Tx) error {
+				
+				statements := []string{
+					`alter type user_account_role_t rename to _user_account_role_t;`,
+					`create type user_account_role_t as enum ('super_admin', 'admin', 'user');`,
+					`alter table users_accounts rename column roles to _roles;`,
+					`alter table users_accounts add roles user_account_role_t[] NOT NULL default ARRAY['user']::user_account_role_t[];`,
+					`update users_accounts set roles = _roles::text::user_account_role_t[];`,
+					`alter table users_accounts drop column _roles;`,
+					`drop type _user_account_role_t;`,
+				}
+
+				for _, q1 := range statements {
+					if _, err := tx.Exec(q1); err != nil {
+						return errors.Wrapf(err, "Query failed %s", q1)
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
 		// TODO: store dates in unix
 	}
 }

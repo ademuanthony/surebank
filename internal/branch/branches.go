@@ -81,7 +81,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	}
 
 	// Admin users can update branch they have access to.
-	if !claims.HasRole(auth.RoleAdmin) {
+	if !claims.HasRole(auth.RoleSuperAdmin) {
 		return nil, errors.WithStack(ErrForbidden)
 	}
 
@@ -137,7 +137,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 		return errors.WithStack(ErrForbidden)
 	}
 	// Admin users can update branches they have access to.
-	if !claims.HasRole(auth.RoleAdmin) {
+	if !claims.HasRole(auth.RoleSuperAdmin) {
 		return errors.WithStack(ErrForbidden)
 	}
 
@@ -195,7 +195,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return errors.WithStack(ErrForbidden)
 	}
 	// Admin users can update branches they have access to.
-	if !claims.HasRole(auth.RoleAdmin) {
+	if !claims.HasRole(auth.RoleSuperAdmin) {
 		return errors.WithStack(ErrForbidden)
 	}
 	// Validate the request.
@@ -238,7 +238,7 @@ func (repo *Repository) Delete(ctx context.Context, claims auth.Claims, req Dele
 		return errors.WithStack(ErrForbidden)
 	}
 	// Admin users can update Categories they have access to.
-	if !claims.HasRole(auth.RoleAdmin) {
+	if !claims.HasRole(auth.RoleSuperAdmin) {
 		return errors.WithStack(ErrForbidden)
 	}
 

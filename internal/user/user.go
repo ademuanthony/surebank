@@ -93,7 +93,7 @@ func (repo *Repository) CanModifyUser(ctx context.Context, claims auth.Claims, u
 	// has the correct role for creating a new user.
 	if claims.Subject != "" && claims.Subject != userID {
 		// Users with the role of admin are ony allows to create users.
-		if !claims.HasRole(auth.RoleAdmin) {
+		if !claims.HasRole(auth.RoleSuperAdmin) {
 			err := errors.WithStack(ErrForbidden)
 			return err
 		}
@@ -331,7 +331,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req User
 	// has the correct role for creating a new user.
 	if claims.Subject != "" {
 		// Users with the role of admin are ony allows to create users.
-		if !claims.HasRole(auth.RoleAdmin) {
+		if !claims.HasRole(auth.RoleSuperAdmin) {
 			err = errors.WithStack(ErrForbidden)
 			return nil, err
 		}
@@ -414,7 +414,7 @@ func (repo *Repository) CreateInvite(ctx context.Context, claims auth.Claims, re
 	// has the correct role for creating a new user.
 	if claims.Subject != "" {
 		// Users with the role of admin are ony allows to create users.
-		if !claims.HasRole(auth.RoleAdmin) {
+		if !claims.HasRole(auth.RoleSuperAdmin) {
 			err = errors.WithStack(ErrForbidden)
 			return nil, err
 		}

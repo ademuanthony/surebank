@@ -37,7 +37,7 @@
             </li>
             <!-- Nav Item - Pages Collapse Menu -->
 
-            {{ if HasRole $._Ctx "admin" }}
+            {{ if HasRole $._Ctx "super_admin" }}
                 <!-- Nav Item - Dashboard -->
                 <li class="nav-item">
                     <a class="nav-link" href="/branches">
@@ -89,7 +89,9 @@
                 </a>
                 <div id="navSectionAccounting" class="collapse" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
+                        {{ if HasRole $._Ctx "super_admin" }}
                         <a class="collapse-item" href="/accounting">Cash Summary</a>
+                        {{ end }}
                         <a class="collapse-item" href="/accounting/resp-summaries">Reps Summaries</a>
                         <a class="collapse-item" href="/accounting/banks">Banks</a>
                         <a class="collapse-item" href="/accounting/deposits">Bank Deposits</a>
@@ -97,7 +99,7 @@
                         <a class="collapse-item" href="/accounting/reps-expenditures">Reps Expenditures</a>
                     </div>
                 </div>
-            </li>
+            </li> 
 
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#navSectionReport" aria-expanded="true" aria-controls="navSectionChecklists">

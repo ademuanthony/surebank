@@ -159,14 +159,14 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		Redis:    appCtx.Redis,
 		Renderer: appCtx.Renderer,
 	}
-	app.Handle("POST", "/branches/:branch_id/update", branches.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/branches/:branch_id/update", branches.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("POST", "/branches/:branch_id", branches.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	app.Handle("GET", "/branches/:branch_id", branches.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	app.Handle("POST", "/branches/create", branches.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/branches/create", branches.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/branches", branches.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	app.Handle("POST", "/api/v1/branches", branches.APICreate, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/branches/:branch_id/update", branches.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("GET", "/branches/:branch_id/update", branches.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("POST", "/branches/:branch_id", branches.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth(), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("GET", "/branches/:branch_id", branches.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth(), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("POST", "/branches/create", branches.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("GET", "/branches/create", branches.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("GET", "/branches", branches.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth(), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("POST", "/api/v1/branches", branches.APICreate, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
 
 	// Accounting
 	accounting := Accounting{
@@ -182,7 +182,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/accounting/expenditures", accounting.Expenditures, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/api/v1/accounting/expenditures", accounting.CreateExpenditure, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/accounting/resp-summaries", accounting.RepsSummaries, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	app.Handle("GET", "/accounting", accounting.DailySummaries, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/accounting", accounting.DailySummaries, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth(), mid.HasRole(auth.RoleSuperAdmin))
 
 	// /accounting/reps-expenditure
 	repsExpenditure := Expenditures{
@@ -320,16 +320,16 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		Redis:           appCtx.Redis,
 		Renderer:        appCtx.Renderer,
 	}
-	app.Handle("POST", "/users/:user_id/update", us.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/users/:user_id/update", us.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("POST", "/users/:user_id", us.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/users/:user_id/update", us.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("GET", "/users/:user_id/update", us.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("POST", "/users/:user_id", us.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
 	app.Handle("GET", "/users/:user_id", us.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/users/invite/:hash", us.InviteAccept)
 	app.Handle("GET", "/users/invite/:hash", us.InviteAccept)
-	app.Handle("POST", "/users/invite", us.Invite, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/users/invite", us.Invite, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("POST", "/users/create", us.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
-	app.Handle("GET", "/users/create", us.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/users/invite", us.Invite, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("GET", "/users/invite", us.Invite, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("POST", "/users/create", us.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
+	app.Handle("GET", "/users/create", us.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleSuperAdmin))
 	app.Handle("GET", "/users", us.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
 	// Register user management and authentication endpoints.

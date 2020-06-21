@@ -74,12 +74,12 @@ func (h UserRepos) Login(ctx context.Context, w http.ResponseWriter, r *http.Req
 			if req.RememberMe {
 				sessionTTL = time.Hour * 36
 			}
-
 			// Authenticated the user.
 			token, err := h.AuthRepo.Authenticate(ctx, user_auth.AuthenticateRequest{
 				Email:    req.Email,
 				Password: req.Password,
 			}, sessionTTL, ctxValues.Now)
+
 			if err != nil {
 				switch errors.Cause(err) {
 				case user.ErrForbidden:
@@ -98,7 +98,7 @@ func (h UserRepos) Login(ctx context.Context, w http.ResponseWriter, r *http.Req
 			}
 
 			// Add the token to the users session.
-			err = handleSessionToken(ctx, w, r, token)
+			err = handleSessionToken(ctx, w, r, token) 
 			if err != nil {
 				return false, err
 			}
