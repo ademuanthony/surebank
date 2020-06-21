@@ -167,6 +167,13 @@ type AddStockRequest struct {
 	Quantity  float64 `json:"amount" validate:"required,gt=0"`
 }
 
+// RemoveStockRequest contains information needed to deduct from an Inventory.
+type RemoveStockRequest struct {
+	ProductID string  `json:"product_id" validate:"required"`
+	Quantity  int64 `json:"amount" validate:"required,gt=0"`
+	Reason	  string  `json:"reason" validate:"required"`
+}
+
 // ReadRequest defines the information needed to read a inventory from the system.
 type ReadRequest struct {
 	ID              string `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`

@@ -161,7 +161,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 		if _, err = repo.InventoryRepo.MakeStockDeduction(ctx, claims, inventory.MakeStockDeductionRequest{
 			ProductID: item.ProductID,
 			Quantity:  int64(item.Quantity),
-			Ref:       fmt.Sprintf("Sale to Customer(%s), %s", req.CustomerName, saleID),
+			Ref:       fmt.Sprintf("Sold out, %s", saleID),
 		}, now, tx); err != nil {
 			_ = tx.Rollback()
 			return nil, weberror.NewError(ctx, weberror.WithMessagef(ctx, err, "Cannot make stock deduction for %s", prod.Name), 400)

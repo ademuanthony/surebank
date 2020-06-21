@@ -1343,7 +1343,7 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 		},
 		// Add super_admin role to user_account_role_t
 		{
-			ID: "20200620-03",
+			ID: "20200620-02",
 			Migrate: func(tx *sql.Tx) error {
 				
 				statements := []string{

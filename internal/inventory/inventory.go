@@ -202,6 +202,32 @@ func (repo *Repository) AddStock(ctx context.Context, claims auth.Claims, req Ad
 	}, nil
 }
 
+// RemoveStock deducts from an inventory in the database.
+func (repo *Repository) RemoveStock(ctx context.Context, claims auth.Claims, req RemoveStockRequest, now time.Time) (*Inventory, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.inventory.removeStock")
+	defer span.Finish()
+	if claims.Subject == "" {
+		return nil, errors.WithStack(ErrForbidden)
+	}
+
+	if !claims.HasRole(auth.RoleSuperAdmin) {
+		return nil, ErrForbidden
+	}
+
+	tx, err := repo.DbConn.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "starting DB transaction")
+	}
+	inv, err := repo.MakeStockDeduction(ctx, claims, MakeStockDeductionRequest{ProductID: req.ProductID,
+		Quantity: req.Quantity, Ref: req.Reason}, now, tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	_ = tx.Commit()
+	return inv, nil
+}
+
 // MakeStockDeduction inserts a new inventory transaction into the database.
 func (repo *Repository) MakeStockDeduction(ctx context.Context, claims auth.Claims, req MakeStockDeductionRequest, now time.Time, tx *sql.Tx) (*Inventory, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.inventory.makeStockDeduction")

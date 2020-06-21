@@ -40,6 +40,10 @@ func urlStocksCreate() string {
 	return fmt.Sprintf("/shop/inventory/create")
 }
 
+func urlStocksRemove() string {
+	return fmt.Sprintf("/shop/inventory/remove")
+}
+
 func urlStocksView(id string) string {
 	return fmt.Sprintf("/shop/inventory/%s", id)
 }
@@ -65,6 +69,7 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: false, Filterable: false,},
 		{Field: "quantity", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: false, },
 		{Field: "type", Title: "Type", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Transaction Type"},
+		{Field: "narration", Title: "Narration", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Transaction Type"},
 		{Field: "created_at", Title: "Date", Visible: true, Searchable: false, Orderable: true, Filterable: true, },
 		{Field: "sales_rep", Title: "Added By", Visible: true, Searchable: false, Orderable: true, Filterable: true, },
 	}
@@ -97,6 +102,9 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 			case "type":
 				v.Value = q.TXType
 				v.Formatted = v.Value
+			case "narration":
+				v.Value = q.Narration
+				v.Formatted = formatInventoryNarration(q.Narration)
 			case "created_at":
 				v.Value = q.CreatedAt.Local
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlStocksView(q.ID), v.Value)
@@ -156,10 +164,24 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	data := map[string]interface{}{
 		"datatable":      dt.Response(),
 		"urlStocksCreate": urlStocksCreate(),
+		"urlStocksRemove": urlStocksRemove(),
 		"urlStocksIndex": urlStocksIndex(),
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "stocks-index.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+func formatInventoryNarration(narration string) string {
+	if !strings.Contains(narration, "Sold out") {
+		return narration
+	}
+	parts := strings.Split(narration, ",")
+	if len(parts) < 2 {
+		return narration
+	}
+	saleID := strings.Trim(parts[len(parts) - 1], " ")
+	var text string = strings.Join(parts[:len(parts)-1], ",")
+	return fmt.Sprintf("<a href='%s'>%s</a>", urlSalesView(saleID), text)
 }
 
 // Create handles creating a new stock transaction.
@@ -238,6 +260,82 @@ func (h *Stocks) Create(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "stocks-create.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
+// Remove handles making a stock deduction.
+func (h *Stocks) Remove(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
+
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
+	}
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	//
+	req := new(inventory.RemoveStockRequest)
+	data := make(map[string]interface{})
+	f := func() (bool, error) {
+		if r.Method == http.MethodPost {
+			err := r.ParseForm()
+			if err != nil { 
+				return false, err
+			}
+
+			decoder := schema.NewDecoder()
+			decoder.IgnoreUnknownKeys(true)
+
+			if err := decoder.Decode(req, r.PostForm); err != nil {
+				return false, errors.WithMessage(err, "Something wrong")
+			}
+
+			resp, err := h.Repo.RemoveStock(ctx, claims, *req, ctxValues.Now)
+			if err != nil {
+				switch errors.Cause(err) {
+				default:
+					if verr, ok := weberror.NewValidationError(ctx, err); ok {
+						data["validationErrors"] = verr.(*weberror.Error)
+						return false, nil
+					} else {
+						return false, err
+					}
+				}
+			}
+
+			// Display a success message to the product.
+			webcontext.SessionFlashSuccess(ctx,
+				"Inventory Removed",
+				"Inventory successfully removed.")
+
+			return true, web.Redirect(ctx, w, r, urlStocksView(resp.ID), http.StatusFound)
+		}
+
+		return false, nil
+	}
+
+	end, err := f()
+	if err != nil {
+		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
+	} else if end {
+		return nil
+	}
+
+	data["products"], err = h.ShopRepo.FindProduct(ctx, shop.ProductFindRequest{ Order: []string{"name"} })
+	if err != nil {
+		return err
+	}
+
+	data["form"] = req
+	data["urlStocksIndex"] = urlStocksIndex()
+
+	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(inventory.AddStockRequest{})); ok {
+		data["validationDefaults"] = verr.(*weberror.Error)
+	}
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "stocks-remove.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
 // View handles displaying a stock.
 func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
@@ -294,6 +392,7 @@ func (h *Stocks) View(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	}
 	data["stock"] = prj.Response(ctx)
 	data["urlStocksCreate"] = urlStocksCreate()
+	data["urlStocksRemove"] = urlStocksRemove()
 	data["urlStocksIndex"] = urlStocksIndex()
 	data["urlStocksView"] = urlStocksView(id)
 	data["urlStocksUpdate"] = urlStocksUpdate(id)
