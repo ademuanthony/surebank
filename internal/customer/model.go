@@ -142,7 +142,7 @@ type PagedResponseList struct {
 // CreateRequest contains information needed to create a new Customer.
 type CreateRequest struct {
 	Name        string `json:"name" validate:"required"  example:"Oluwafe Dami"`
-	Email       string `json:"email" validate:"required" example:"a@b.c"`
+	Email       string `json:"email" example:"a@b.c"`
 	PhoneNumber string `json:"phone_number" validate:"required" example:"0809000000"`
 	Address     string `json:"address" example:"No 3 Ab Rd, Agege, Lagos"`
 	SalesRepID  string `json:"sales_rep_id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
