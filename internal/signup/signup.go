@@ -83,7 +83,10 @@ func (repo *Repository) Signup(ctx context.Context, claims auth.Claims, req Sign
 	ua := user_account.UserAccountCreateRequest{
 		UserID:    resp.User.ID,
 		AccountID: resp.Account.ID,
-		Roles:     []user_account.UserAccountRole{user_account.UserAccountRole_Admin},
+		Roles:     []user_account.UserAccountRole{
+			user_account.UserAccountRole_Admin,
+			user_account.UserAccountRole_SuperAdmin,
+		},
 		//Status:  Use default value
 	}
 
