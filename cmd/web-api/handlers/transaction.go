@@ -186,6 +186,7 @@ func (h *Transactions) Create(ctx context.Context, w http.ResponseWriter, r *htt
 		AccountNumber: req.AccountNumber,
 		Amount:        req.Amount,
 		Narration:     req.Narration,
+		PaymentMethod: strings.ToLower(req.PaymentMethod),
 	}, v.Now)
 	if err != nil {
 		cause := errors.Cause(err)
