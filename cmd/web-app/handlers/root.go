@@ -20,6 +20,7 @@ import (
 	"github.com/ikeikeikeike/go-sitemap-generator/v2/stm"
 	"github.com/pkg/errors"
 	"github.com/sethgrid/pester"
+	"github.com/volatiletech/null"
 )
 
 // Root represents the Root API method handler set.
@@ -70,7 +71,7 @@ func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *htt
 
 	
 	statement := "select SUM(balance) total from account WHERE account_type = 'DS'"
-	var dsBalance float64
+	var dsBalance null.Float64
 	rows := h.CustomerRepo.DbConn.QueryRow(statement)
 	err = rows.Scan(&dsBalance)
 	if err != nil {
@@ -78,7 +79,7 @@ func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *htt
 	}
 
 	statement = "select SUM(balance) total from account WHERE account_type = 'SB'"
-	var sbBalance float64
+	var sbBalance null.Float64
 	rows = h.CustomerRepo.DbConn.QueryRow(statement)
 	err = rows.Scan(&sbBalance)
 	if err != nil {
@@ -90,8 +91,8 @@ func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *htt
 		"accountCount": accountCount,
 		"todayDeposit": todayDeposit,
 		"thisWeekDeposit": thisWeekDeposit,
-		"dsBalance": dsBalance,
-		"sbBalance": sbBalance,
+		"dsBalance": dsBalance.Float64,
+		"sbBalance": sbBalance.Float64,
 	}
 	
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "root-dashboard.gohtml",
