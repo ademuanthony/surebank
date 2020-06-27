@@ -181,6 +181,9 @@ func (h *Transactions) Create(ctx context.Context, w http.ResponseWriter, r *htt
 		return web.RespondJsonError(ctx, w, err)
 	}
 
+	if req.PaymentMethod == "transfer" {
+		req.PaymentMethod = "bank_deposit"
+	}
 	res, err := h.Repository.Deposit(ctx, claims, transaction.CreateRequest{
 		Type:          transaction.TransactionType_Deposit,
 		AccountNumber: req.AccountNumber,
