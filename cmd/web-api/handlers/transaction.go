@@ -52,9 +52,9 @@ func (h *Transactions) Find(ctx context.Context, w http.ResponseWriter, r *http.
 	// Handle where query value if set.
 	whereVal := r.URL.Query().Get("where")
 	if whereVal == "" {
-		whereVal = `type = "deposit"`
+		whereVal = `tx_type = "deposit"`
 	} else {
-		whereVal = ` AND type = "deposit"`
+		whereVal = ` AND tx_type = "deposit"`
 	}
 	where, args, err := web.ExtractWhereArgs(whereVal)
 	if err != nil {
