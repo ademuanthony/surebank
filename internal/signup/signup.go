@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"merryworld/surebank/internal/tenant"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/user"
 	"merryworld/surebank/internal/user_account"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 // Signup performs the steps needed to create a new account, new user and then associate
@@ -42,10 +42,11 @@ func (repo *Repository) Signup(ctx context.Context, claims auth.Claims, req Sign
 
 	// UserCreateRequest contains information needed to create a new User.
 	userReq := user.UserCreateRequest{
-		BranchID: 		 "717cbfd4-b228-48f6-92bc-cc054a4e13f6", // hard-coded HQ branch id inserted during migration
+		BranchID:        "717cbfd4-b228-48f6-92bc-cc054a4e13f6", // hard-coded HQ branch id inserted during migration
 		FirstName:       req.User.FirstName,
 		LastName:        req.User.LastName,
 		Email:           req.User.Email,
+		PhoneNumber:     req.User.PhoneNumber,
 		Password:        req.User.Password,
 		PasswordConfirm: req.User.PasswordConfirm,
 		Timezone:        req.Account.Timezone,
@@ -83,7 +84,7 @@ func (repo *Repository) Signup(ctx context.Context, claims auth.Claims, req Sign
 	ua := user_account.UserAccountCreateRequest{
 		UserID:    resp.User.ID,
 		AccountID: resp.Account.ID,
-		Roles:     []user_account.UserAccountRole{
+		Roles: []user_account.UserAccountRole{
 			user_account.UserAccountRole_Admin,
 			user_account.UserAccountRole_SuperAdmin,
 		},

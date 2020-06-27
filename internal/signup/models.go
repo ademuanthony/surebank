@@ -50,6 +50,7 @@ type SignupUser struct {
 	FirstName       string `json:"first_name" validate:"required" example:"Gabi"`
 	LastName        string `json:"last_name" validate:"required" example:"May"`
 	Email           string `json:"email" validate:"required,email,unique" example:"{RANDOM_EMAIL}"`
+	PhoneNumber		string `json:"phone_number"`
 	Password        string `json:"password" validate:"required" example:"SecretString"`
 	PasswordConfirm string `json:"password_confirm" validate:"required,eqfield=Password" example:"SecretString"`
 }
