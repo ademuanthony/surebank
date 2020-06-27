@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"merryworld/surebank/internal/checklist"
-	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/transaction"
 
 	"github.com/pkg/errors"
 	"gopkg.in/go-playground/validator.v9"
@@ -50,14 +50,18 @@ func (h *Transactions) Find(ctx context.Context, w http.ResponseWriter, r *http.
 	var req transaction.FindRequest
 
 	// Handle where query value if set.
-	if v := r.URL.Query().Get("where"); v != "" {
-		where, args, err := web.ExtractWhereArgs(v)
-		if err != nil {
-			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
-		}
-		req.Where = web.SqlBoilderWhere(where)
-		req.Args = args
+	whereVal := r.URL.Query().Get("where")
+	if whereVal == "" {
+		whereVal = `type = "deposit"`
+	} else {
+		whereVal = ` AND type = "deposit"`
 	}
+	where, args, err := web.ExtractWhereArgs(whereVal)
+	if err != nil {
+		return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
+	}
+	req.Where = web.SqlBoilderWhere(where)
+	req.Args = args
 
 	// Handle order query value if set.
 	if v := r.URL.Query().Get("order"); v != "" {
