@@ -64,6 +64,10 @@ func urlCustomersAccountTransactions(customerID, accountID string) string {
 	return fmt.Sprintf("/customers/%s/accounts/%s/transactions", customerID, accountID)
 }
 
+func urlCustomersAccountTransactionsReverse(customerID, accountID, transactionID string) string {
+	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/%s/reverse", customerID, accountID, transactionID)
+}
+
 func urlCustomersTransactionsCreate(customerID, accountID string) string {
 	return fmt.Sprintf("/customers/%s/accounts/%s/transactions/deposit", customerID, accountID)
 }
@@ -489,6 +493,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
 		{Field: "payment_method", Title: "Payment Method", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Payment Method"},
 		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
+		{Field: "receipt", Title: "Receipt", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
 		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
 	}
@@ -531,6 +536,9 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 			case "account":
 				v.Value = q.AccountNumber
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(customerID, q.AccountID), v.Value)
+			case "receipt":
+				v.Value = q.ReceiptNo
+				v.Formatted = q.ReceiptNo 
 			case "sales_rep_id":
 				v.Value = q.SalesRepID
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)
@@ -830,6 +838,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
 		{Field: "payment_method", Title: "Payment Method", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Payment Method"},
 		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
+		{Field: "receipt", Title: "Receipt", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Receipt"},
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
 		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
 	}
@@ -872,6 +881,9 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 			case "account":
 				v.Value = q.AccountNumber
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(cust.ID, q.AccountID), v.Value)
+			case "receipt":
+				v.Value = q.ReceiptNo
+				v.Formatted = q.ReceiptNo 
 			case "sales_rep_id":
 				v.Value = q.SalesRepID
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)

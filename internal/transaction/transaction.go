@@ -606,33 +606,52 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 
 	tranx, err := models.Transactions(models.TransactionWhere.ID.EQ(req.ID)).One(ctx, tx)
 	if err != nil {
+		_ = tx.Rollback()
 		return err
 	}
 
-	_, err = models.Transactions(models.TransactionWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, models.M{models.TransactionColumns.ArchivedAt: now})
+	if tranx.ArchivedAt.Valid {
+		_ = tx.Rollback()
+		return errors.New("This transaction has been archived")
+	}
+
+	_, err = models.Transactions(models.TransactionWhere.ID.EQ(req.ID)).
+		UpdateAll(ctx, tx, models.M{models.TransactionColumns.ArchivedAt: now.Unix()})
 
 	var txAmount = tranx.Amount
-	if tranx.TXType == TransactionType_Withdrawal.String() {
+	if tranx.TXType == TransactionType_Deposit.String() {
 		txAmount *= -1
 	}
 
 	// updated all trans after it
-	_, err = models.Transactions(
-		models.TransactionWhere.CreatedAt.GT(tranx.CreatedAt)).
-		UpdateAll(ctx, tx, models.M{models.TransactionColumns.Amount: fmt.Sprintf("amount + (%f)", txAmount)})
+	statement := fmt.Sprintf("UPDATE %s SET %s = %s + $1 WHERE %s = $2 AND %s > $3", 
+		models.TableNames.Transaction, 
+		models.TransactionColumns.OpeningBalance, models.TransactionColumns.OpeningBalance, 
+		models.TransactionColumns.AccountID, models.TransactionColumns.CreatedAt)
+	_, err = models.NewQuery(qm.SQL(statement, txAmount, tranx.AccountID, tranx.CreatedAt)).Exec(tx)
 
 	if err != nil {
 		_ = tx.Rollback()
 		return err
 	}
 
-	// update all accounts balance
-	_, err = models.Accounts(models.AccountWhere.ID.EQ(tranx.AccountID)).UpdateAll(ctx, tx,
-		models.M{models.AccountColumns.Balance: fmt.Sprintf("balance + (%f)", txAmount)})
+	// update the account balance
+	statement = fmt.Sprintf("UPDATE %s SET %s = %s + $1 WHERE %s = $2", 
+		models.TableNames.Account, 
+		models.AccountColumns.Balance,
+		models.AccountColumns.Balance,
+		models.AccountColumns.ID,
+	)
+	_, err = models.NewQuery(qm.SQL(statement, txAmount, tranx.AccountID)).Exec(tx)
+
 
 	if err != nil {
 		_ = tx.Rollback()
 		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return errors.Wrap(err, "commintin transaction")
 	}
 
 	return nil

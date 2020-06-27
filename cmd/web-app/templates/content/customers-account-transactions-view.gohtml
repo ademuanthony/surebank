@@ -17,6 +17,13 @@
 
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">{{ .transaction.Narration }}</h1>
+        {{ if HasRole $._Ctx "super_admin" }}
+        <form method="POST">
+            <input type="hidden" name="action" value="archive">
+            <button type="submit" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                <i class="fas fa-folder-minus fa-sm text-white-50 mr-1"></i>Reverse</button>
+        </form>
+        {{ end }}
     </div>
 
     <div class="card shadow mb-4">
@@ -43,6 +50,13 @@
                     <p>
                         <small>Amount</small><br/>
                         <b>{{ .transaction.Amount }}</b>
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <p>
+                        <small>Receipt No</small><br/>
+                        <b>{{ .transaction.ReceiptNo }}</b>
                     </p>
                 </div>
 
