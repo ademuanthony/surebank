@@ -133,7 +133,7 @@ func main() {
 			SMSSender         string `default:"BulkSMSNG" envconfig:"SMS_SENDER"`
 			SMSProvider       string `default:"bulksmsnigeria" envconfig:"SMS_Provider"`
 			// TODO: remove default value
-			SMSAuthToken  string `default:"ikxmyun7ZDLdmC2RugtlMvstHoEulfG44CXxRDPafv5fLP9edkfRNmtLNrKY" envconfig:"SMS_Auth_TOKEN"`
+			SMSAuthToken  string `default:"nHIts34gQLQeqN6o92PgFZTqWj01MCNNgPxn0Z5lqTfArc3mbE1SZkt3vil0" envconfig:"SMS_Auth_TOKEN"`
 			WebApiBaseUrl string `default:"http://127.0.0.1:3001" envconfig:"WEB_API_BASE_URL"  example:"http://api.example.saasstartupkit.com"`
 		}
 		Redis struct {

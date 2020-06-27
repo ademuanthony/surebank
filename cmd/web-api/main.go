@@ -121,7 +121,7 @@ func main() {
 			EmailSender       string `default:"norepply@surebankltd.com" envconfig:"EMAIL_SENDER"`
 			SMSSender         string `default:"BulkSMSNG" envconfig:"SMS_SENDER"`
 			SMSProvider       string `default:"bulksmsnigeria" envconfig:"SMS_Provider"`
-			SMSAuthToken      string `default:"ikxmyun7ZDLdmC2RugtlMvstHoEulfG44CXxRDPafv5fLP9edkfRNmtLNrKY" envconfig:"SMS_Auth_TOKEN"`
+			SMSAuthToken      string `default:"nHIts34gQLQeqN6o92PgFZTqWj01MCNNgPxn0Z5lqTfArc3mbE1SZkt3vil0" envconfig:"SMS_Auth_TOKEN"`
 			WebAppBaseUrl     string `default:"http://127.0.0.1:3000" envconfig:"WEB_APP_BASE_URL" example:"www.example.saasstartupkit.com"`
 		}
 		Redis struct {

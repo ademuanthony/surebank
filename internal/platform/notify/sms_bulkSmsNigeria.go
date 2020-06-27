@@ -21,7 +21,6 @@ type BulkSmsNigeria struct {
 }
 
 func NewBulkSmsNigeria(token, sender, sharedTemplateDir string, client http.Client) (*BulkSmsNigeria, error) {
-	spew.Dump(token)
 
 	if token == "" {
 		return nil, errors.New("SMS Auth token is required.")
