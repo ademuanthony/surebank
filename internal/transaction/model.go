@@ -21,18 +21,18 @@ import (
 
 // Repository defines the required dependencies for Transaction.
 type Repository struct {
-	DbConn    *sqlx.DB
+	DbConn         *sqlx.DB
 	CommissionRepo *dscommission.Repository
-	notifySMS notify.SMS
-	accNumMtx sync.Mutex
+	notifySMS      notify.SMS
+	accNumMtx      sync.Mutex
 }
 
 // NewRepository creates a new Repository that defines dependencies for Transaction.
 func NewRepository(db *sqlx.DB, commissionRepo *dscommission.Repository, notifySMS notify.SMS) *Repository {
 	return &Repository{
-		DbConn:    db,
+		DbConn:         db,
 		CommissionRepo: commissionRepo,
-		notifySMS: notifySMS,
+		notifySMS:      notifySMS,
 	}
 }
 
@@ -44,10 +44,10 @@ type Transaction struct {
 	OpeningBalance float64         `json:"opening_balance" exmaple:"34500.01"`
 	Amount         float64         `json:"amount" truss:"api-read"`
 	Narration      string          `json:"narration" truss:"api-read"`
-	PaymentMethod      string          `json:"payment_method" truss:"api-read"`
+	PaymentMethod  string          `json:"payment_method" truss:"api-read"`
 	SalesRepID     string          `json:"sales_rep_id" truss:"api-read"`
-	ReceiptNo	   string 		   `json:"receipt_no"`
-	EffectiveDate  time.Time 	   `json:"effective_date"`
+	ReceiptNo      string          `json:"receipt_no"`
+	EffectiveDate  time.Time       `json:"effective_date"`
 	CreatedAt      time.Time       `json:"created_at" truss:"api-read"`
 	UpdatedAt      time.Time       `json:"updated_at" truss:"api-read"`
 	ArchivedAt     *time.Time      `json:"archived_at,omitempty" truss:"api-hide"`
@@ -64,9 +64,9 @@ func FromModel(rec *models.Transaction) *Transaction {
 		OpeningBalance: rec.OpeningBalance,
 		Amount:         rec.Amount,
 		Narration:      rec.Narration,
-		PaymentMethod: rec.PaymentMethod,
+		PaymentMethod:  rec.PaymentMethod,
 		SalesRepID:     rec.SalesRepID,
-		ReceiptNo:  	rec.ReceiptNo,
+		ReceiptNo:      rec.ReceiptNo,
 		EffectiveDate:  time.Unix(rec.EffectiveDate, 0).UTC(),
 		CreatedAt:      time.Unix(rec.CreatedAt, 0).UTC(),
 		UpdatedAt:      time.Unix(rec.UpdatedAt, 0).UTC(),
@@ -100,11 +100,11 @@ type Response struct {
 	OpeningBalance float64           `json:"opening_balance" truss:"api-read"`
 	Amount         float64           `json:"amount" truss:"api-read"`
 	Narration      string            `json:"narration" truss:"api-read"`
-	PaymentMethod      string          `json:"payment_method" truss:"api-read"`
+	PaymentMethod  string            `json:"payment_method" truss:"api-read"`
 	SalesRepID     string            `json:"sales_rep_id" truss:"api-read"`
 	SalesRep       string            `json:"sales_rep,omitempty" truss:"api-read"`
-	ReceiptNo	   string			 `json:"receipt_no"`
-	EffectiveDate  web.TimeResponse  `json:"effective_date" truss:"api-read"`  
+	ReceiptNo      string            `json:"receipt_no"`
+	EffectiveDate  web.TimeResponse  `json:"effective_date" truss:"api-read"`
 	CreatedAt      web.TimeResponse  `json:"created_at" truss:"api-read"`            // CreatedAt contains multiple format options for display.
 	UpdatedAt      web.TimeResponse  `json:"updated_at" truss:"api-read"`            // UpdatedAt contains multiple format options for display.
 	ArchivedAt     *web.TimeResponse `json:"archived_at,omitempty" truss:"api-read"` // ArchivedAt contains multiple format options for display.
@@ -124,8 +124,8 @@ func (m *Transaction) Response(ctx context.Context) *Response {
 		OpeningBalance: m.OpeningBalance,
 		Amount:         m.Amount,
 		Narration:      m.Narration,
-		PaymentMethod: m.PaymentMethod,
-		ReceiptNo: 		m.ReceiptNo,
+		PaymentMethod:  m.PaymentMethod,
+		ReceiptNo:      m.ReceiptNo,
 		SalesRepID:     m.SalesRepID,
 		EffectiveDate:  web.NewTimeResponse(ctx, m.EffectiveDate),
 		CreatedAt:      web.NewTimeResponse(ctx, m.CreatedAt),
@@ -176,31 +176,31 @@ type CreateRequest struct {
 	AccountNumber string          `json:"account_number" validate:"required"`
 	Amount        float64         `json:"amount" validate:"required,gt=0"`
 	Narration     string          `json:"narration"`
-	PaymentMethod string 		  `json:"payment_method"`
+	PaymentMethod string          `json:"payment_method"`
 }
 
 // WithdrawRequest contains information needed to make a new Transaction.
 type WithdrawRequest struct {
-	Type          	  TransactionType `json:"type" validate:"required,oneof=deposit withdrawal"`
-	AccountNumber 	  string          `json:"account_number" validate:"required"`
-	Amount        	  float64         `json:"amount" validate:"required,gt=0"`
-	PaymentMethod 	  string 		  `json:"payment_method" validate:"required"`
-	Bank			  string 		  `json:"bank"`
-	BankAccountNumber string 		  `json:"bank_account_number"`
-	Narration     	  string          `json:"narration"`
+	Type              TransactionType `json:"type" validate:"required,oneof=deposit withdrawal"`
+	AccountNumber     string          `json:"account_number" validate:"required"`
+	Amount            float64         `json:"amount" validate:"required,gt=0"`
+	PaymentMethod     string          `json:"payment_method" validate:"required"`
+	Bank              string          `json:"bank"`
+	BankAccountNumber string          `json:"bank_account_number"`
+	Narration         string          `json:"narration"`
 }
 
 type MakeDeductionRequest struct {
-	AccountNumber string          `json:"account_number" validate:"required"`
-	Amount        float64         `json:"amount" validate:"required,gt=0"`
-	Narration     string          `json:"narration"`
+	AccountNumber string  `json:"account_number" validate:"required"`
+	Amount        float64 `json:"amount" validate:"required,gt=0"`
+	Narration     string  `json:"narration"`
 }
 
 // CreateDepositRequest contains information needed to add a new Transaction of type, deposit.
 type CreateDepositRequest struct {
 	AccountNumber string  `json:"account_number" validate:"required"`
 	Amount        float64 `json:"amount" validate:"required,gt=0"`
-	PaymentMethod      string          `json:"payment_method" validate:"required" truss:"api-read"`
+	PaymentMethod string  `json:"payment_method" validate:"required" truss:"api-read"`
 	Narration     string  `json:"narration"`
 }
 
@@ -215,7 +215,7 @@ type ReadRequest struct {
 // changed. It uses pointer fields so we can differentiate between a field that
 // was not provided and a field that was provided as explicitly blank.
 type UpdateRequest struct {
-	ID        string  `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	ID        string   `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
 	Amount    *float64 `json:"amount" validate:"omitempty,gt=0"`
 	Narration *string  `json:"narration"`
 }
@@ -234,15 +234,17 @@ type DeleteRequest struct {
 // FindRequest defines the possible options to search for accounts. By default
 // archived checklist will be excluded from response.
 type FindRequest struct {
-	Where           string        `json:"where" example:"type = deposit and account_id = ? and created_at > ? and created_at < ?"`
-	Args            []interface{} `json:"args" swaggertype:"array,string" example:"Moon Launch,active"`
-	Order           []string      `json:"order" example:"created_at desc"`
-	Limit           *uint         `json:"limit" example:"10"`
-	Offset          *uint         `json:"offset" example:"20"`
-	IncludeArchived bool          `json:"include-archived" example:"false"`
-	IncludeAccount  bool          `json:"include_account" example:"false"`
-	IncludeSalesRep bool          `json:"include_sales_rep" example:"false"`
+	Where            string        `json:"where" example:"type = deposit and account_id = ? and created_at > ? and created_at < ?"`
+	Args             []interface{} `json:"args" swaggertype:"array,string" example:"Moon Launch,active"`
+	Order            []string      `json:"order" example:"created_at desc"`
+	Limit            *uint         `json:"limit" example:"10"`
+	Offset           *uint         `json:"offset" example:"20"`
+	IncludeArchived  bool          `json:"include-archived" example:"false"`
+	IncludeAccount   bool          `json:"include_account" example:"false"`
+	IncludeAccountNo bool          `json:"include_account_no" example:"false"`
+	IncludeSalesRep  bool          `json:"include_sales_rep" example:"false"`
 }
+
 // ChecklistStatus represents the status of checklist.
 type TransactionType string
 

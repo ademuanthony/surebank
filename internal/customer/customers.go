@@ -8,6 +8,7 @@ import (
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
@@ -38,6 +39,10 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	if !req.IncludeArchived {
 		queries = append(queries, And("archived_at is null"))
+	}
+
+	if req.IncludeAccountNo {
+		queries = append(queries, qm.Load(models.CustomerRels.Accounts))
 	}
 
 	totalCount, err := models.Customers(queries...).Count(ctx, repo.DbConn)

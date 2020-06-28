@@ -2,11 +2,14 @@ package customer
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // Repository defines the required dependencies for Customer.
@@ -63,6 +66,15 @@ func FromModel(rec *models.Customer) *Customer {
 		if rec.R.SalesRep != nil {
 			c.SalesRep = rec.R.SalesRep.FirstName + " " + rec.R.SalesRep.LastName
 		}
+
+		if accs := rec.R.Accounts; accs != nil {
+			var numbers []string
+			for _, a := range accs {
+				numbers = append(numbers, a.Number)
+			}
+
+			c.Name = fmt.Sprintf("%s (%s)", c.Name, strings.Join(numbers, ", "))
+		}
 	}
 
 	if rec.ArchivedAt.Valid {
@@ -114,6 +126,8 @@ func (m *Customer) Response(ctx context.Context) *Response {
 		at := web.NewTimeResponse(ctx, *m.ArchivedAt)
 		r.ArchivedAt = &at
 	}
+
+	
 
 	return r
 }
@@ -193,4 +207,5 @@ type FindRequest struct {
 	Limit           *uint         `json:"limit" example:"10"`
 	Offset          *uint         `json:"offset" example:"20"`
 	IncludeArchived bool          `json:"include-archived" example:"false"`
+	IncludeAccountNo bool		  `json:"include-account-no" example:"false"`
 }

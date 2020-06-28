@@ -12,6 +12,7 @@ import (
 	"merryworld/surebank/internal/mid"
 	saasSwagger "merryworld/surebank/internal/mid/saas-swagger"
 	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/notify"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	_ "merryworld/surebank/internal/platform/web/weberror"
@@ -48,6 +49,7 @@ type AppContext struct {
 	Authenticator     *auth.Authenticator
 	PreAppMiddleware  []web.Middleware
 	PostAppMiddleware []web.Middleware
+	NotifySMS		  notify.SMS
 }
 
 // API returns a handler for a set of routes.
@@ -125,6 +127,7 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	cus := Customers{
 		Repository:  appCtx.CustomerRepo,
 		AccountRepo: appCtx.AccountRepo,
+		notifySMS: appCtx.NotifySMS,
 	}
 	app.Handle("GET", "/v1/customers", cus.Find, mid.AuthenticateHeader(appCtx.Authenticator))
 	app.Handle("POST", "/v1/customers", cus.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))

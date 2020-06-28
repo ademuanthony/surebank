@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/notify"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
@@ -19,8 +21,9 @@ import (
 
 // Customers represents the Customer API method handler set.
 type Customers struct {
-	Repository *customer.Repository
+	Repository  *customer.Repository
 	AccountRepo *account.Repository
+	notifySMS notify.SMS
 
 	// ADD OTHER STATE LIKE THE LOGGER IF NEEDED.
 }
@@ -103,6 +106,18 @@ func (h *Customers) Find(ctx context.Context, w http.ResponseWriter, r *http.Req
 		}
 		req.IncludeArchived = b
 	}
+
+	// Handle include-account query value if set.
+	if v := r.URL.Query().Get("include-account"); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			err = errors.WithMessagef(err, "unable to parse %s as boolean for include-account param", v)
+			return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
+		}
+		req.IncludeArchived = b
+	}
+
+	req.IncludeAccountNo = true
 
 	res, err := h.Repository.Find(ctx, claims, req)
 	if err != nil {
@@ -215,6 +230,16 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 			}
 			return errors.Wrapf(err, "Customer: %+v", &req)
 		}
+	}
+
+	if err = h.notifySMS.Send(ctx, req.PhoneNumber, "sms/welcome_message",
+		map[string]interface{}{
+			"Name":          req.Name,
+			"AccountNumber": accRes.Number,
+			"Target":        req.Target,
+		}); err != nil {
+		// TODO: log critical error. Send message to monitoring account
+		fmt.Println(err)
 	}
 
 	result := accRes.Response(ctx)

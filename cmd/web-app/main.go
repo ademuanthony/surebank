@@ -527,6 +527,7 @@ func main() {
 		InventoryRepo:   inventoryRepo,
 		SaleRepo:        saleRepo,
 		ExpendituresRepo: expendituresRepo,
+		NotifySMS:		 notifySMS,
 	}
 
 	// =========================================================================

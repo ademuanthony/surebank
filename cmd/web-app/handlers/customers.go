@@ -7,19 +7,20 @@ import (
 	"net/http"
 	"strings"
 
-	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/datatable"
+	"merryworld/surebank/internal/platform/notify"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/transaction"
 
 	"github.com/gorilla/schema"
+	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"github.com/pkg/errors"
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 )
 
@@ -28,6 +29,7 @@ type Customers struct {
 	CustomerRepo    *customer.Repository
 	AccountRepo     *account.Repository
 	TransactionRepo *transaction.Repository
+	NotifySMS       notify.SMS
 	Renderer        web.Renderer
 	Redis           *redis.Client
 }
@@ -171,9 +173,9 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 	}
 
 	data := map[string]interface{}{
-		"datatable":      dt.Response(),
+		"datatable":          dt.Response(),
 		"urlCustomersCreate": urlCustomersCreate(),
-		"urlCustomersIndex": urlCustomersIndex(),
+		"urlCustomersIndex":  urlCustomersIndex(),
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-index.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
@@ -230,7 +232,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 				BranchID:   req.BranchID,
 			}
 
-			_, err = h.AccountRepo.Create(ctx, claims, accReq, ctxValues.Now)
+			accRes, err := h.AccountRepo.Create(ctx, claims, accReq, ctxValues.Now)
 			if err != nil {
 				// delete the created customer account
 				_ = h.CustomerRepo.Delete(ctx, claims, customer.DeleteRequest{ID: res.ID}) // TODO: log delete error for debug
@@ -244,6 +246,16 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 						return false, err
 					}
 				}
+			}
+
+			if err = h.NotifySMS.Send(ctx, req.PhoneNumber, "sms/welcome_message",
+				map[string]interface{}{
+					"Name":          req.Name,
+					"AccountNumber": accRes.Number,
+					"Target":        req.Target,
+				}); err != nil {
+				// TODO: log critical error. Send message to monitoring account
+				fmt.Println(err)
 			}
 
 			// Display a success message to the checklist.
@@ -538,7 +550,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(customerID, q.AccountID), v.Value)
 			case "receipt":
 				v.Value = q.ReceiptNo
-				v.Formatted = q.ReceiptNo 
+				v.Formatted = q.ReceiptNo
 			case "sales_rep_id":
 				v.Value = q.SalesRepID
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)
@@ -557,7 +569,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 
 	customer, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	accountsResp, err := h.AccountRepo.Find(ctx, claims, account.FindRequest{
@@ -628,12 +640,12 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 	}
 
 	data := map[string]interface{}{
-		"customer":              customer,
-		"datatable":             dt.Response(),
-		"urlCustomersTransactionsCreate": urlCustomersTransactionsCreate(customerID, accountID),
+		"customer":                         customer,
+		"datatable":                        dt.Response(),
+		"urlCustomersTransactionsCreate":   urlCustomersTransactionsCreate(customerID, accountID),
 		"urlCustomersTransactionsWithdraw": urlCustomersTransactionsWithdraw(customerID, accountID),
-		"urlCustomersIndex":     urlCustomersIndex(),
-		"urlCustomersView":      urlCustomersView(customerID),
+		"urlCustomersIndex":                urlCustomersIndex(),
+		"urlCustomersView":                 urlCustomersView(customerID),
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-transactions.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
@@ -780,7 +792,7 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 
 	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
 	if err != nil {
-		return  weberror.NewError(ctx, err, 404)
+		return weberror.NewError(ctx, err, 404)
 	}
 	data["account"] = acc.Response(ctx)
 
@@ -822,7 +834,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 
 	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	cust, err := h.CustomerRepo.ReadByID(ctx, claims, acc.CustomerID)
@@ -853,7 +865,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 			case "amount":
 				v.Value = fmt.Sprintf("%f", q.Amount)
 				p := message.NewPrinter(language.English)
-				var sign string 
+				var sign string
 				if q.Type == transaction.TransactionType_Withdrawal {
 					sign = "-"
 				}
@@ -863,7 +875,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 				v.Formatted = q.CreatedAt.Local
 			case "effective_date":
 				v.Value = q.EffectiveDate.LocalDate
-				v.Formatted = q.EffectiveDate.LocalDate 
+				v.Formatted = q.EffectiveDate.LocalDate
 			case "narration":
 				values := strings.Split(q.Narration, ":")
 				if len(values) > 1 {
@@ -877,13 +889,13 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 				}
 			case "payment_method":
 				v.Value = q.PaymentMethod
-				v.Formatted = q.PaymentMethod 
+				v.Formatted = q.PaymentMethod
 			case "account":
 				v.Value = q.AccountNumber
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(cust.ID, q.AccountID), v.Value)
 			case "receipt":
 				v.Value = q.ReceiptNo
-				v.Formatted = q.ReceiptNo 
+				v.Formatted = q.ReceiptNo
 			case "sales_rep_id":
 				v.Value = q.SalesRepID
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)
@@ -913,7 +925,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		res, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
 			Order: order,
 			Where: "account_id = ?",
-			Args: []interface{}{accountID},
+			Args:  []interface{}{accountID},
 		})
 		if err != nil {
 			return resp, err
@@ -948,14 +960,14 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 	}
 
 	data := map[string]interface{}{
-		"customer":                       cust.Response(ctx),
-		"account":                        acc.Response(ctx),
-		"datatable":                      dt.Response(),
-		"urlTransactionsCreate": urlCustomersTransactionsCreate(cust.ID, accountID),
-		"urlTransactionsWithdraw": urlCustomersTransactionsWithdraw(cust.ID, accountID),
-		"urlCustomersAccountsView":       urlCustomersAccountsView(cust.ID, accountID),
-		"urlCustomersIndex":              urlCustomersIndex(),
-		"urlCustomersView":               urlCustomersView(cust.ID),
+		"customer":                 cust.Response(ctx),
+		"account":                  acc.Response(ctx),
+		"datatable":                dt.Response(),
+		"urlTransactionsCreate":    urlCustomersTransactionsCreate(cust.ID, accountID),
+		"urlTransactionsWithdraw":  urlCustomersTransactionsWithdraw(cust.ID, accountID),
+		"urlCustomersAccountsView": urlCustomersAccountsView(cust.ID, accountID),
+		"urlCustomersIndex":        urlCustomersIndex(),
+		"urlCustomersView":         urlCustomersView(cust.ID),
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-transactions.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
@@ -979,7 +991,7 @@ func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.
 
 	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	req := new(transaction.CreateRequest)
@@ -1056,7 +1068,7 @@ func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.
 
 	ctxValues, err := webcontext.ContextValues(ctx)
 	if err != nil {
-		return err 
+		return err
 	}
 
 	customerID := params["customer_id"]
@@ -1069,7 +1081,7 @@ func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.
 
 	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
 	if err != nil {
-		return  weberror.NewErrorMessage(ctx, err, 400, "accountID" + accountID)
+		return weberror.NewErrorMessage(ctx, err, 400, "accountID"+accountID)
 	}
 
 	req := new(transaction.WithdrawRequest)
@@ -1123,7 +1135,7 @@ func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.
 
 	customerRes, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
 	if err != nil {
-		return  weberror.NewErrorMessage(ctx, err, 400, "customerID" + customerID)
+		return weberror.NewErrorMessage(ctx, err, 400, "customerID"+customerID)
 	}
 
 	data["form"] = req
@@ -1204,7 +1216,7 @@ func (h *Customers) Transaction(ctx context.Context, w http.ResponseWriter, r *h
 
 	cust, err := h.CustomerRepo.ReadByID(ctx, claims, acc.CustomerID)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	data["transaction"] = tranx.Response(ctx)

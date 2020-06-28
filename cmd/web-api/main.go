@@ -498,6 +498,7 @@ func main() {
 		CommissionRepo: commissionRepo,
 		DepositRepo:     depositRepo,
 		Authenticator:   authenticator,
+		NotifySMS:		 notifySMS,
 	}
 
 	// =========================================================================

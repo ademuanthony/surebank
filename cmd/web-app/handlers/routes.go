@@ -21,6 +21,7 @@ import (
 	"merryworld/surebank/internal/geonames"
 	"merryworld/surebank/internal/mid"
 	"merryworld/surebank/internal/platform/auth"
+	"merryworld/surebank/internal/platform/notify"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
@@ -70,6 +71,7 @@ type AppContext struct {
 	TransactionRepo   *transaction.Repository
 	SaleRepo          *sale.Repository
 	ExpendituresRepo  *expenditure.Repository
+	NotifySMS		  notify.SMS
 	Authenticator     *auth.Authenticator
 	StaticDir         string
 	TemplateDir       string
@@ -261,6 +263,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	custs := Customers{
 		CustomerRepo:    appCtx.CustomerRepo,
 		AccountRepo:     appCtx.AccountRepo,
+		NotifySMS:		 appCtx.NotifySMS,
 		TransactionRepo: appCtx.TransactionRepo,
 		Redis:           appCtx.Redis,
 		Renderer:        appCtx.Renderer,
