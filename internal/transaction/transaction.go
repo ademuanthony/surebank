@@ -197,11 +197,11 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 	}
 
 	var tx *Transaction
-	reqAmount := req.Amount
+	amount, reqAmount := req.Amount, req.Amount
 	req.Amount = account.Target
-	for reqAmount > 0 {
+	for amount > 0 {
 		tx, err = repo.create(ctx, claims, req, currentDate)
-		reqAmount -= account.Target
+		amount -= account.Target
 		currentDate = currentDate.Add(4 * time.Second)
 	}
 
