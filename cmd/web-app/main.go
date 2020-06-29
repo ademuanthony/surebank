@@ -130,7 +130,7 @@ func main() {
 			SharedTemplateDir string `default:"../../resources/templates/shared" envconfig:"SHARED_TEMPLATE_DIR"`
 			SharedSecretKey   string `default:"" envconfig:"SHARED_SECRET_KEY"`
 			EmailSender       string `default:"noreply@surebankltd.com" envconfig:"EMAIL_SENDER"`
-			SMSSender         string `default:"BulkSMSNG" envconfig:"SMS_SENDER"`
+			SMSSender         string `default:"SUREBLTD" envconfig:"SMS_SENDER"`
 			SMSProvider       string `default:"bulksmsnigeria" envconfig:"SMS_Provider"`
 			// TODO: remove default value
 			SMSAuthToken  string `default:"nHIts34gQLQeqN6o92PgFZTqWj01MCNNgPxn0Z5lqTfArc3mbE1SZkt3vil0" envconfig:"SMS_Auth_TOKEN"`
