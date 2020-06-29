@@ -123,7 +123,7 @@ func main() {
 			SMSProvider       string `default:"bulksmsnigeria" envconfig:"SMS_Provider"`
 			SMSAuthToken      string `default:"nHIts34gQLQeqN6o92PgFZTqWj01MCNNgPxn0Z5lqTfArc3mbE1SZkt3vil0" envconfig:"SMS_Auth_TOKEN"`
 			WebAppBaseUrl     string `default:"http://127.0.0.1:3000" envconfig:"WEB_APP_BASE_URL" example:"www.example.saasstartupkit.com"`
-		}
+		} 
 		Redis struct {
 			Host            string        `default:":6379" envconfig:"HOST"`
 			DB              int           `default:"1" envconfig:"DB"`

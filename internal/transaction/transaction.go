@@ -397,6 +397,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		SalesRepID:     m.SalesRepID,
 		CreatedAt:      time.Unix(m.CreatedAt, 0),
 		UpdatedAt:      time.Unix(m.UpdatedAt, 0),
+		EffectiveDate:  time.Unix(m.EffectiveDate, 0),
 	}, nil
 }
 
