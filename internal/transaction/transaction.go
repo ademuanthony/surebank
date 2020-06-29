@@ -192,7 +192,7 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 		return nil, weberror.NewError(ctx, fmt.Errorf("Amount must be a multiple of %f", account.Target), 400)
 	}
 
-	if req.Amount / account.Target > 5 {
+	if req.Amount/account.Target > 50 {
 		return nil, weberror.NewError(ctx, fmt.Errorf("Please pay for max of 5 days at a time, one day is %f", account.Target), 400)
 	}
 
@@ -203,6 +203,19 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 		tx, err = repo.create(ctx, claims, req, currentDate)
 		reqAmount -= account.Target
 		currentDate = currentDate.Add(4 * time.Second)
+	}
+
+	if err == nil && account.AccountType == models.AccountTypeDS {
+		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ds_received",
+			map[string]interface{}{
+				"Name":          account.R.Customer.Name,
+				"EffectiveDate": web.NewTimeResponse(ctx, tx.EffectiveDate).LocalDate,
+				"Amount":        req.Amount,
+				"Balance":       tx.OpeningBalance + tx.Amount,
+			}); err != nil {
+			// TODO: log critical error. Send message to monitoring account
+			fmt.Println(err)
+		}
 	}
 	return tx, err
 
@@ -272,7 +285,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		OpeningBalance: accountBalanceAtTx(lastTransaction),
 		Amount:         req.Amount,
 		Narration:      req.Narration,
-		PaymentMethod: req.PaymentMethod,
+		PaymentMethod:  req.PaymentMethod,
 		TXType:         req.Type.String(),
 		SalesRepID:     claims.Subject,
 		ReceiptNo:      repo.generateReceiptNumber(ctx),
@@ -306,18 +319,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 
 	// send SMS notification
 	if req.Type == TransactionType_Deposit {
-		if account.AccountType == models.AccountTypeDS {
-			if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ds_received",
-				map[string]interface{}{
-					"Name":          account.R.Customer.Name,
-					"EffectiveDate": web.NewTimeResponse(ctx, time.Unix(m.EffectiveDate, 0)).LocalDate,
-					"Amount":        req.Amount,
-					"Balance":       m.OpeningBalance + req.Amount,
-				}); err != nil {
-				// TODO: log critical error. Send message to monitoring account
-				fmt.Println(err)
-			}
-		} else {
+		if account.AccountType == models.AccountTypeSB {
 			if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_received",
 				map[string]interface{}{
 					"Name":    account.R.Customer.Name,
@@ -624,9 +626,9 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	}
 
 	// updated all trans after it
-	statement := fmt.Sprintf("UPDATE %s SET %s = %s + $1 WHERE %s = $2 AND %s > $3", 
-		models.TableNames.Transaction, 
-		models.TransactionColumns.OpeningBalance, models.TransactionColumns.OpeningBalance, 
+	statement := fmt.Sprintf("UPDATE %s SET %s = %s + $1 WHERE %s = $2 AND %s > $3",
+		models.TableNames.Transaction,
+		models.TransactionColumns.OpeningBalance, models.TransactionColumns.OpeningBalance,
 		models.TransactionColumns.AccountID, models.TransactionColumns.CreatedAt)
 	_, err = models.NewQuery(qm.SQL(statement, txAmount, tranx.AccountID, tranx.CreatedAt)).Exec(tx)
 
@@ -636,14 +638,13 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	}
 
 	// update the account balance
-	statement = fmt.Sprintf("UPDATE %s SET %s = %s + $1 WHERE %s = $2", 
-		models.TableNames.Account, 
+	statement = fmt.Sprintf("UPDATE %s SET %s = %s + $1 WHERE %s = $2",
+		models.TableNames.Account,
 		models.AccountColumns.Balance,
 		models.AccountColumns.Balance,
 		models.AccountColumns.ID,
 	)
 	_, err = models.NewQuery(qm.SQL(statement, txAmount, tranx.AccountID)).Exec(tx)
-
 
 	if err != nil {
 		_ = tx.Rollback()

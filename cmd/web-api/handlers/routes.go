@@ -77,7 +77,7 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	// Register health check endpoint. This route is not authenticated.
 	check := Check{
 		MasterDB: appCtx.MasterDB,
-		Redis:    appCtx.Redis,
+		Redis:    appCtx.Redis, 
 	}
 	app.Handle("GET", "/v1/health", check.Health)
 	app.Handle("GET", "/ping", check.Ping)

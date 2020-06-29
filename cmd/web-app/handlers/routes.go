@@ -246,7 +246,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		ShopRepo:   appCtx.ShopRepo,
 		BranchRepo: appCtx.BranchRepo,
 		Redis:      appCtx.Redis,
-		Renderer:   appCtx.Renderer,
+		Renderer:   appCtx.Renderer, 
 	}
 	// app.Handle("POST", "/shop/inventory/:stock_id/update", stock.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	// app.Handle("GET", "/shop/inventory/:stock_id/update", stock.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
