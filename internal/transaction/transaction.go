@@ -193,7 +193,7 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 	}
 
 	if req.Amount/account.Target > 50 {
-		return nil, weberror.NewError(ctx, fmt.Errorf("Please pay for max of 5 days at a time, one day is %f", account.Target), 400)
+		return nil, weberror.NewError(ctx, fmt.Errorf("Please pay for max of 50 days at a time, one day is %f", account.Target), 400)
 	}
 
 	var tx *Transaction
