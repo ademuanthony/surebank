@@ -130,7 +130,7 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		notifySMS: appCtx.NotifySMS,
 	}
 	app.Handle("GET", "/v1/customers", cus.Find, mid.AuthenticateHeader(appCtx.Authenticator))
-	app.Handle("POST", "/v1/customers", cus.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/v1/customers", cus.Create, mid.AuthenticateHeader(appCtx.Authenticator))
 	app.Handle("GET", "/v1/customers/:id", cus.Read, mid.AuthenticateHeader(appCtx.Authenticator))
 	app.Handle("PATCH", "/v1/customers", cus.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("PATCH", "/v1/customers/archive", cus.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
@@ -141,7 +141,7 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		Repository: appCtx.AccountRepo,
 	}
 	app.Handle("GET", "/v1/accounts", acc.Find, mid.AuthenticateHeader(appCtx.Authenticator))
-	app.Handle("POST", "/v1/accounts", acc.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/v1/accounts", acc.Create, mid.AuthenticateHeader(appCtx.Authenticator))
 	app.Handle("GET", "/v1/accounts/:id", acc.Read, mid.AuthenticateHeader(appCtx.Authenticator))
 	app.Handle("PATCH", "/v1/accounts", acc.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("PATCH", "/v1/accounts/archive", acc.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
@@ -151,7 +151,7 @@ func API(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		Repository: appCtx.DepositRepo,
 	}
 	app.Handle("GET", "/v1/transactions", dep.Find, mid.AuthenticateHeader(appCtx.Authenticator))
-	app.Handle("POST", "/v1/transactions", dep.Create, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/v1/transactions", dep.Create, mid.AuthenticateHeader(appCtx.Authenticator))
 	app.Handle("GET", "/v1/transactions/:id", dep.Read, mid.AuthenticateHeader(appCtx.Authenticator))
 	app.Handle("PATCH", "/v1/transactions", dep.Update, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("PATCH", "/v1/transactions/archive", dep.Archive, mid.AuthenticateHeader(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
