@@ -210,7 +210,7 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 			map[string]interface{}{
 				"Name":          account.R.Customer.Name,
 				"EffectiveDate": web.NewTimeResponse(ctx, tx.EffectiveDate).LocalDate,
-				"Amount":        req.Amount,
+				"Amount":        reqAmount,
 				"Balance":       tx.OpeningBalance + tx.Amount,
 			}); err != nil {
 			// TODO: log critical error. Send message to monitoring account
