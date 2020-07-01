@@ -64,6 +64,7 @@ func (h *Customers) Find(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	// Handle order query value if set.
+	req.Order = []string{"created_at desc"}
 	if v := r.URL.Query().Get("order"); v != "" {
 		for _, o := range strings.Split(v, ",") {
 			o = strings.TrimSpace(o)
@@ -71,11 +72,11 @@ func (h *Customers) Find(ctx context.Context, w http.ResponseWriter, r *http.Req
 				req.Order = append(req.Order, o)
 			}
 		}
-	} else {
-		req.Order = []string{"created_at desc"}
 	}
 
 	// Handle limit query value if set.
+	var l uint = 20
+	req.Limit = &l
 	if v := r.URL.Query().Get("limit"); v != "" {
 		l, err := strconv.Atoi(v)
 		if err != nil {
