@@ -88,6 +88,13 @@ func (a *App) Handle(verb, path string, handler Handler, mw ...Middleware) {
 				}
 			}
 
+			a.log.Printf("*****> critical error not handled: %v", err)
+			// Render an error response.
+			if rerr := RespondErrorStatus(ctx, w, err, 500); rerr == nil {
+				// If there was not error rending the error, then no need to continue.
+				return
+			}
+
 			a.log.Printf("*****> critical shutdown error: %v", err)
 			if ok := a.SignalShutdown(); !ok {
 				// When shutdown chan is nil, in the case of unit testing
