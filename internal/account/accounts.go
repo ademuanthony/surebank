@@ -335,7 +335,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 }
 
 // Archive soft deleted the account from the database.
-func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req ArchiveRequest, now time.Time) error {
+func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req ArchiveRequest) error {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.Archive")
 	defer span.Finish()
 
@@ -353,21 +353,22 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return err
 	}
 
-	// If now empty set it to the current time.
-	if now.IsZero() {
-		now = time.Now()
+	tx, err := repo.DbConn.Begin()
+	if err != nil {
+		return err
 	}
 
-	// Always store the time as UTC.
-	now = now.UTC()
-	// Postgres truncates times to milliseconds when storing. We and do the same
-	// here so the value we return is consistent with what we store.
-	now = now.Truncate(time.Millisecond)
+	if _, err := models.Transactions(models.TransactionWhere.AccountID.EQ(req.ID)).DeleteAll(ctx, tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if _, err = models.Accounts(models.AccountWhere.ID.EQ(req.ID)).DeleteAll(ctx, tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
 
-	_, err = models.Accounts(models.AccountWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.AccountColumns.ArchivedAt: now})
-
-	if err != nil {
-		return weberror.NewError(ctx, err, 500)
+	if err = tx.Commit(); err != nil {
+		return err
 	}
 
 	return nil

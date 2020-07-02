@@ -223,7 +223,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	cols[models.CustomerColumns.UpdatedAt] = now
+	cols[models.CustomerColumns.UpdatedAt] = now.Unix()
 
 	_, err = models.Customers(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
@@ -231,7 +231,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 }
 
 // Archive soft deleted the customer from the database.
-func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req ArchiveRequest, now time.Time) error {
+func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req ArchiveRequest) error {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.Archive")
 	defer span.Finish()
 
@@ -239,7 +239,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return errors.WithStack(ErrForbidden)
 	}
 	// Admin users can update customer they have access to.
-	if !claims.HasRole(auth.RoleAdmin) {
+	if !claims.HasRole(auth.RoleSuperAdmin) {
 		return errors.WithStack(ErrForbidden)
 	}
 	// Validate the request.
@@ -249,46 +249,41 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return err
 	}
 
-	// If now empty set it to the current time.
-	if now.IsZero() {
-		now = time.Now()
-	}
-
-	// Always store the time as UTC.
-	now = now.UTC()
-	// Postgres truncates times to milliseconds when storing. We and do the same
-	// here so the value we return is consistent with what we store.
-	now = now.Truncate(time.Millisecond)
-
-	_, err = models.Customers(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.CustomerColumns.ArchivedAt: now})
-
-	return nil
-}
-
-// Delete removes an customer from the database.
-func (repo *Repository) Delete(ctx context.Context, claims auth.Claims, req DeleteRequest) error {
-	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.Delete")
-	defer span.Finish()
-
-	// Validate the request.
-	v := webcontext.Validator()
-	err := v.Struct(req)
+	tx, err := repo.DbConn.Begin()
 	if err != nil {
 		return err
 	}
-
-	// Ensure the claims can modify the project specified in the request.
-	if claims.Audience == "" {
-		return errors.WithStack(ErrForbidden)
-	}
-	// Admin users can update Categories they have access to.
-	if !claims.HasRole(auth.RoleAdmin) {
-		return errors.WithStack(ErrForbidden)
-	}
-
-	_, err = models.Customers(models.CustomerWhere.ID.EQ(req.ID)).DeleteAll(ctx, repo.DbConn)
+	accounts, err := models.Accounts(models.AccountWhere.CustomerID.EQ(req.ID)).All(ctx, tx)
 	if err != nil {
-		return errors.WithStack(err)
+		if err.Error() != sql.ErrNoRows.Error() { 
+			return err
+		}
+	}
+
+	for _, acc := range accounts {
+		if _, err := models.Transactions(models.TransactionWhere.AccountID.EQ(acc.ID)).DeleteAll(ctx, tx); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		
+		if _, err := models.DSCommissions(models.DSCommissionWhere.AccountID.EQ(acc.ID)).DeleteAll(ctx, tx); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+
+		if _, err = models.Accounts(models.AccountWhere.ID.EQ(acc.ID)).DeleteAll(ctx, tx); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+
+	if _, err = models.Customers(models.CustomerWhere.ID.EQ(req.ID)).DeleteAll(ctx, tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
 	}
 
 	return nil

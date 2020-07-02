@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
@@ -18,6 +19,7 @@ import (
 	"merryworld/surebank/internal/transaction"
 
 	"github.com/gorilla/schema"
+	"github.com/jinzhu/now"
 	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -235,7 +237,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 			accRes, err := h.AccountRepo.Create(ctx, claims, accReq, ctxValues.Now)
 			if err != nil {
 				// delete the created customer account
-				_ = h.CustomerRepo.Delete(ctx, claims, customer.DeleteRequest{ID: res.ID}) // TODO: log delete error for debug
+				_ = h.CustomerRepo.Archive(ctx, claims, customer.ArchiveRequest{ID: res.ID}) // TODO: log delete error for debug
 				cause := errors.Cause(err)
 				switch cause {
 				default:
@@ -290,11 +292,6 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 // View handles displaying a customer.
 func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
-	ctxValues, err := webcontext.ContextValues(ctx)
-	if err != nil {
-		return err
-	}
-
 	customerID := params["customer_id"]
 
 	claims, err := auth.ClaimsFromContext(ctx)
@@ -314,7 +311,7 @@ func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Req
 			case "archive":
 				err = h.CustomerRepo.Archive(ctx, claims, customer.ArchiveRequest{
 					ID: customerID,
-				}, ctxValues.Now)
+				})
 				if err != nil {
 					return false, err
 				}
@@ -421,7 +418,7 @@ func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 			err := r.ParseForm()
 			if err != nil {
 				return false, err
-			}
+			} 
 
 			decoder := schema.NewDecoder()
 			decoder.IgnoreUnknownKeys(true)
@@ -736,11 +733,6 @@ func (h *Customers) AddAccount(ctx context.Context, w http.ResponseWriter, r *ht
 // Account handles displaying an account for a customer
 func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
-	ctxValues, err := webcontext.ContextValues(ctx)
-	if err != nil {
-		return err
-	}
-
 	customerID := params["customer_id"]
 	accountID := params["account_id"]
 
@@ -749,7 +741,7 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 		return err
 	}
 
-	data := make(map[string]interface{})
+	data := make(map[string]interface{}) 
 	f := func() (bool, error) {
 		if r.Method == http.MethodPost {
 			err := r.ParseForm()
@@ -759,9 +751,9 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 
 			switch r.PostForm.Get("action") {
 			case "archive":
-				err = h.CustomerRepo.Archive(ctx, claims, customer.ArchiveRequest{
+				err = h.AccountRepo.Archive(ctx, claims, account.ArchiveRequest{
 					ID: customerID,
-				}, ctxValues.Now)
+				})
 				if err != nil {
 					return false, err
 				}
@@ -912,6 +904,36 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		return resp, nil
 	}
 
+	var data = make(map[string]interface{})
+	var txWhere = []string{"account_id = $1"}
+	var txArgs = []interface{}{accountID}
+
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		date, err := time.Parse("01/02/2006", v)
+		if err != nil {
+			return err
+		}
+		date = date.Truncate(time.Millisecond)
+		date = now.New(date).BeginningOfDay().Add(-1 * time.Hour)
+		txWhere = append(txWhere, fmt.Sprintf("created_at >= $%d", len(txArgs)+1))
+		txArgs = append(txArgs, date.UTC().Unix())
+		data["startDate"] = v
+		// 1581897600
+		// 1581897323
+	}
+
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		date, err := time.Parse("01/02/2006", v)
+		if err != nil {
+			return err
+		}
+		date = date.Truncate(time.Millisecond)
+		date = now.New(date).EndOfDay().Add(-1 * time.Hour)
+		txWhere = append(txWhere, fmt.Sprintf("created_at <= $%d", len(txArgs)+1))
+		txArgs = append(txArgs, date.Unix())
+		data["endDate"] = v
+	}
+
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 
 		var order []string
@@ -924,8 +946,8 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		var res = &transaction.PagedResponseList{}
 		res, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
 			Order: order,
-			Where: "account_id = ?",
-			Args:  []interface{}{accountID},
+			Where: strings.Join(txWhere, " AND "),
+			Args:  txArgs,
 		})
 		if err != nil {
 			return resp, err
@@ -943,6 +965,13 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		return resp, nil
 	}
 
+	totalDeposit, err := h.TransactionRepo.DepositAmountByWhere(ctx, strings.Join(txWhere, " and "), txArgs)
+	if err != nil {
+		return err
+	}
+
+	data["totalDeposit"] = totalDeposit
+
 	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
 	if err != nil {
 		return err
@@ -959,16 +988,14 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		return nil
 	}
 
-	data := map[string]interface{}{
-		"customer":                 cust.Response(ctx),
-		"account":                  acc.Response(ctx),
-		"datatable":                dt.Response(),
-		"urlTransactionsCreate":    urlCustomersTransactionsCreate(cust.ID, accountID),
-		"urlTransactionsWithdraw":  urlCustomersTransactionsWithdraw(cust.ID, accountID),
-		"urlCustomersAccountsView": urlCustomersAccountsView(cust.ID, accountID),
-		"urlCustomersIndex":        urlCustomersIndex(),
-		"urlCustomersView":         urlCustomersView(cust.ID),
-	}
+	data["customer"] = cust.Response(ctx)
+	data["account"] = acc.Response(ctx)
+	data["datatable"] = dt.Response()
+	data["urlTransactionsCreate"] = urlCustomersTransactionsCreate(cust.ID, accountID)
+	data["urlTransactionsWithdraw"] = urlCustomersTransactionsWithdraw(cust.ID, accountID)
+	data["urlCustomersAccountsView"] = urlCustomersAccountsView(cust.ID, accountID)
+	data["urlCustomersIndex"] = urlCustomersIndex()
+	data["urlCustomersView"] = urlCustomersView(cust.ID)
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-transactions.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }

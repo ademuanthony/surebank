@@ -32,7 +32,7 @@
                      style="position: absolute; transform: translate3d(-156px, 19px, 0px); top: 0px; left: 0px; will-change: transform;">
                     <div class="dropdown-header">Actions</div>
                     <a class="dropdown-item" href="{{ .urlCustomersUpdate }}">Update Details</a>
-                    {{ if HasRole $._Ctx "admin" }}
+                    {{ if HasRole $._Ctx "super_admin" }}
                         <form method="post"><input type="hidden" name="action" value="archive"/><input type="submit"
                                                                                                        value="Archive Customer"
                                                                                                        class="dropdown-item">
