@@ -12,6 +12,7 @@ import (
 // SMS defines method need to send an SMS disregarding the service provider.
 type SMS interface {
 	Send(ctx context.Context, phoneNumber, templateName string, data map[string]interface{}) error
+	SendStr(ctx context.Context, phoneNumber, message string) error
 }
 
 // MockEmail defines an implementation of the email interface for testing.

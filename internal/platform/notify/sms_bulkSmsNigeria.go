@@ -72,3 +72,29 @@ func (b *BulkSmsNigeria) Send(ctx context.Context, phoneNumber, templateName str
 
 	return nil
 }
+
+func (b *BulkSmsNigeria) SendStr(ctx context.Context, phoneNumber, message string) error {
+	params := url.Values{}
+	params.Add("api_token", b.token)
+	params.Add("from", b.sender)
+	params.Add("to", phoneNumber)
+	params.Add("body", message)
+
+	resp, err := b.client.Get("https://www.bulksmsnigeria.com/api/v1/sms/create?" + params.Encode())
+
+	fmt.Println("https://www.bulksmsnigeria.com/api/v1/sms/create?" + params.Encode())
+	if err != nil {
+		return err
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.WithMessage(err, "cannot read response body")
+	}
+
+	if !strings.Contains(string(respBody), "") {
+		return fmt.Errorf("cannot sent message, %s", string(respBody))
+	}
+
+	return nil
+}

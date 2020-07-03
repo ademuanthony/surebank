@@ -14,3 +14,7 @@ func NewSMSDisabled() *DisableSMS {
 func (n *DisableSMS) Send(ctx context.Context, phoneNumber, templateName string, data map[string]interface{}) error {
 	return nil
 }
+
+func (n *DisableSMS) SendStr(ctx context.Context, phoneNumber, message string) error {
+	return nil
+}

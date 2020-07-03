@@ -35,6 +35,14 @@
                     <i class="fas fa-fw fa-list"></i>
                     <span>Sales</span></a>
             </li>
+
+            {{ if HasRole $._Ctx "super_admin" "admin" }}
+            <li class="nav-item">
+                <a class="nav-link" href="/sms">
+                    <i class="fas fa-fw fa-list"></i>
+                    <span>Bulk SMS</span></a>
+            </li>
+            {{ end }}
             <!-- Nav Item - Pages Collapse Menu -->
 
             {{ if HasRole $._Ctx "super_admin" }}

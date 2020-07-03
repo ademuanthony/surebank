@@ -71,7 +71,7 @@ type AppContext struct {
 	TransactionRepo   *transaction.Repository
 	SaleRepo          *sale.Repository
 	ExpendituresRepo  *expenditure.Repository
-	NotifySMS		  notify.SMS
+	NotifySMS         notify.SMS
 	Authenticator     *auth.Authenticator
 	StaticDir         string
 	TemplateDir       string
@@ -246,7 +246,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 		ShopRepo:   appCtx.ShopRepo,
 		BranchRepo: appCtx.BranchRepo,
 		Redis:      appCtx.Redis,
-		Renderer:   appCtx.Renderer, 
+		Renderer:   appCtx.Renderer,
 	}
 	// app.Handle("POST", "/shop/inventory/:stock_id/update", stock.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	// app.Handle("GET", "/shop/inventory/:stock_id/update", stock.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
@@ -263,7 +263,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	custs := Customers{
 		CustomerRepo:    appCtx.CustomerRepo,
 		AccountRepo:     appCtx.AccountRepo,
-		NotifySMS:		 appCtx.NotifySMS,
+		NotifySMS:       appCtx.NotifySMS,
 		TransactionRepo: appCtx.TransactionRepo,
 		Redis:           appCtx.Redis,
 		Renderer:        appCtx.Renderer,
@@ -288,6 +288,18 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("POST", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers/create", custs.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/customers", custs.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+
+	// Customers
+	sms := BulkSMS{
+		CustomerRepo: appCtx.CustomerRepo,
+		AccountRepo:  appCtx.AccountRepo,
+		NotifySMS:    appCtx.NotifySMS,
+		Redis:        appCtx.Redis,
+		Renderer:     appCtx.Renderer,
+		DbConn:       appCtx.MasterDB.DB,
+	}
+	app.Handle("POST", "/sms", sms.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/sms", sms.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 
 	reports := Reports{
 		CustomerRepo:    appCtx.CustomerRepo,

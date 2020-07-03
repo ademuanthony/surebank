@@ -15,6 +15,10 @@ func (n *DisableEmail) Send(ctx context.Context, toEmail, subject, templateName 
 	return nil
 }
 
+func (b *DisableEmail) SendStr(ctx context.Context, phoneNumber, message string) error {
+	return nil
+}
+
 // Verify does nothing.
 func (n *DisableEmail) Verify() error {
 	return nil

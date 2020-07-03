@@ -1,0 +1,84 @@
+{{define "title"}}{{ $.customer.Name }} Send SMS{{end}}
+{{define "style"}}
+
+{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="">SMS</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Send Message</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Send SMS</h1>
+    </div>
+
+    {{ if $.message }} 
+    <p class="text-success">{{ .message }}</p>
+    {{ end }}
+
+    {{ if $.error }} 
+    <p class="text-success">{{ .error }}</p>
+    {{ end }}
+    <form class="user" method="post" novalidate>
+
+        <div class="card shadow">
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="selectAccountType">Account Type</label>
+                            <div class="form-control-select-wrapper">
+                                <select id="selectAccountType" name="AccountType" placeholder="Account Type" required
+                                    class="form-control form-control-select-box">
+                                    <option></option>
+                                    <option value="all">All Customers</option>
+                                    {{ range $i := $.accountTypes }}
+                                        <option value="{{ $i }}" {{ if eq $.form.AccountType $i }}selected="selected"{{ end }}>{{ $i }}</option>
+                                    {{ end }}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputTarget">Account Numbers (Comma separated)</label>
+                            <textarea name="AccountNumbers" class="form-control">{{ $.form.AccountNos }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputTargetInfo">Phone Numbers (Comma separated)</label>
+                            <textarea name="PhoneNumbers" class="form-control">{{ $.form.PhoneNumbers }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputTargetInfo">Message (Use @name for customer name)</label>
+                            <textarea name="Message" class="form-control">{{ $.form.Message }}</textarea>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col">
+                <input id="btnSubmit" type="submit" name="action" value="Send Message" class="btn btn-primary"/>
+            </div>
+        </div>
+
+    </form>
+{{end}}
+{{define "js"}}
+
+{{end}}
