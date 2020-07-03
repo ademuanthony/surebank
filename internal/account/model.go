@@ -2,12 +2,13 @@ package account
 
 import (
 	"context"
-	"merryworld/surebank/internal/branch"
-	"merryworld/surebank/internal/customer"
-	"merryworld/surebank/internal/user"
 	"sync"
 	"time"
 
+	"merryworld/surebank/internal/branch"
+	"merryworld/surebank/internal/customer"
+	"merryworld/surebank/internal/user"
+	
 	"github.com/jmoiron/sqlx"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
@@ -28,18 +29,19 @@ func NewRepository(db *sqlx.DB) *Repository {
 
 // Account represents a customer account.
 type Account struct {
-	ID         string     `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	CustomerID string     `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	Number     string     `json:"number"  validate:"required" example:"Rocket Launch"`
-	Type       string     `json:"type" truss:"api-read"`
-	Balance    float64    `json:"balance" truss:"api-read"`
-	Target     float64    `json:"target" truss:"api-read"`
-	TargetInfo string     `json:"target_info" truss:"api-read"`
-	SalesRepID string     `json:"sales_rep_id" truss:"api-read"`
-	BranchID   string     `json:"branch_id" truss:"api-read"`
-	CreatedAt  time.Time  `json:"created_at" truss:"api-read"`
-	UpdatedAt  time.Time  `json:"updated_at" truss:"api-read"`
-	ArchivedAt *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
+	ID              string     `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	CustomerID      string     `json:"customer_id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	Number          string     `json:"number"  validate:"required" example:"Rocket Launch"`
+	Type            string     `json:"type" truss:"api-read"`
+	Balance         float64    `json:"balance" truss:"api-read"`
+	Target          float64    `json:"target" truss:"api-read"`
+	TargetInfo      string     `json:"target_info" truss:"api-read"`
+	SalesRepID      string     `json:"sales_rep_id" truss:"api-read"`
+	BranchID        string     `json:"branch_id" truss:"api-read"`
+	LastPaymentDate time.Time  `json:"last_payment_date"`
+	CreatedAt       time.Time  `json:"created_at" truss:"api-read"`
+	UpdatedAt       time.Time  `json:"updated_at" truss:"api-read"`
+	ArchivedAt      *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
 
 	Customer *customer.Customer `json:"customer"`
 	SalesRep *user.User         `json:"sales_rep" truss:"api-read"`
@@ -48,17 +50,18 @@ type Account struct {
 
 func FromModel(rec *models.Account) *Account {
 	a := &Account{
-		ID:         rec.ID,
-		CustomerID: rec.CustomerID,
-		Number:     rec.Number,
-		Type:       rec.AccountType,
-		Balance:    rec.Balance,
-		Target:     rec.Target,
-		TargetInfo: rec.TargetInfo,
-		SalesRepID: rec.SalesRepID,
-		BranchID:   rec.BranchID,
-		CreatedAt:  time.Unix(rec.CreatedAt, 0),
-		UpdatedAt:  time.Unix(rec.UpdatedAt, 0),
+		ID:              rec.ID,
+		CustomerID:      rec.CustomerID,
+		Number:          rec.Number,
+		Type:            rec.AccountType,
+		Balance:         rec.Balance,
+		Target:          rec.Target,
+		TargetInfo:      rec.TargetInfo,
+		SalesRepID:      rec.SalesRepID,
+		BranchID:        rec.BranchID,
+		LastPaymentDate: time.Unix(rec.LastPaymentDate, 0),
+		CreatedAt:       time.Unix(rec.CreatedAt, 0),
+		UpdatedAt:       time.Unix(rec.UpdatedAt, 0),
 	}
 
 	if rec.R != nil {
@@ -85,21 +88,22 @@ func FromModel(rec *models.Account) *Account {
 
 // Response represents a customer account that is returned for display.
 type Response struct {
-	ID         string             `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86" truss:"api-read"`
-	CustomerID string             `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86" truss:"api-read"`
-	Customer   *customer.Response `json:"customer,omitempty" truss:"api-read"`
-	Number     string             `json:"number" example:"Rocket Launch" truss:"api-read"`
-	Type       string             `json:"type" truss:"api-read"`
-	Balance    float64            `json:"balance" truss:"api-read"`
-	Target     float64            `json:"target" truss:"api-read"`
-	TargetInfo string             `json:"target_info" truss:"api-read"`
-	SalesRepID string             `json:"sales_rep_id" truss:"api-read"`
-	BranchID   string             `json:"branch_id" truss:"api-read"`
-	SalesRep   string             `json:"sales_rep,omitempty" truss:"api-read"`
-	Branch     string             `json:"branch,omitempty" truss:"api-read"`
-	CreatedAt  web.TimeResponse   `json:"created_at"`            // CreatedAt contains multiple format options for display.
-	UpdatedAt  web.TimeResponse   `json:"updated_at"`            // UpdatedAt contains multiple format options for display.
-	ArchivedAt *web.TimeResponse  `json:"archived_at,omitempty"` // ArchivedAt contains multiple format options for display.
+	ID              string             `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86" truss:"api-read"`
+	CustomerID      string             `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86" truss:"api-read"`
+	Customer        *customer.Response `json:"customer,omitempty" truss:"api-read"`
+	Number          string             `json:"number" example:"Rocket Launch" truss:"api-read"`
+	Type            string             `json:"type" truss:"api-read"`
+	Balance         float64            `json:"balance" truss:"api-read"`
+	Target          float64            `json:"target" truss:"api-read"`
+	TargetInfo      string             `json:"target_info" truss:"api-read"`
+	SalesRepID      string             `json:"sales_rep_id" truss:"api-read"`
+	BranchID        string             `json:"branch_id" truss:"api-read"`
+	SalesRep        string             `json:"sales_rep,omitempty" truss:"api-read"`
+	Branch          string             `json:"branch,omitempty" truss:"api-read"`
+	LastPaymentDate web.TimeResponse   `json:"created_at"`            // CreatedAt contains multiple format options for display.
+	CreatedAt       web.TimeResponse   `json:"created_at"`            // CreatedAt contains multiple format options for display.
+	UpdatedAt       web.TimeResponse   `json:"updated_at"`            // UpdatedAt contains multiple format options for display.
+	ArchivedAt      *web.TimeResponse  `json:"archived_at,omitempty"` // ArchivedAt contains multiple format options for display.
 }
 
 // Response transforms Account to the Response that is used for display.
@@ -110,18 +114,19 @@ func (m *Account) Response(ctx context.Context) *Response {
 	}
 
 	r := &Response{
-		ID:         m.ID,
-		CustomerID: m.CustomerID,
-		Customer:   m.Customer.Response(ctx),
-		Number:     m.Number,
-		Type:       m.Type,
-		Balance:    m.Balance,
-		Target:     m.Target,
-		TargetInfo: m.TargetInfo,
-		SalesRepID: m.SalesRepID,
-		BranchID:   m.BranchID,
-		CreatedAt:  web.NewTimeResponse(ctx, m.CreatedAt),
-		UpdatedAt:  web.NewTimeResponse(ctx, m.UpdatedAt),
+		ID:              m.ID,
+		CustomerID:      m.CustomerID,
+		Customer:        m.Customer.Response(ctx),
+		Number:          m.Number,
+		Type:            m.Type,
+		Balance:         m.Balance,
+		Target:          m.Target,
+		TargetInfo:      m.TargetInfo,
+		SalesRepID:      m.SalesRepID,
+		BranchID:        m.BranchID,
+		LastPaymentDate: web.NewTimeResponse(ctx, m.LastPaymentDate),
+		CreatedAt:       web.NewTimeResponse(ctx, m.CreatedAt),
+		UpdatedAt:       web.NewTimeResponse(ctx, m.UpdatedAt),
 	}
 
 	if m.ArchivedAt != nil && !m.ArchivedAt.IsZero() {

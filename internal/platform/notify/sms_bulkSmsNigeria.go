@@ -82,7 +82,6 @@ func (b *BulkSmsNigeria) SendStr(ctx context.Context, phoneNumber, message strin
 
 	resp, err := b.client.Get("https://www.bulksmsnigeria.com/api/v1/sms/create?" + params.Encode())
 
-	fmt.Println("https://www.bulksmsnigeria.com/api/v1/sms/create?" + params.Encode())
 	if err != nil {
 		return err
 	}

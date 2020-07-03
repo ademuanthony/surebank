@@ -304,8 +304,13 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, errors.WithMessage(err, "Insert deposit failed")
 	}
 
+	var lastDepositDate int64
+	if req.Type == TransactionType_Deposit {
+		lastDepositDate = m.EffectiveDate
+	}
 	if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, tx, models.M{
 		models.AccountColumns.Balance: accountBalanceAtTx(&m),
+		models.AccountColumns.LastPaymentDate: lastDepositDate,
 	}); err != nil {
 
 		_ = tx.Rollback()

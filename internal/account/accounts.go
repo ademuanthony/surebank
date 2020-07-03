@@ -10,6 +10,7 @@ import (
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
@@ -127,6 +128,81 @@ func (repo *Repository) FindDs(ctx context.Context, _ auth.Claims, req FindReque
 		queries = append(queries, Load(models.AccountRels.SalesRep))
 	}
 
+	if len(req.Order) > 0 {
+		for _, s := range req.Order {
+			queries = append(queries, OrderBy(s))
+		}
+	}
+
+	if req.Limit != nil {
+		queries = append(queries, Limit(int(*req.Limit)))
+	}
+
+	if req.Offset != nil {
+		queries = append(queries, Offset(int(*req.Offset)))
+	}
+
+	accountSlice, err := models.Accounts(queries...).All(ctx, repo.DbConn)
+	if err != nil {
+		if err.Error() == sql.ErrNoRows.Error() {
+			return &PagedResponseList{}, nil
+		}
+		return nil, weberror.NewError(ctx, err, 500)
+	}
+
+	var result Accounts
+	for _, rec := range accountSlice {
+		result = append(result, FromModel(rec))
+	}
+
+	if len(result) == 0 {
+		return &PagedResponseList{}, nil
+	}
+
+	return &PagedResponseList{
+		Accounts:   result.Response(ctx),
+		TotalCount: totalCount,
+	}, nil
+}
+
+// FindDs gets all the accounts from the database that are of DS type and have > 0 balance.
+func (repo *Repository) Debtors(ctx context.Context, _ auth.Claims, req FindRequest, currentDate time.Time) (*PagedResponseList, error) {
+	var queries []QueryMod
+
+	if req.Where != "" {
+		queries = append(queries, Where(req.Where, req.Args...))
+	}
+
+	sevenDaysAgo := currentDate.Add(-3 * 24 * time.Hour).Unix()
+	thirtyDaysAgo := currentDate.Add(-30 * 24 * time.Hour).Unix()
+
+	queries = append(queries,
+		models.AccountWhere.LastPaymentDate.GTE(thirtyDaysAgo),
+		models.AccountWhere.LastPaymentDate.LTE(sevenDaysAgo),
+	)
+
+	if !req.IncludeArchived {
+		queries = append(queries, And("archived_at is null"))
+	}
+
+	totalCount, err := models.Accounts(queries...).Count(ctx, repo.DbConn)
+	if err != nil {
+		return nil, weberror.WithMessage(ctx, err, "Cannot get account total count")
+	}
+
+	if req.IncludeBranch {
+		queries = append(queries, Load(models.AccountRels.Branch))
+	}
+
+	if req.IncludeCustomer {
+		queries = append(queries, Load(models.AccountRels.Customer))
+	}
+
+	if req.IncludeSalesRep {
+		queries = append(queries, Load(models.AccountRels.SalesRep))
+	}
+
+	queries = append(queries, qm.OrderBy(models.AccountColumns.LastPaymentDate))
 	if len(req.Order) > 0 {
 		for _, s := range req.Order {
 			queries = append(queries, OrderBy(s))

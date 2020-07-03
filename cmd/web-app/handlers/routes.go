@@ -314,13 +314,14 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/reports/collections", reports.Transactions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/reports/ds/commissions", reports.DsCommissions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/reports/ds", reports.Ds, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/reports/debtors", reports.Debtors, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
 	// Register sales endpoint
 	sales := Sales{
 		Repository: appCtx.SaleRepo,
 		ShopRepo:   appCtx.ShopRepo,
-		Redis:      appCtx.Redis,
-		Renderer:   appCtx.Renderer,
+		Redis:      appCtx.Redis, 
+		Renderer:   appCtx.Renderer, 
 	}
 	app.Handle("POST", "/api/v1/sales/sell", sales.Sell, mid.AuthenticateSessionRequired(appCtx.Authenticator))
 	app.Handle("GET", "/sales/:sale_id", sales.View, mid.AuthenticateSessionRequired(appCtx.Authenticator))

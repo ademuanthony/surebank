@@ -9,6 +9,7 @@ import (
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/datatable"
 	"merryworld/surebank/internal/platform/web"
+	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/shop"
 	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/user"
@@ -315,6 +316,125 @@ func (h *Reports) Ds(ctx context.Context, w http.ResponseWriter, r *http.Request
 	data["datatable"] = dt.Response()
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "report-ds.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// Ds handles listing of all the Ds account types
+func (h *Reports) Debtors(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	ctxValue, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err	
+	}
+
+	var data = make(map[string]interface{})
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err 
+	}
+ 
+	fields := []datatable.DisplayField{
+		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
+		{Field: "customer", Title: "Name", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
+		{Field: "phone_number", Title: "Phone Number", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
+		{Field: "number", Title: "Account Number", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
+		{Field: "last_payment_date", Title: "Last Payment Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
+		{Field: "target", Title: "Daily Contribution", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
+		{Field: "balance", Title: "Account Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
+		{Field: "sales_rep_id", Title: "Account Manager", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
+		{Field: "created_at", Title: "Registration Date", Visible: true, Searchable: false, Orderable: true, Filterable: false},
+	}
+
+	mapFunc := func(q *account.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+		for i := 0; i < len(cols); i++ {
+			col := cols[i]
+			var v datatable.ColumnValue
+			switch col.Field {
+			case "id":
+				v.Value = fmt.Sprintf("%s", q.ID)
+			case "customer":
+				v.Value = q.Customer.ShortName
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.CustomerID), q.Customer.ShortName)
+			case "phone_number":
+				v.Value = q.Customer.PhoneNumber
+				v.Formatted = v.Value
+			case "number":
+				v.Value = q.Number
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(q.CustomerID, q.ID), q.Number)
+			case "last_payment_date":
+				v.Value = q.LastPaymentDate.LocalDate
+				v.Formatted = v.Value
+			case "target":
+				v.Value = fmt.Sprintf("%f", q.Balance)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("%.2f", q.Balance)
+			case "balance":
+				v.Value = fmt.Sprintf("%f", q.Balance)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("%.2f", q.Balance)
+			case "sales_rep_id":
+				v.Value = q.SalesRepID
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)
+			case "created_at":
+				v.Value = q.CreatedAt.LocalDate
+				v.Formatted = v.Value
+			default:
+				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
+			}
+			resp = append(resp, v)
+		}
+
+		return resp, nil
+	}
+
+	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
+
+		var order []string
+		if len(sorting) > 0 {
+			order = strings.Split(sorting, ",")
+		}
+
+		res, err := h.AccountRepo.Debtors(ctx, claims, account.FindRequest{
+			Order: order,
+			IncludeBranch: true,
+			IncludeCustomer: true,
+			IncludeSalesRep: true,
+		}, ctxValue.Now)
+		if err != nil {
+			return resp, err
+		}
+
+		for _, a := range res.Accounts {
+			l, err := mapFunc(a, fields)
+			if err != nil {
+				return resp, errors.Wrapf(err, "Failed to map DS accounts for display.")
+			}
+
+			resp = append(resp, l)
+		}
+
+		return resp, nil
+	}
+
+	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
+	if err != nil {
+		return err
+	}
+
+	if dt.HasCache() {
+		return nil
+	}
+
+	if ok, err := dt.Render(); ok {
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	data["datatable"] = dt.Response()
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "report-debtors.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // DsCommissions handles listing of all the Ds Commissions

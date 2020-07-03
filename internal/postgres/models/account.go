@@ -24,49 +24,52 @@ import (
 
 // Account is an object representing the database table.
 type Account struct {
-	ID          string     `boil:"id" json:"id" toml:"id" yaml:"id"`
-	BranchID    string     `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
-	Number      string     `boil:"number" json:"number" toml:"number" yaml:"number"`
-	CustomerID  string     `boil:"customer_id" json:"customer_id" toml:"customer_id" yaml:"customer_id"`
-	AccountType string     `boil:"account_type" json:"account_type" toml:"account_type" yaml:"account_type"`
-	Target      float64    `boil:"target" json:"target" toml:"target" yaml:"target"`
-	TargetInfo  string     `boil:"target_info" json:"target_info" toml:"target_info" yaml:"target_info"`
-	SalesRepID  string     `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
-	CreatedAt   int64      `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt   int64      `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	ArchivedAt  null.Int64 `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
-	Balance     float64    `boil:"balance" json:"balance" toml:"balance" yaml:"balance"`
+	ID              string     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	BranchID        string     `boil:"branch_id" json:"branch_id" toml:"branch_id" yaml:"branch_id"`
+	Number          string     `boil:"number" json:"number" toml:"number" yaml:"number"`
+	CustomerID      string     `boil:"customer_id" json:"customer_id" toml:"customer_id" yaml:"customer_id"`
+	AccountType     string     `boil:"account_type" json:"account_type" toml:"account_type" yaml:"account_type"`
+	Target          float64    `boil:"target" json:"target" toml:"target" yaml:"target"`
+	TargetInfo      string     `boil:"target_info" json:"target_info" toml:"target_info" yaml:"target_info"`
+	SalesRepID      string     `boil:"sales_rep_id" json:"sales_rep_id" toml:"sales_rep_id" yaml:"sales_rep_id"`
+	CreatedAt       int64      `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt       int64      `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ArchivedAt      null.Int64 `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
+	Balance         float64    `boil:"balance" json:"balance" toml:"balance" yaml:"balance"`
+	LastPaymentDate int64      `boil:"last_payment_date" json:"last_payment_date" toml:"last_payment_date" yaml:"last_payment_date"`
 
 	R *accountR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L accountL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var AccountColumns = struct {
-	ID          string
-	BranchID    string
-	Number      string
-	CustomerID  string
-	AccountType string
-	Target      string
-	TargetInfo  string
-	SalesRepID  string
-	CreatedAt   string
-	UpdatedAt   string
-	ArchivedAt  string
-	Balance     string
+	ID              string
+	BranchID        string
+	Number          string
+	CustomerID      string
+	AccountType     string
+	Target          string
+	TargetInfo      string
+	SalesRepID      string
+	CreatedAt       string
+	UpdatedAt       string
+	ArchivedAt      string
+	Balance         string
+	LastPaymentDate string
 }{
-	ID:          "id",
-	BranchID:    "branch_id",
-	Number:      "number",
-	CustomerID:  "customer_id",
-	AccountType: "account_type",
-	Target:      "target",
-	TargetInfo:  "target_info",
-	SalesRepID:  "sales_rep_id",
-	CreatedAt:   "created_at",
-	UpdatedAt:   "updated_at",
-	ArchivedAt:  "archived_at",
-	Balance:     "balance",
+	ID:              "id",
+	BranchID:        "branch_id",
+	Number:          "number",
+	CustomerID:      "customer_id",
+	AccountType:     "account_type",
+	Target:          "target",
+	TargetInfo:      "target_info",
+	SalesRepID:      "sales_rep_id",
+	CreatedAt:       "created_at",
+	UpdatedAt:       "updated_at",
+	ArchivedAt:      "archived_at",
+	Balance:         "balance",
+	LastPaymentDate: "last_payment_date",
 }
 
 // Generated where
@@ -149,31 +152,33 @@ func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
 }
 
 var AccountWhere = struct {
-	ID          whereHelperstring
-	BranchID    whereHelperstring
-	Number      whereHelperstring
-	CustomerID  whereHelperstring
-	AccountType whereHelperstring
-	Target      whereHelperfloat64
-	TargetInfo  whereHelperstring
-	SalesRepID  whereHelperstring
-	CreatedAt   whereHelperint64
-	UpdatedAt   whereHelperint64
-	ArchivedAt  whereHelpernull_Int64
-	Balance     whereHelperfloat64
+	ID              whereHelperstring
+	BranchID        whereHelperstring
+	Number          whereHelperstring
+	CustomerID      whereHelperstring
+	AccountType     whereHelperstring
+	Target          whereHelperfloat64
+	TargetInfo      whereHelperstring
+	SalesRepID      whereHelperstring
+	CreatedAt       whereHelperint64
+	UpdatedAt       whereHelperint64
+	ArchivedAt      whereHelpernull_Int64
+	Balance         whereHelperfloat64
+	LastPaymentDate whereHelperint64
 }{
-	ID:          whereHelperstring{field: "\"account\".\"id\""},
-	BranchID:    whereHelperstring{field: "\"account\".\"branch_id\""},
-	Number:      whereHelperstring{field: "\"account\".\"number\""},
-	CustomerID:  whereHelperstring{field: "\"account\".\"customer_id\""},
-	AccountType: whereHelperstring{field: "\"account\".\"account_type\""},
-	Target:      whereHelperfloat64{field: "\"account\".\"target\""},
-	TargetInfo:  whereHelperstring{field: "\"account\".\"target_info\""},
-	SalesRepID:  whereHelperstring{field: "\"account\".\"sales_rep_id\""},
-	CreatedAt:   whereHelperint64{field: "\"account\".\"created_at\""},
-	UpdatedAt:   whereHelperint64{field: "\"account\".\"updated_at\""},
-	ArchivedAt:  whereHelpernull_Int64{field: "\"account\".\"archived_at\""},
-	Balance:     whereHelperfloat64{field: "\"account\".\"balance\""},
+	ID:              whereHelperstring{field: "\"account\".\"id\""},
+	BranchID:        whereHelperstring{field: "\"account\".\"branch_id\""},
+	Number:          whereHelperstring{field: "\"account\".\"number\""},
+	CustomerID:      whereHelperstring{field: "\"account\".\"customer_id\""},
+	AccountType:     whereHelperstring{field: "\"account\".\"account_type\""},
+	Target:          whereHelperfloat64{field: "\"account\".\"target\""},
+	TargetInfo:      whereHelperstring{field: "\"account\".\"target_info\""},
+	SalesRepID:      whereHelperstring{field: "\"account\".\"sales_rep_id\""},
+	CreatedAt:       whereHelperint64{field: "\"account\".\"created_at\""},
+	UpdatedAt:       whereHelperint64{field: "\"account\".\"updated_at\""},
+	ArchivedAt:      whereHelpernull_Int64{field: "\"account\".\"archived_at\""},
+	Balance:         whereHelperfloat64{field: "\"account\".\"balance\""},
+	LastPaymentDate: whereHelperint64{field: "\"account\".\"last_payment_date\""},
 }
 
 // AccountRels is where relationship names are stored.
@@ -209,9 +214,9 @@ func (*accountR) NewStruct() *accountR {
 type accountL struct{}
 
 var (
-	accountAllColumns            = []string{"id", "branch_id", "number", "customer_id", "account_type", "target", "target_info", "sales_rep_id", "created_at", "updated_at", "archived_at", "balance"}
+	accountAllColumns            = []string{"id", "branch_id", "number", "customer_id", "account_type", "target", "target_info", "sales_rep_id", "created_at", "updated_at", "archived_at", "balance", "last_payment_date"}
 	accountColumnsWithoutDefault = []string{"id", "number", "account_type", "sales_rep_id", "created_at", "updated_at", "archived_at"}
-	accountColumnsWithDefault    = []string{"branch_id", "customer_id", "target", "target_info", "balance"}
+	accountColumnsWithDefault    = []string{"branch_id", "customer_id", "target", "target_info", "balance", "last_payment_date"}
 	accountPrimaryKeyColumns     = []string{"id"}
 )
 
