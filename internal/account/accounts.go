@@ -173,12 +173,12 @@ func (repo *Repository) Debtors(ctx context.Context, _ auth.Claims, req FindRequ
 		queries = append(queries, Where(req.Where, req.Args...))
 	}
 
-	sevenDaysAgo := currentDate.Add(-3 * 24 * time.Hour).Unix()
+	threeDaysAgo := currentDate.Add(-3 * 24 * time.Hour).Unix()
 	thirtyDaysAgo := currentDate.Add(-30 * 24 * time.Hour).Unix()
 
 	queries = append(queries,
 		models.AccountWhere.LastPaymentDate.GTE(thirtyDaysAgo),
-		models.AccountWhere.LastPaymentDate.LTE(sevenDaysAgo),
+		models.AccountWhere.LastPaymentDate.LTE(threeDaysAgo),
 	)
 
 	if !req.IncludeArchived {
