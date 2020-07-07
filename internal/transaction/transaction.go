@@ -151,9 +151,9 @@ func (repo *Repository) TotalDepositAmount(ctx context.Context, claims auth.Clai
 func (repo *Repository) DepositAmountByWhere(ctx context.Context, where string, args []interface{}) (float64, error) {
 	statement := `select sum(amount) total from transaction where `
 	if len(where) > 0 {
-		statement += where + fmt.Sprintf(" AND %s = %s ", models.TransactionColumns.TXType, TransactionType_Deposit)
+		statement += where + fmt.Sprintf(" AND %s = '%s' ", models.TransactionColumns.TXType, TransactionType_Deposit)
 	} else {
-		statement += fmt.Sprintf(" %s = %s ", models.TransactionColumns.TXType, TransactionType_Deposit)
+		statement += fmt.Sprintf(" %s = '%s' ", models.TransactionColumns.TXType, TransactionType_Deposit)
 	}
 	var result struct {
 		Total sql.NullFloat64
