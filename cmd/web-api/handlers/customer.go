@@ -219,7 +219,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 	accRes, err := h.AccountRepo.Create(ctx, claims, accReq, v.Now)
 	if err != nil {
 		// delete the created customer account
-		_ = h.Repository.Delete(ctx, claims, customer.DeleteRequest{ID: res.ID}) // TODO: log delete error for debug
+		_ = h.Repository.Archive(ctx, claims, customer.ArchiveRequest{ID: res.ID}) // TODO: log delete error for debug
 		cause := errors.Cause(err)
 		switch cause {
 		case customer.ErrForbidden:
@@ -313,14 +313,10 @@ func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 // @Failure 500 {object} weberror.ErrorResponse
 // @Router /customers/archive [patch]
 func (h *Customers) Archive(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
-	v, err := webcontext.ContextValues(ctx)
-	if err != nil {
-		return err
-	}
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
-		return err
+		return err 
 	}
 
 	var req customer.ArchiveRequest
@@ -331,7 +327,7 @@ func (h *Customers) Archive(ctx context.Context, w http.ResponseWriter, r *http.
 		return web.RespondJsonError(ctx, w, err)
 	}
 
-	err = h.Repository.Archive(ctx, claims, req, v.Now)
+	err = h.Repository.Archive(ctx, claims, req)
 	if err != nil {
 		cause := errors.Cause(err)
 		switch cause {
@@ -369,8 +365,8 @@ func (h *Customers) Delete(ctx context.Context, w http.ResponseWriter, r *http.R
 		return err
 	}
 
-	err = h.Repository.Delete(ctx, claims,
-		customer.DeleteRequest{ID: params["id"]})
+	err = h.Repository.Archive(ctx, claims,
+		customer.ArchiveRequest{ID: params["id"]})
 	if err != nil {
 		cause := errors.Cause(err)
 		switch cause {

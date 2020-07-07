@@ -291,10 +291,6 @@ func (h *Accounts) Update(ctx context.Context, w http.ResponseWriter, r *http.Re
 // @Failure 500 {object} weberror.ErrorResponse
 // @Router /accounts/archive [patch]
 func (h *Accounts) Archive(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
-	v, err := webcontext.ContextValues(ctx)
-	if err != nil {
-		return err
-	}
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
@@ -309,7 +305,7 @@ func (h *Accounts) Archive(ctx context.Context, w http.ResponseWriter, r *http.R
 		return web.RespondJsonError(ctx, w, err)
 	}
 
-	err = h.Repository.Archive(ctx, claims, req, v.Now)
+	err = h.Repository.Archive(ctx, claims, req)
 	if err != nil {
 		cause := errors.Cause(err)
 		switch cause {
