@@ -64,6 +64,8 @@ import (
 	"gitlab.com/geeks-accelerator/oss/devops/pkg/devdeploy"
 	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	awstrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/aws/aws-sdk-go/aws"
 	sqltrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/database/sql"
 	redistrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
@@ -945,6 +947,10 @@ func main() {
 		// CompStringInt
 		"CompStringInt": func(s1 interface{}, s2 interface{}) bool {
 			return fmt.Sprintf("%v", s1) == fmt.Sprintf("%v", s2)
+		},
+		"normalize": func (f float64) string {
+			p := message.NewPrinter(language.English)
+			return p.Sprintf("%.2f", f)
 		},
 	}
 
