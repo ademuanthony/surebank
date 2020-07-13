@@ -1,0 +1,75 @@
+{{define "title"}}{{ $.customer.Name }} - Add Account{{end}}
+{{define "style"}}
+
+{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ .urlCustomersIndex }}">Customers</a></li>
+            <li class="breadcrumb-item"><a href="{{ .urlCustomersView }}">{{ $.customer.Name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ .urlCustomersAccountView }}">{{ $.account.Number }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Update</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Add Account</h1>
+    </div>
+
+    <form class="user" method="post" novalidate>
+
+        <div class="card shadow">
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="selectAccountType">Account Type</label>
+                            <div class="form-control-select-wrapper">
+                                <select id="selectAccountType" name="Type" placeholder="Account Type" required
+                                        class="form-control form-control-select-box {{ ValidationFieldClass $.validationErrors "Type" }}">
+                                    <option></option>
+                                    {{ range $i := $.accountTypes }}
+                                        <option value="{{ $i }}" {{ if CompStringInt $.form.Type $i }}selected="selected"{{ end }}>{{ $i }}</option>
+                                    {{ end }}
+                                </select>
+                                {{template "invalid-feedback" dict "fieldName" "Type" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputTarget">Target Amount</label>
+                            <input type="text" id="inputTarget"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Target" }}"
+                                   placeholder="Account Target Amount" name="Target" value="{{ .form.Target }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "Target" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputTargetInfo">Target Description</label>
+                            <input type="text" id="inputTargetInfo"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "TargetInfo" }}"
+                                   placeholder="Account Target Info" name="TargetInfo" value="{{ .form.TargetInfo }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "TargetInfo" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col">
+                <input id="btnSubmit" type="submit" name="action" value="Update Account" class="btn btn-primary"/>
+                <a href="{{ .urlCustomersView }}" class="ml-2 btn btn-secondary" >Cancel</a>
+            </div>
+        </div>
+
+    </form>
+{{end}}
+{{define "js"}}
+
+{{end}}

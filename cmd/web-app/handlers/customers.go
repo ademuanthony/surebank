@@ -64,6 +64,10 @@ func urlCustomersAccountsView(customerID, accountID string) string {
 	return fmt.Sprintf("/customers/%s/accounts/%s", customerID, accountID)
 }
 
+func urlCustomersAccountsUpdate(customerID, accountID string) string {
+	return fmt.Sprintf("/customers/%s/accounts/%s/update", customerID, accountID)
+}
+
 func urlCustomersAccountTransactions(customerID, accountID string) string {
 	return fmt.Sprintf("/customers/%s/accounts/%s/transactions", customerID, accountID)
 }
@@ -806,12 +810,108 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 	data["transactions"] = tranxListResp.Transactions
 
 	data["urlCustomersIndex"] = urlCustomersIndex()
-	data["urlCustomersView"] = urlCustomersView(customerID)
+	data["urlCustomersAccountsUpdate"] = urlCustomersAccountsUpdate(customerID, accountID)
+	data["urlCustomersAccountUpdate"] = urlCustomersAddAccount(customerID)
 	data["urlCustomersAccountTransactions"] = urlCustomersAccountTransactions(customerID, accountID)
 	data["urlCustomersTransactionsWithdraw"] = urlCustomersTransactionsWithdraw(cust.ID, accountID)
 	data["urlCustomersTransactionsCreate"] = urlCustomersTransactionsCreate(customerID, accountID)
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// Update handles updating a customer.
+func (h *Customers) UpdateAccount(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
+	}
+	customerID := params["customer_id"]
+	accountID := params["account_id"]
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	//
+	req := new(account.UpdateRequest)
+	data := make(map[string]interface{})
+	f := func() (bool, error) {
+		if r.Method == http.MethodPost {
+			err := r.ParseForm()
+			if err != nil {
+				return false, err
+			} 
+
+			decoder := schema.NewDecoder()
+			decoder.IgnoreUnknownKeys(true)
+
+			if err := decoder.Decode(req, r.PostForm); err != nil {
+				return false, err
+			}
+			req.ID = accountID
+
+			err = h.AccountRepo.Update(ctx, claims, *req, ctxValues.Now)
+			if err != nil {
+				switch errors.Cause(err) {
+				default:
+					if verr, ok := weberror.NewValidationError(ctx, err); ok {
+						data["validationErrors"] = verr.(*weberror.Error)
+						return false, nil
+					} else {
+						return false, err
+					}
+				}
+			}
+
+			webcontext.SessionFlashSuccess(ctx,
+				"Account Updated",
+				"Account successfully updated.")
+
+			return true, web.Redirect(ctx, w, r, urlCustomersAccountsView(customerID, accountID), http.StatusFound)
+		}
+
+		return false, nil
+	}
+
+	end, err := f()
+	if err != nil {
+		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
+	} else if end {
+		return nil
+	}
+
+	cust, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	if err != nil {
+		return err
+	}
+
+	data["customer"] = cust.Response(ctx)
+
+	data["urlCustomersIndex"] = urlCustomersIndex()
+	data["urlCustomersView"] = urlCustomersView(customerID)
+	data["urlCustomersAccountView"] = urlCustomersAccountsView(customerID, accountID)
+
+	account, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
+	if err != nil {
+		return err
+	}
+	data["account"] = account
+	if req.ID == "" {
+		req.Target = &account.Target
+		req.TargetInfo = &account.TargetInfo
+		req.Type = &account.Type
+	}
+
+	data["form"] = req
+	data["accountTypes"] = customer.AccountTypes
+
+	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(customer.UpdateRequest{})); ok {
+		data["validationDefaults"] = verr.(*weberror.Error)
+	}
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-update-account.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // AccountTransactions handles listing all the transactions for the selected account.

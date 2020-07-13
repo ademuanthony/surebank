@@ -399,9 +399,9 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	cols[models.CustomerColumns.UpdatedAt] = now
+	cols[models.AccountColumns.UpdatedAt] = now.Unix()
 
-	_, err = models.Accounts(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
+	_, err = models.Accounts(models.AccountWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
 	if err != nil {
 		return weberror.NewError(ctx, err, 500)
