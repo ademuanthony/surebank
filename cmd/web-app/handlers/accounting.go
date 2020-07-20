@@ -246,11 +246,10 @@ func (h *Accounting) RepsSummaries(ctx context.Context, w http.ResponseWriter, r
 		u.id as sales_rep_id, 
 		concat(u.first_name, ' ', u.last_name) as sales_rep,
 		(SELECT SUM(amount) FROM transaction 
-			 WHERE tx_type = 'deposit' AND payment_method = 'cash' AND sales_rep_id = u.id %s ) AS income,
+			 WHERE tx_type = 'deposit' AND (payment_method = 'cash' or payment_method = 'null') AND sales_rep_id = u.id %s ) AS income,
 		(SELECT SUM(amount) FROM reps_expense 
 			 WHERE sales_rep_id = u.id %s) AS expenditure
 		from users u %s
-		
 		order by u.first_name, u.last_name;`, incomeWhere, expenditureWhere, userWhere)
 
 		var summaries []accounting.RepsSummary

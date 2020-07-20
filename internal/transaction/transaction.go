@@ -217,6 +217,10 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 		return nil, weberror.NewError(ctx, fmt.Errorf("Please pay for max of 50 days at a time, one day is %.2f", account.Target), 400)
 	}
 
+	if req.PaymentMethod != "bank_deposit" {
+		req.PaymentMethod = "cash"
+	}
+
 	var tx *Transaction
 	amount, reqAmount := req.Amount, req.Amount
 	req.Amount = account.Target
