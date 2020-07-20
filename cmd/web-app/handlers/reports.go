@@ -55,7 +55,6 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 		{Field: "payment_method", Title: "Payment Method", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
 		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
-		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: true, Filterable: false},
 	}
 
 	mapFunc := func(q *transaction.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
@@ -92,10 +91,6 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 			case "sales_rep_id":
 				v.Value = q.SalesRepID
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), q.SalesRep)
-			case "opening_balance":
-				v.Value = fmt.Sprintf("%f", q.OpeningBalance)
-				p := message.NewPrinter(language.English)
-				v.Formatted = p.Sprintf("%.2f", q.OpeningBalance)
 			default:
 				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
 			}

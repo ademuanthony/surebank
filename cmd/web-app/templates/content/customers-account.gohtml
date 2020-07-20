@@ -116,7 +116,6 @@
                             <th>Narration</th>
                             <th>Account</th>
                             <th>Recorded By</th>
-                            <th>Opening Balance</th>
                         </tr>
                         </thead>
 
@@ -130,7 +129,6 @@
                                 <td>{{ FormatNarration $tran.Narration }}</td>
                                 <td><a href="/accounts/{{ $tran.AccountID }}">{{ $tran.AccountNumber }}</a></td>
                                 <td><a href="/users/{{ $tran.SalesRepID }}">{{ $tran.SalesRep}}</a></td>
-                                <td>{{ $tran.OpeningBalance }}</td>
                             </tr>
                         {{ end }}
                         </tbody>

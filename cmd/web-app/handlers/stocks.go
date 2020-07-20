@@ -66,7 +66,6 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		{Field: "product_name", Title: "Product", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 		{Field: "branch_id", Title: "Branch ID", Visible: false, Searchable: false, Orderable: false, Filterable: false},
 		{Field: "branch_name", Title: "Branch", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Branch"},
-		{Field: "opening_balance", Title: "Opening Balance", Visible: true, Searchable: false, Orderable: false, Filterable: false,},
 		{Field: "quantity", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: false, },
 		{Field: "type", Title: "Type", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Transaction Type"},
 		{Field: "narration", Title: "Narration", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Transaction Type"},
@@ -91,11 +90,6 @@ func (h *Stocks) Index(ctx context.Context, w http.ResponseWriter, r *http.Reque
 			case "branch_name":
 				v.Value = q.Branch
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlBranchesView(q.BranchID), v.Value)
-			case "opening_balance":
-				v.Value = fmt.Sprintf("%d", q.OpeningBalance)
-				p := message.NewPrinter(language.English)
-				v.Formatted = p.Sprintf("%d", q.OpeningBalance)
-				v.Formatted = v.Value
 			case "quantity":
 				v.Value = fmt.Sprintf("%d", q.Quantity)
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlStocksView(q.ID), v.Value)
