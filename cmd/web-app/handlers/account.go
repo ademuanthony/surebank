@@ -204,7 +204,7 @@ func (h *Account) Update(ctx context.Context, w http.ResponseWriter, r *http.Req
 			// Update the access token to include the updated claims.
 			if updateClaims {
 				ctx, err = updateContextClaims(ctx, h.Authenticator, claims)
-				if err != nil {
+				if err != nil { 
 					return false, err
 				}
 			}
@@ -231,7 +231,7 @@ func (h *Account) Update(ctx context.Context, w http.ResponseWriter, r *http.Req
 		if preferenceTimeFormat == "" {
 			preferenceTimeFormat = account_preference.AccountPreference_Time_Format_Default
 		}
-
+ 
 		if req.ID == "" {
 			req.Name = &acc.Name
 			req.Address1 = &acc.Address1
@@ -263,7 +263,7 @@ func (h *Account) Update(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return false, nil
 	}
 
-	end, err := f()
+	end, err := f() 
 	if err != nil {
 		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
 	} else if end {

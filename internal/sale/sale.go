@@ -188,14 +188,6 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 		if req.AccountNumber == "" {
 			return nil, weberror.NewError(ctx, errors.New("You must specify the buyer's account number to use wallet for payment"), 400)
 		}
-		accountBalance, err := repo.TransactionRepo.AccountBalance(ctx, claims, req.AccountNumber)
-		if err != nil {
-			return nil, weberror.NewErrorMessage(ctx, err, 400, "cannot get buyer's account balance")
-		}
-		if accountBalance < amount {
-			return nil, weberror.NewError(ctx, errors.New("insufficient fund"), 400)
-		}
-
 		_, err = repo.TransactionRepo.MakeDeduction(ctx, claims, transaction.MakeDeductionRequest{
 			AccountNumber: req.AccountNumber,
 			Amount:        amount,

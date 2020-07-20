@@ -13,6 +13,7 @@ import (
 	"github.com/jinzhu/now"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
@@ -162,32 +163,47 @@ func (repo *Repository) DepositAmountByWhere(ctx context.Context, where string, 
 	return result.Total.Float64, err
 }
 
+const accountBalanceStatement = `SELECT 
+	SUM(amount) AS balance FROM (
+		SELECT
+			CASE WHEN tx.tx_type = 'deposit' THEN tx.amount ELSE -1 * tx.amount END AS amount 
+		FROM transaction tx
+		WHERE tx.account_id = $1
+	) res`
+
 // AccountBalance gets the balance of the specified account from the database.
-func (repo *Repository) AccountBalance(ctx context.Context, _ auth.Claims, accountNumber string) (balance float64, err error) {
-	account, err := models.Accounts(models.AccountWhere.Number.EQ(accountNumber)).One(ctx, repo.DbConn)
-	if err != nil {
-		return 0, weberror.WithMessage(ctx, err, "Invalid account number")
-	}
+func (repo *Repository) AccountBalance(ctx context.Context, accountID string) (float64, error) {
+	var result null.Float64
+	err := repo.DbConn.QueryRow(accountBalanceStatement, accountID).Scan(&result)
+	return result.Float64, err
+}
 
-	lastTx, err := repo.lastTransaction(ctx, account.ID)
-	if err != nil {
-		if err.Error() != sql.ErrNoRows.Error() {
-			return 0, err
-		}
-	}
-
-	return accountBalanceAtTx(lastTx), nil
+// AccountBalanceTx gets the balance of the specified account from the database within a DB tx.
+func (repo *Repository) AccountBalanceTx(ctx context.Context, accountID string, tx *sql.Tx) (float64, error) {
+	var result null.Float64
+	err := tx.QueryRow(accountBalanceStatement, accountID).Scan(&result)
+	return result.Float64, err
 }
 
 func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time) (*Transaction, error) {
+	dbTx, err := repo.DbConn.Begin()
+	if err != nil {
+		return nil, err
+	}
 	account, err := models.Accounts(models.AccountWhere.Number.EQ(req.AccountNumber),
-		Load(models.AccountRels.Customer)).One(ctx, repo.DbConn)
+		Load(models.AccountRels.Customer)).One(ctx, dbTx)
 	if err != nil {
 		return nil, weberror.NewErrorMessage(ctx, err, http.StatusBadRequest, "Invalid account number")
 	}
 
 	if account.AccountType != models.AccountTypeDS {
-		return repo.create(ctx, claims, req, currentDate)
+		m, err := repo.create(ctx, claims, req, currentDate, dbTx)
+		if err != nil {
+			dbTx.Rollback()
+			return nil, err
+		}
+		dbTx.Commit()
+		return m, nil
 	}
 
 	if math.Mod(req.Amount, account.Target) != 0 {
@@ -195,20 +211,27 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 	}
 
 	if req.Amount/account.Target > 50 {
-		return nil, weberror.NewError(ctx, fmt.Errorf("Please pay for max of 50 days at a time, one day is %f", account.Target), 400)
+		return nil, weberror.NewError(ctx, fmt.Errorf("Please pay for max of 50 days at a time, one day is %.2f", account.Target), 400)
 	}
 
 	var tx *Transaction
 	amount, reqAmount := req.Amount, req.Amount
 	req.Amount = account.Target
 	for amount > 0 {
-		tx, err = repo.create(ctx, claims, req, currentDate)
+		tx, err = repo.create(ctx, claims, req, currentDate, dbTx)
+		if err != nil {
+			dbTx.Rollback()
+			return nil, err
+		}
 		amount -= account.Target
 		currentDate = currentDate.Add(4 * time.Second)
 	}
 
-	if err == nil && account.AccountType == models.AccountTypeDS {
-		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ds_received",
+	if account.AccountType == models.AccountTypeDS {
+		if err = dbTx.Commit(); err != nil {
+			return nil, err
+		}
+		if serr := repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ds_received",
 			map[string]interface{}{
 				"Name":          account.R.Customer.Name,
 				"EffectiveDate": web.NewTimeResponse(ctx, tx.EffectiveDate).LocalDate,
@@ -216,15 +239,14 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 				"Balance":       tx.OpeningBalance + tx.Amount,
 			}); err != nil {
 			// TODO: log critical error. Send message to monitoring account
-			fmt.Println(err)
+			fmt.Println(serr)
 		}
 	}
 	return tx, err
-
 }
 
 // create inserts a new transaction into the database.
-func (repo *Repository) create(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time) (*Transaction, error) {
+func (repo *Repository) create(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time, dbTx *sql.Tx) (*Transaction, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Create")
 	defer span.Finish()
 	if claims.Audience == "" {
@@ -239,7 +261,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 	}
 
 	account, err := models.Accounts(models.AccountWhere.Number.EQ(req.AccountNumber),
-		Load(models.AccountRels.Customer)).One(ctx, repo.DbConn)
+		Load(models.AccountRels.Customer)).One(ctx, dbTx)
 	if err != nil {
 		return nil, weberror.NewErrorMessage(ctx, err, http.StatusBadRequest, "Invalid account number")
 	}
@@ -268,15 +290,10 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 	repo.accNumMtx.Lock()
 	defer repo.accNumMtx.Unlock()
 
-	tx, err := repo.DbConn.Begin()
-	if err != nil {
-		return nil, err
-	}
-
-	lastTransaction, err := repo.lastTransaction(ctx, account.ID)
+	accountBalance, err := repo.AccountBalanceTx(ctx, account.ID, dbTx)
 	if err != nil {
 		if err.Error() != sql.ErrNoRows.Error() {
-			_ = tx.Rollback()
+			dbTx.Rollback()
 			return nil, err
 		}
 	}
@@ -284,7 +301,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 	m := models.Transaction{
 		ID:             uuid.NewRandom().String(),
 		AccountID:      account.ID,
-		OpeningBalance: accountBalanceAtTx(lastTransaction),
+		OpeningBalance: accountBalance,
 		Amount:         req.Amount,
 		Narration:      req.Narration,
 		PaymentMethod:  req.PaymentMethod,
@@ -301,26 +318,26 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, err
 	}
 
-	if err := m.Insert(ctx, tx, boil.Infer()); err != nil {
-		_ = tx.Rollback()
+	if err := m.Insert(ctx, dbTx, boil.Infer()); err != nil {
 		return nil, errors.WithMessage(err, "Insert deposit failed")
 	}
 
 	var lastDepositDate int64
 	if req.Type == TransactionType_Deposit {
 		lastDepositDate = m.EffectiveDate
+		accountBalance += m.Amount
+	} else {
+		accountBalance -= m.Amount
 	}
-	if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, tx, models.M{
-		models.AccountColumns.Balance: accountBalanceAtTx(&m),
+
+	if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, dbTx, models.M{
+		models.AccountColumns.Balance:         accountBalance,
 		models.AccountColumns.LastPaymentDate: lastDepositDate,
 	}); err != nil {
-
-		_ = tx.Rollback()
 		return nil, err
 	}
 
-	if err = SaveDailySummary(ctx, req.Amount, 0, 0, currentDate, tx); err != nil {
-		tx.Rollback()
+	if err = SaveDailySummary(ctx, req.Amount, 0, 0, currentDate, dbTx); err != nil {
 		return nil, err
 	}
 
@@ -331,7 +348,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 				map[string]interface{}{
 					"Name":    account.R.Customer.Name,
 					"Amount":  req.Amount,
-					"Balance": m.OpeningBalance + req.Amount,
+					"Balance": accountBalance,
 				}); err != nil {
 				// TODO: log critical error. Send message to monitoring account
 				fmt.Println(err)
@@ -342,7 +359,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 			map[string]interface{}{
 				"Name":    account.R.Customer.Name,
 				"Amount":  req.Amount,
-				"Balance": m.OpeningBalance + req.Amount,
+				"Balance": accountBalance,
 			}); err != nil {
 			// TODO: log critical error. Send message to monitoring account
 			fmt.Println(err)
@@ -353,7 +370,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		wm := models.Transaction{
 			ID:             uuid.NewRandom().String(),
 			AccountID:      account.ID,
-			OpeningBalance: accountBalanceAtTx(&m),
+			OpeningBalance: accountBalance,
 			Amount:         req.Amount,
 			Narration:      "DS fee deduction",
 			TXType:         TransactionType_Withdrawal.String(),
@@ -363,16 +380,14 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 			UpdatedAt:      currentDate.Unix(),
 		}
 
-		if err := wm.Insert(ctx, tx, boil.Infer()); err != nil {
-			_ = tx.Rollback()
+		if err := wm.Insert(ctx, dbTx, boil.Infer()); err != nil {
 			return nil, errors.WithMessage(err, "Insert DS fee failed")
 		}
 
-		if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, tx, models.M{
-			models.AccountColumns.Balance: accountBalanceAtTx(&wm),
+		accountBalance -= req.Amount
+		if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, dbTx, models.M{
+			models.AccountColumns.Balance: accountBalance,
 		}); err != nil {
-
-			_ = tx.Rollback()
 			return nil, err
 		}
 
@@ -385,13 +400,8 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 			EffectiveDate: effectiveDate.Unix(),
 		}
 		if err := commission.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
-			_ = tx.Rollback()
 			return nil, err
 		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return nil, err
 	}
 
 	return &Transaction{
@@ -455,15 +465,6 @@ func (repo *Repository) receiptExists(ctx context.Context, receipt string) bool 
 	return exists
 }
 
-// lastTransaction returns the last transaction for the specified account
-func (repo *Repository) lastTransaction(ctx context.Context, accountID string) (*models.Transaction, error) {
-	return models.Transactions(
-		models.TransactionWhere.AccountID.EQ(accountID),
-		OrderBy(fmt.Sprintf("%s desc", models.TransactionColumns.CreatedAt)),
-		Limit(1),
-	).One(ctx, repo.DbConn)
-}
-
 func (repo *Repository) lastDeposit(ctx context.Context, accountID string) (*models.Transaction, error) {
 	return models.Transactions(
 		models.TransactionWhere.AccountID.EQ(accountID),
@@ -471,20 +472,6 @@ func (repo *Repository) lastDeposit(ctx context.Context, accountID string) (*mod
 		OrderBy(fmt.Sprintf("%s desc", models.TransactionColumns.CreatedAt)),
 		Limit(1),
 	).One(ctx, repo.DbConn)
-}
-
-// accountBalanceAtTx returns the account balance as at the specified tx
-func accountBalanceAtTx(tx *models.Transaction) float64 {
-	var lastBalance float64
-	if tx != nil {
-		if tx.TXType == TransactionType_Deposit.String() {
-			lastBalance = tx.OpeningBalance + tx.Amount
-		} else {
-			lastBalance = tx.OpeningBalance - tx.Amount
-		}
-	}
-
-	return lastBalance
 }
 
 // Update replaces an exiting transaction in the database.
@@ -539,6 +526,10 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 	}
 
 	_, err = models.Transactions(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, cols)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
 
 	if req.Amount != nil {
 		tranx, err := models.FindTransaction(ctx, repo.DbConn, req.ID)
@@ -627,6 +618,10 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 
 	_, err = models.Transactions(models.TransactionWhere.ID.EQ(req.ID)).
 		UpdateAll(ctx, tx, models.M{models.TransactionColumns.ArchivedAt: now.Unix()})
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
 
 	var txAmount = tranx.Amount
 	if tranx.TXType == TransactionType_Deposit.String() {
@@ -704,27 +699,20 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 	repo.accNumMtx.Lock()
 	defer repo.accNumMtx.Unlock()
 
-	lastTransaction, err := models.Transactions(
-		models.TransactionWhere.AccountID.EQ(account.ID),
-		OrderBy(fmt.Sprintf("%s desc", models.TransactionColumns.CreatedAt)),
-		Limit(1),
-	).One(ctx, tx)
+	accountBalance, err := repo.AccountBalanceTx(ctx, account.ID, tx)
 	if err != nil {
-		if err.Error() != sql.ErrNoRows.Error() {
-			return nil, err
-		}
+		return nil, err
 	}
 
-	balance := accountBalanceAtTx(lastTransaction)
-	if balance < req.Amount {
-		return nil, fmt.Errorf("balance: %.2f, cannot deduct %.2f. Insufficient fund. Aborted", balance, req.Amount)
+	if accountBalance < req.Amount {
+		return nil, weberror.NewError(ctx, errors.New("insufficient fund"), 400)
 	}
 
 	m := models.Transaction{
 		ID:             uuid.NewRandom().String(),
 		AccountID:      account.ID,
 		TXType:         TransactionType_Withdrawal.String(),
-		OpeningBalance: balance,
+		OpeningBalance: accountBalance,
 		Amount:         req.Amount,
 		Narration:      req.Narration,
 		SalesRepID:     claims.Subject,
@@ -733,11 +721,12 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 	}
 
 	if err := m.Insert(ctx, tx, boil.Infer()); err != nil {
-		return nil, errors.WithMessage(err, "Insert deposit failed")
+		return nil, errors.WithMessage(err, "Insert deduction failed")
 	}
 
+	accountBalance -= req.Amount
 	if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, tx, models.M{
-		models.AccountColumns.Balance: accountBalanceAtTx(&m),
+		models.AccountColumns.Balance: accountBalance,
 	}); err != nil {
 
 		_ = tx.Rollback()
@@ -748,7 +737,7 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 		map[string]interface{}{
 			"Name":    account.R.Customer.Name,
 			"Amount":  req.Amount,
-			"Balance": m.OpeningBalance + req.Amount,
+			"Balance": accountBalance,
 		}); err != nil {
 		// TODO: log critical error. Send message to monitoring account
 		fmt.Println(err)
