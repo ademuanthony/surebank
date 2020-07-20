@@ -66,7 +66,7 @@ func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
 				v.Formatted = fmt.Sprintf("<a href='/accounting/deposits?date=%d'>%s</a>", q.Date, v.Value)
 			case "expenditure":
 				v.Value = fmt.Sprintf("%.2f", q.Expenditure)
-				v.Formatted = fmt.Sprintf("<a href='/accounting/expenditure?date=%d'>%s</a>", q.Date, v.Value)
+				v.Formatted = fmt.Sprintf("<a href='/accounting/expenditures?date=%d'>%s</a>", q.Date, v.Value)
 			case "balance":
 				v.Value = fmt.Sprintf("%.2f", q.Income-(q.BankDeposit+q.Expenditure))
 				v.Formatted = v.Value
