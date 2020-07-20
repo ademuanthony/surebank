@@ -3,8 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/shop"
