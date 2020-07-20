@@ -355,6 +355,11 @@ func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Req
 	var txWhere []string
 	var txArgs []interface{}
 	for _, acc := range accountsResp.Accounts {
+		accBal, err := h.TransactionRepo.AccountBalance(ctx, acc.ID)
+		if err != nil {
+			return err	
+		}
+		acc.Balance = accBal
 		accountBalance += acc.Balance
 		txWhere = append(txWhere, "account_id = ?")
 		txArgs = append(txArgs, acc.ID)

@@ -175,6 +175,9 @@ const accountBalanceStatement = `SELECT
 func (repo *Repository) AccountBalance(ctx context.Context, accountID string) (float64, error) {
 	var result null.Float64
 	err := repo.DbConn.QueryRow(accountBalanceStatement, accountID).Scan(&result)
+	if err != nil && err.Error() == sql.ErrNoRows.Error() {
+		return 0, nil
+	}
 	return result.Float64, err
 }
 
