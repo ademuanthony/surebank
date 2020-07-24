@@ -75,7 +75,7 @@ func (h *Transactions) Find(ctx context.Context, w http.ResponseWriter, r *http.
 	}
 
 	// Handle limit query value if set.
-	var l uint = 50
+	var l uint = 10
 	req.Limit = &l
 	if v := r.URL.Query().Get("limit"); v != "" {
 		l, err := strconv.Atoi(v)
