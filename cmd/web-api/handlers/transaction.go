@@ -86,7 +86,7 @@ func (h *Transactions) Find(ctx context.Context, w http.ResponseWriter, r *http.
 		ul := uint(l)
 		req.Limit = &ul
 	}
-
+ 
 	// Handle offset query value if set.
 	if v := r.URL.Query().Get("offset"); v != "" {
 		l, err := strconv.Atoi(v)

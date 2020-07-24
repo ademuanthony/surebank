@@ -51,7 +51,7 @@ func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRe
 
 	// if the current sales resp is not an admin, show only his transactions
 	if !claims.HasRole(auth.RoleAdmin) {
-		queries = append(queries, And(fmt.Sprintf("%s = '%s", models.TransactionColumns.SalesRepID, claims.Subject)))
+		queries = append(queries, And(fmt.Sprintf("%s = '%s'", models.TransactionColumns.SalesRepID, claims.Subject)))
 	}
 
 	totalCount, err := models.Transactions(queries...).Count(ctx, repo.DbConn)

@@ -95,7 +95,7 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 	if err != nil {
 		return err
 	}
-
+ 
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "name", Title: "Name", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
