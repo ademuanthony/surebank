@@ -51,17 +51,16 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "amount", Title: "Quantity", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Quantity"},
 		{Field: "created_at", Title: "Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Date"},
-		{Field: "narration", Title: "Narration", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
-		{Field: "payment_method", Title: "Payment Method", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Narration"},
-		{Field: "account", Title: "Account", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
+		{Field: "customer_name", Title: "Customer", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
+		{Field: "account", Title: "Account Number", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Account"},
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
 	}
 
-	mapFunc := func(q *transaction.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q transaction.TxReportResponse, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
-			switch col.Field {
+			switch col.Field { 
 			case "id":
 				v.Value = fmt.Sprintf("%s", q.ID)
 			case "amount":
@@ -69,8 +68,9 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 				p := message.NewPrinter(language.English)
 				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlCustomersTransactionsView(q.CustomerID, q.AccountID, q.ID), q.Amount)
 			case "created_at":
-				v.Value = q.CreatedAt.LocalDate
-				v.Formatted = q.CreatedAt.LocalDate
+				date := web.NewTimeResponse(ctx, time.Unix(q.CreatedAt, 0))
+				v.Value = date.LocalDate
+				v.Formatted = date.LocalDate
 			case "narration":
 				values := strings.Split(q.Narration, ":")
 				if len(values) > 1 {
@@ -85,6 +85,9 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 			case "payment_method": 
 				v.Value = q.PaymentMethod
 				v.Formatted = q.PaymentMethod
+			case "customer_name":
+				v.Value = q.CustomerName
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.CustomerID), v.Value)
 			case "account":
 				v.Value = q.AccountNumber
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(q.CustomerID, q.AccountID), v.Value)
@@ -126,7 +129,7 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 		txArgs = append(txArgs, date.UTC().Unix())
 		data["startDate"] = v
 		// 1581897600
-		// 1581897323
+		// 1581897323 
 	}
 
 	if v := r.URL.Query().Get("end_date"); v != "" {
@@ -148,18 +151,17 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 			order = strings.Split(sorting, ",")
 		}
 
-		var res = &transaction.PagedResponseList{}
-		// 0 where means this customer has no associated account
-		if len(txWhere) > 0 {
-			res, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
-				Order: order, Where: strings.Join(txWhere, " AND "), Args: txArgs,
-			})
-			if err != nil {
-				return resp, err
-			}
+		for i := range txWhere {
+			txWhere[i] = "tx." + txWhere[i]
+		}
+		res, err := h.TransactionRepo.TxReport(ctx, claims, transaction.FindRequest{
+			Order: order, Where: strings.Join(txWhere, " AND "), Args: txArgs,
+		})
+		if err != nil {
+			return resp, err
 		}
 
-		for _, a := range res.Transactions {
+		for _, a := range res {
 			l, err := mapFunc(a, fields)
 			if err != nil {
 				return resp, errors.Wrapf(err, "Failed to map brand for display.")

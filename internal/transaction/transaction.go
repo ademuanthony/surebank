@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jinzhu/now"
@@ -102,6 +103,68 @@ func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRe
 		Transactions: result.Response(ctx),
 		TotalCount:   totalCount,
 	}, nil
+}
+
+func (repo *Repository) TxReport(ctx context.Context, claims auth.Claims, req FindRequest) ([]TxReportResponse, error) {
+	statement := `select 
+		tx.id, 
+		tx.sales_rep_id,
+		tx.account_id,
+		tx.tx_type,
+		tx.narration,
+		tx.receipt_no,
+		c.id as customer_id,
+		concat(u.first_name, ' ', u.last_name) as sales_rep, 
+		c.name as customer_name, 
+		ac.number as account_number, 
+		tx.amount, 
+		tx.created_at from 
+	transaction tx
+		inner join account ac on ac.id = tx.account_id
+		inner join customer c on c.id = ac.customer_id
+		inner join users u on u.id = tx.sales_rep_id `
+
+	var wheres []string
+	var args []interface{}
+
+	if req.Where != "" {
+		wheres = append(wheres, req.Where)
+		args = append(args, req.Args...)
+	}
+
+	if !req.IncludeArchived {
+		wheres = append(wheres, "tx.archived_at is null")
+	}
+
+	if !claims.HasRole(auth.RoleAdmin) {
+		wheres = append(wheres, fmt.Sprintf("tx.%s = $%d", models.TransactionColumns.SalesRepID, len(args)+1))
+		args = append(args, claims.Subject)
+	}
+
+	if len(wheres) > 0 {
+		statement = fmt.Sprintf("%s where %s", statement, strings.Join(wheres, " and "))
+	}
+
+	order := "order by tx.created_at"
+	if len(req.Order) > 0 {
+		order = fmt.Sprintf("order by %s", strings.Join(req.Order, ","))
+	}
+	statement = fmt.Sprintf("%s %s", statement, order)
+
+	if req.Limit != nil {
+		statement = fmt.Sprintf("%s limit $%d", statement, len(args)+1)
+		args = append(args, req.Limit)
+	}
+
+	if req.Offset != nil {
+		statement = fmt.Sprintf("%s offset $%d", statement, len(args)+1)
+		args = append(args, req.Offset)
+	}
+
+	fmt.Println(statement)
+	var result []TxReportResponse
+	err := models.NewQuery(qm.SQL(statement, args...)).Bind(ctx, repo.DbConn, &result)
+	return result, err
 }
 
 // ReadByID gets the specified transaction by ID from the database.
