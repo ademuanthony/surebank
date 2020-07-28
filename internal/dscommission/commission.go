@@ -114,3 +114,15 @@ func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) 
 
 	return FromModel(model), nil
 }
+
+func (repo *Repository) TotalAmountByWhere(ctx context.Context, where string, args []interface{}) (float64, error) {
+	statement := `select sum(amount) total from ds_commission `
+	if len(where) > 0 {
+		statement += fmt.Sprintf(" where %s ", where)
+	}
+	var result struct {
+		Total sql.NullFloat64
+	}
+	err := models.NewQuery(SQL(statement, args...)).Bind(ctx, repo.DbConn, &result)
+	return result.Total.Float64, err
+}

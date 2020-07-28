@@ -559,7 +559,13 @@ func (h *Reports) DsCommissions(ctx context.Context, w http.ResponseWriter, r *h
 		return nil
 	}
 
+	total, err := h.CommissionRepo.TotalAmountByWhere(ctx, strings.Join(txWhere, " and "), txArgs)
+	if err != nil {
+		return err
+	}
+
 	data["datatable"] = dt.Response()
+	data["total"] = total
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "report-ds-commissions.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
