@@ -13,6 +13,7 @@
         <h1 class="h3 mb-0 text-gray-800">Collection Report <small>{{ .filter }}</small></h1>
     </div>
 
+    {{ if HasRole $._Ctx "super_admin" "admin" }}
     <div class="mb-3">
         <form class="form-row">
             <div class="col">
@@ -55,6 +56,7 @@
         <br/>
         <p class="font-weight-bolder">Total: {{ .total }}</p>
     </div>
+    {{end}}
 
     <div class="row"> 
         <div class="col">

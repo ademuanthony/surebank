@@ -26,9 +26,10 @@
 
                         <div class="form-group">
                             <label for="inputTarget">Account Number</label>
-                            <input type="text" id="inputTarget"
+                            <input type="text" id="inputTarget" data-action="change->deposit#accountNumberChanged"
                                    class="form-control {{ ValidationFieldClass $.validationErrors "AccountNumber" }}"
                                    placeholder="Account Number" name="AccountNumber" value="{{ .form.AccountNumber }}" required>
+                                   <p data-target="deposit.accountName" class="text-success"></p>
                             {{template "invalid-feedback" dict "fieldName" "AccountNumber" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
                         </div>
 
@@ -78,6 +79,7 @@
 
     </form>
 {{end}}
+{{define "js-controller"}}deposit{{end}}
 {{define "js"}}
 
 {{end}}

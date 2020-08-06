@@ -16,11 +16,13 @@ import (
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/postgres/models"
 	"merryworld/surebank/internal/transaction"
 
 	"github.com/gorilla/schema"
 	"github.com/jinzhu/now"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
@@ -1334,7 +1336,7 @@ func (h *Customers) DirectDeposit(ctx context.Context, w http.ResponseWriter, r 
 	}
 
 	end, err := f()
-	if err != nil { 
+	if err != nil {
 		data["error"] = err
 	} else if end {
 		return nil
@@ -1348,6 +1350,24 @@ func (h *Customers) DirectDeposit(ctx context.Context, w http.ResponseWriter, r 
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-direct-deposit.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+func (h *Customers) AccountName(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+	if err := r.ParseForm(); err != nil {
+		return err
+	}
+	accountNumber := r.FormValue("account_number")
+	account, err := models.Accounts(
+		qm.Load(models.AccountRels.Customer),
+		models.AccountWhere.Number.EQ(accountNumber),
+	).One(ctx, h.CustomerRepo.DbConn)
+	if err != nil {
+		return errors.Errorf("Account not found")
+	}
+	data := map[string]string{
+		"name": account.R.Customer.Name,
+	}
+	return web.RespondJson(ctx, w, data, http.StatusCreated)
 }
 
 // Transaction handles displaying of a transaction

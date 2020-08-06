@@ -7,8 +7,20 @@ export default class extends Controller {
 
   static get targets () {
     return [
-      'bank', 'amount'
+      'bank', 'amount', 'accountName'
     ]
+  }
+
+  accountNumberChanged (e) {
+    const number = e.currentTarget.value
+    if (number.length !== 7) return
+    axios.get('/api/v1/customers/account-name?account_number=' + number).then(resp => {
+      this.accountNameTarget.textContent = resp.data.name
+    }).catch(err => {
+      this.accountNameTarget.textContent = ''
+      let error = err.response.data.details
+      window.alert(error)
+    })
   }
 
   create (e) {
