@@ -272,8 +272,12 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 	app.Handle("GET", "/customers/:customer_id/update", custs.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/customers/:customer_id/add-account", custs.AddAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/customers/:customer_id/add-account", custs.AddAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	
 	app.Handle("GET", "/customers/:customer_id/accounts/:account_id/transactions/deposit", custs.Deposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/customers/:customer_id/accounts/:account_id/transactions/deposit", custs.Deposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/deposit", custs.DirectDeposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/deposit", custs.DirectDeposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	
 	app.Handle("GET", "/customers/:customer_id/accounts/:account_id/transactions/withdraw",
 		custs.Withraw, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/customers/:customer_id/accounts/:account_id/transactions/withdraw",

@@ -95,7 +95,7 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 	if err != nil {
 		return err
 	}
- 
+
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "name", Title: "Name", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
@@ -358,7 +358,7 @@ func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Req
 	for _, acc := range accountsResp.Accounts {
 		accBal, err := h.TransactionRepo.AccountBalance(ctx, acc.ID)
 		if err != nil {
-			return err	
+			return err
 		}
 		acc.Balance = accBal
 		accountBalance += acc.Balance
@@ -428,7 +428,7 @@ func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 			err := r.ParseForm()
 			if err != nil {
 				return false, err
-			} 
+			}
 
 			decoder := schema.NewDecoder()
 			decoder.IgnoreUnknownKeys(true)
@@ -746,7 +746,7 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 		return err
 	}
 
-	data := make(map[string]interface{}) 
+	data := make(map[string]interface{})
 	f := func() (bool, error) {
 		if r.Method == http.MethodPost {
 			err := r.ParseForm()
@@ -843,7 +843,7 @@ func (h *Customers) UpdateAccount(ctx context.Context, w http.ResponseWriter, r 
 			err := r.ParseForm()
 			if err != nil {
 				return false, err
-			} 
+			}
 
 			decoder := schema.NewDecoder()
 			decoder.IgnoreUnknownKeys(true)
@@ -1273,6 +1273,81 @@ func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.
 	}
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-withdrawal.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
+}
+
+// Deposit handles add a new transaction to account.
+func (h *Customers) DirectDeposit(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+
+	ctxValues, err := webcontext.ContextValues(ctx)
+	if err != nil {
+		return err
+	}
+
+	claims, err := auth.ClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	req := new(transaction.CreateRequest)
+	data := make(map[string]interface{})
+	f := func() (bool, error) {
+		if r.Method == http.MethodPost {
+			err := r.ParseForm()
+			if err != nil {
+				return false, err
+			}
+
+			decoder := schema.NewDecoder()
+			decoder.IgnoreUnknownKeys(true)
+
+			if err := decoder.Decode(req, r.PostForm); err != nil {
+				return false, err
+			}
+			req.Type = transaction.TransactionType_Deposit
+
+			res, err := h.TransactionRepo.Deposit(ctx, claims, *req, ctxValues.Now)
+			if err != nil {
+				switch errors.Cause(err) {
+				default:
+					if verr, ok := weberror.NewValidationError(ctx, err); ok {
+						data["validationErrors"] = verr.(*weberror.Error)
+						return false, nil
+					} else {
+						return false, err
+					}
+				}
+			}
+			acc, err := h.AccountRepo.ReadByID(ctx, claims, res.AccountID)
+			if err != nil {
+				return false, err
+			}
+
+			// Display a success message to the checklist.
+			webcontext.SessionFlashSuccess(ctx,
+				"Deposit Added",
+				"Deposit successfully Added.")
+
+			return true, web.Redirect(ctx, w, r, urlCustomersTransactionsView(acc.CustomerID, acc.ID, res.ID), http.StatusFound)
+		}
+
+		return false, nil
+	}
+
+	end, err := f()
+	if err != nil { 
+		data["error"] = err
+	} else if end {
+		return nil
+	}
+
+	data["form"] = req
+	data["paymentMethods"] = transaction.PaymentMethods
+
+	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(transaction.CreateRequest{})); ok {
+		data["validationDefaults"] = verr.(*weberror.Error)
+	}
+
+	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "customers-account-direct-deposit.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
 
 // Transaction handles displaying of a transaction
