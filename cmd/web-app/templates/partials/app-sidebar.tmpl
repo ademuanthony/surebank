@@ -94,7 +94,7 @@
                     </div>
                 </div>
             </li>
-
+            {{ if HasRole $._Ctx "super_admin" "admin" }}
             <li class="nav-item"> 
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#navSectionAccounting" aria-expanded="true" aria-controls="navSectionChecklists">
                     <i class="fas fa-fw fa-shopping-cart"></i>
@@ -113,6 +113,7 @@
                     </div>
                 </div>
             </li> 
+            {{end}}
 
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#navSectionReport" aria-expanded="true" aria-controls="navSectionChecklists">
@@ -122,9 +123,11 @@
                 <div id="navSectionReport" class="collapse" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <a class="collapse-item" href="/reports/collections">Collection Report</a>
+                        {{ if HasRole $._Ctx "super_admin" "admin" }}
                         <a class="collapse-item" href="/reports/ds">DS Report</a>
                         <a class="collapse-item" href="/reports/debtors">DS Debtors</a>
                         <a class="collapse-item" href="/reports/ds/commissions">DS Commission</a>
+                        {{end}}
                     </div>
                 </div>
             </li>
