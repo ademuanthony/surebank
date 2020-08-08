@@ -355,6 +355,7 @@ func (repo *Repository) CreateProduct(ctx context.Context, claims auth.Claims, r
 
 	prodModel := s.ToModel()
 	if err := prodModel.Insert(ctx, tx, boil.Infer()); err != nil {
+		_ = tx.Rollback()
 		return nil, errors.WithMessage(err, "create Product failed")
 	}
 
@@ -515,6 +516,7 @@ func (repo *Repository) AddProductToCategory(ctx context.Context, claims auth.Cl
 	}
 
 	if err := pCat.Insert(ctx, tx, boil.Infer()); err != nil {
+		_ = tx.Rollback()
 		return errors.WithStack(err)
 	}
 
@@ -573,6 +575,7 @@ func (repo *Repository) RemoveProductFromCategory(ctx context.Context, claims au
 	}
 
 	if _, err = pCat.Delete(ctx, tx); err != nil {
+		_ = tx.Rollback()
 		return errors.WithStack(errors.WithMessage(err, "cannot remove category"))
 	}
 

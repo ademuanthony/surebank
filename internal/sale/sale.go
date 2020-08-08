@@ -137,6 +137,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 
 	salesRep, err := models.Users(models.UserWhere.ID.EQ(claims.Subject)).One(ctx, repo.DbConn)
 	if err != nil {
+		_ = tx.Rollback()
 		return nil, weberror.NewErrorMessage(ctx, err, 400, "Something went wrong. Are you logged in?")
 	}
 
@@ -146,14 +147,17 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 	for _, item := range req.Items {
 		prod, err := repo.ShopRepo.ReadProductByID(ctx, claims, item.ProductID)
 		if err != nil {
+			_ = tx.Rollback()
 			return nil, weberror.WithMessagef(ctx, err, "Invalid product ID, %s", item.ProductID)
 		}
 		bal, err := repo.InventoryRepo.Balance(ctx, claims, item.ProductID, salesRep.BranchID)
 		if err != nil {
+			_ = tx.Rollback()
 			return nil, weberror.WithMessagef(ctx, err, "Cannot get stock balance for product, %s", prod.Name)
 		}
 
 		if bal < int64(item.Quantity) {
+			_ = tx.Rollback()
 			return nil, weberror.NewError(ctx, weberror.WithMessagef(ctx, errors.New("Low stock balance"),
 				"%s is remaining %d, cannot sell %d", prod.Name, bal, item.Quantity), 400)
 		}
@@ -179,6 +183,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 	}
 
 	if req.PaymentMethod == "cash" && amount > req.AmountTender {
+		_ = tx.Rollback()
 		return nil, weberror.NewError(ctx, fmt.Errorf("you must collect %f from the customer to make this sale", amount), 400)
 	}
 
@@ -186,6 +191,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 
 	if req.PaymentMethod == "wallet" {
 		if req.AccountNumber == "" {
+			_ = tx.Rollback()
 			return nil, weberror.NewError(ctx, errors.New("You must specify the buyer's account number to use wallet for payment"), 400)
 		}
 		_, err = repo.TransactionRepo.MakeDeduction(ctx, claims, transaction.MakeDeductionRequest{
@@ -194,6 +200,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 			Narration:     fmt.Sprintf("sale:%s:%s", receiptNumber, saleID),
 		}, now, tx)
 		if err != nil {
+			_ = tx.Rollback()
 			return nil, weberror.NewErrorMessage(ctx, err, 500, "cannot make deduction")
 		}
 	}

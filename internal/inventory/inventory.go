@@ -182,6 +182,7 @@ func (repo *Repository) AddStock(ctx context.Context, claims auth.Claims, req Ad
 	}
 
 	if err := m.Insert(ctx, tx, boil.Infer()); err != nil {
+		_ = tx.Rollback()
 		return nil, errors.WithMessage(err, "Insert deposit failed")
 	}
 
@@ -365,10 +366,15 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 
 	tranx, err := models.Inventories(models.InventoryWhere.ID.EQ(req.ID)).One(ctx, tx)
 	if err != nil {
+		_ = tx.Rollback()
 		return err
 	}
 
 	_, err = models.Inventories(models.InventoryWhere.ID.EQ(req.ID)).UpdateAll(ctx, tx, models.M{models.InventoryColumns.ArchivedAt: now})
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
 
 	var txAmount = tranx.Quantity
 	if tranx.TXType == transaction.TransactionType_Withdrawal.String() {

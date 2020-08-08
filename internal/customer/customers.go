@@ -255,7 +255,8 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	}
 	accounts, err := models.Accounts(models.AccountWhere.CustomerID.EQ(req.ID)).All(ctx, tx)
 	if err != nil {
-		if err.Error() != sql.ErrNoRows.Error() { 
+		if err.Error() != sql.ErrNoRows.Error() {
+			_ = tx.Rollback()
 			return err
 		}
 	}
@@ -265,7 +266,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 			_ = tx.Rollback()
 			return err
 		}
-		
+
 		if _, err := models.DSCommissions(models.DSCommissionWhere.AccountID.EQ(acc.ID)).DeleteAll(ctx, tx); err != nil {
 			_ = tx.Rollback()
 			return err

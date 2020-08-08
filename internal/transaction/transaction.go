@@ -259,6 +259,7 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 	account, err := models.Accounts(models.AccountWhere.Number.EQ(req.AccountNumber),
 		Load(models.AccountRels.Customer)).One(ctx, dbTx)
 	if err != nil {
+		dbTx.Rollback()
 		return nil, weberror.NewErrorMessage(ctx, err, http.StatusBadRequest, "Invalid account number")
 	}
 
@@ -268,15 +269,19 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 			dbTx.Rollback()
 			return nil, err
 		}
-		dbTx.Commit()
+		if err := dbTx.Commit(); err != nil {
+			return nil, err
+		}
 		return m, nil
 	}
 
 	if math.Mod(req.Amount, account.Target) != 0 {
+		dbTx.Rollback()
 		return nil, weberror.NewError(ctx, fmt.Errorf("Amount must be a multiple of %f", account.Target), 400)
 	}
 
 	if req.Amount/account.Target > 50 {
+		dbTx.Rollback()
 		return nil, weberror.NewError(ctx, fmt.Errorf("Please pay for max of 50 days at a time, one day is %.2f", account.Target), 400)
 	}
 
@@ -297,20 +302,18 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 		currentDate = currentDate.Add(4 * time.Second)
 	}
 
-	if account.AccountType == models.AccountTypeDS {
-		if err = dbTx.Commit(); err != nil {
-			return nil, err
-		}
-		if serr := repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ds_received",
-			map[string]interface{}{
-				"Name":          account.R.Customer.Name,
-				"EffectiveDate": web.NewTimeResponse(ctx, tx.EffectiveDate).LocalDate,
-				"Amount":        reqAmount,
-				"Balance":       tx.OpeningBalance + tx.Amount,
-			}); err != nil {
-			// TODO: log critical error. Send message to monitoring account
-			fmt.Println(serr)
-		}
+	if err = dbTx.Commit(); err != nil {
+		return nil, err
+	}
+	if serr := repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ds_received",
+		map[string]interface{}{
+			"Name":          account.R.Customer.Name,
+			"EffectiveDate": web.NewTimeResponse(ctx, tx.EffectiveDate).LocalDate,
+			"Amount":        reqAmount,
+			"Balance":       tx.OpeningBalance + tx.Amount,
+		}); err != nil {
+		// TODO: log critical error. Send message to monitoring account
+		fmt.Println(serr)
 	}
 	return tx, err
 }

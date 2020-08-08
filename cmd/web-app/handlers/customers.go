@@ -1163,7 +1163,7 @@ func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.
 
 	end, err := f()
 	if err != nil {
-		return web.RenderError(ctx, w, r, err, h.Renderer, TmplLayoutBase, TmplContentErrorGeneric, web.MIMETextHTMLCharsetUTF8)
+		data["error"] = err
 	} else if end {
 		return nil
 	}
