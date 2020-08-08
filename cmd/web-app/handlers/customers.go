@@ -147,7 +147,7 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 		res, err := h.CustomerRepo.Find(ctx, claims, customer.FindRequest{
 			Order: order,
-			// IncludeAccountNo: true,
+			IncludeAccountNo: true,
 		})
 		if err != nil {
 			return resp, err
