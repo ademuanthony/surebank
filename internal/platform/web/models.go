@@ -34,6 +34,13 @@ type TimeResponse struct {
 // returns the display friendly format as TimeResponse.
 func NewTimeResponse(ctx context.Context, t time.Time) TimeResponse {
 
+	tr := TimeResponse {
+		Value:      t,
+		ValueUTC:   t.UTC(),
+	}
+	if t.Year() < 1987 {
+		return tr
+	}
 	// If the context has claims, check to see if timezone is set for the current user and
 	// then format the input time in that timezone if set.
 	claims, ok := ctx.Value(auth.Key).(auth.Claims)
@@ -56,7 +63,7 @@ func NewTimeResponse(ctx context.Context, t time.Time) TimeResponse {
 		formatTime = claims.Preferences.TimeFormat
 	}
 
-	tr := TimeResponse{
+	tr = TimeResponse{
 		Value:      t,
 		ValueUTC:   t.UTC(),
 		Date:       t.Format("2006-01-02"),
@@ -69,6 +76,7 @@ func NewTimeResponse(ctx context.Context, t time.Time) TimeResponse {
 		NowTime:    humanize.Time(t.UTC()),
 		NowRelTime: humanize.RelTime(time.Now().UTC(), t.UTC(), "ago", "from now"),
 	}
+
 
 	if t.Location() != nil {
 		tr.Timezone = t.Location().String()
