@@ -82,6 +82,7 @@ var service = "WEB_API"
 // @scope.admin Grants administrative privileges with role of admin.
 
 func main() {
+	return
 
 	// =========================================================================
 	// Logging
