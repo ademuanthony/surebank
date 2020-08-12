@@ -553,6 +553,7 @@ func (h *Accounting) CreateBankDeposit(ctx context.Context, w http.ResponseWrite
 	}
 	err = model.Insert(ctx, tx, boil.Infer())
 	if err != nil {
+		tx.Rollback()
 		return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 	}
 
@@ -698,6 +699,7 @@ func (h *Accounting) CreateExpenditure(ctx context.Context, w http.ResponseWrite
 	}
 	err = model.Insert(ctx, tx, boil.Infer())
 	if err != nil {
+		tx.Rollback()
 		return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 	}
 
