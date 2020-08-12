@@ -126,7 +126,7 @@ func main() {
 			DebugHost       string        `default:"0.0.0.0:4000" envconfig:"DEBUG_HOST"`
 			ShutdownTimeout time.Duration `default:"5s" envconfig:"SHUTDOWN_TIMEOUT"`
 			ScaleToZero     time.Duration `envconfig:"SCALE_TO_ZERO"`
-		} 
+		}
 		Project struct {
 			Name              string `default:"" envconfig:"PROJECT_NAME"`
 			SharedTemplateDir string `default:"../../resources/templates/shared" envconfig:"SHARED_TEMPLATE_DIR"`
@@ -419,7 +419,9 @@ func main() {
 	defer masterDb.Close()
 
 	// Enable AWS to auto pause the DB when no activity.
-	masterDb.SetConnMaxLifetime(time.Hour)
+	masterDb.SetMaxOpenConns(25)
+	masterDb.SetMaxIdleConns(25)
+	masterDb.SetConnMaxLifetime(5 * time.Minute)
 
 	// =========================================================================
 	// Notify Email
@@ -501,35 +503,35 @@ func main() {
 	expendituresRepo := expenditure.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
-		Log:             log,
-		Env:             cfg.Env,
-		MasterDB:        masterDb,
-		MasterDbHost:    cfg.DB.Host,
-		Redis:           redisClient,
-		TemplateDir:     cfg.Service.TemplateDir,
-		StaticDir:       cfg.Service.StaticFiles.Dir,
-		WebRoute:        webRoute,
-		UserRepo:        usrRepo,
-		UserAccountRepo: usrAccRepo,
-		TenantRepo:      accRepo,
-		AccountPrefRepo: accPrefRepo,
-		AuthRepo:        authRepo,
-		GeoRepo:         geoRepo,
-		SignupRepo:      signupRepo,
-		InviteRepo:      inviteRepo,
-		ChecklistRepo:   chklstRepo,
-		CustomerRepo:    customerRepo,
-		AccountRepo:     accountRepo,
-		CommissionRepo: commissionRepo,
-		TransactionRepo: transactionRepo,
-		Authenticator:   authenticator,
-		AwsSession:      awsSession,
-		ShopRepo:        shopRepo,
-		BranchRepo:      branchRepo,
-		InventoryRepo:   inventoryRepo,
-		SaleRepo:        saleRepo,
+		Log:              log,
+		Env:              cfg.Env,
+		MasterDB:         masterDb,
+		MasterDbHost:     cfg.DB.Host,
+		Redis:            redisClient,
+		TemplateDir:      cfg.Service.TemplateDir,
+		StaticDir:        cfg.Service.StaticFiles.Dir,
+		WebRoute:         webRoute,
+		UserRepo:         usrRepo,
+		UserAccountRepo:  usrAccRepo,
+		TenantRepo:       accRepo,
+		AccountPrefRepo:  accPrefRepo,
+		AuthRepo:         authRepo,
+		GeoRepo:          geoRepo,
+		SignupRepo:       signupRepo,
+		InviteRepo:       inviteRepo,
+		ChecklistRepo:    chklstRepo,
+		CustomerRepo:     customerRepo,
+		AccountRepo:      accountRepo,
+		CommissionRepo:   commissionRepo,
+		TransactionRepo:  transactionRepo,
+		Authenticator:    authenticator,
+		AwsSession:       awsSession,
+		ShopRepo:         shopRepo,
+		BranchRepo:       branchRepo,
+		InventoryRepo:    inventoryRepo,
+		SaleRepo:         saleRepo,
 		ExpendituresRepo: expendituresRepo,
-		NotifySMS:		 notifySMS,
+		NotifySMS:        notifySMS,
 	}
 
 	// =========================================================================
@@ -948,7 +950,7 @@ func main() {
 		"CompStringInt": func(s1 interface{}, s2 interface{}) bool {
 			return fmt.Sprintf("%v", s1) == fmt.Sprintf("%v", s2)
 		},
-		"normalize": func (f float64) string {
+		"normalize": func(f float64) string {
 			p := message.NewPrinter(language.English)
 			return p.Sprintf("%.2f", f)
 		},
