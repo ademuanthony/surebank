@@ -419,9 +419,9 @@ func main() {
 	defer masterDb.Close()
 
 	// Enable AWS to auto pause the DB when no activity.
-	masterDb.SetMaxOpenConns(85)
-	masterDb.SetMaxIdleConns(10)
-	masterDb.SetConnMaxLifetime(2 * time.Minute)
+	masterDb.SetMaxOpenConns(60)
+	masterDb.SetMaxIdleConns(30)
+	masterDb.SetConnMaxLifetime(1 * time.Minute)
 
 	// =========================================================================
 	// Notify Email
