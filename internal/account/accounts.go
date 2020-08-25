@@ -449,3 +449,14 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 
 	return nil
 }
+
+func (repo *Repository) DbConnCount(ctx context.Context) (int, error) {
+	result := struct {
+		Number int
+	}{}
+	statement := "SELECT sum(numbackends) FROM pg_stat_database;"
+	if err := models.NewQuery(qm.SQL(statement)).Bind(ctx, repo.DbConn, &result); err != nil {
+		return 0, err
+	}
+	return result.Number, nil
+}

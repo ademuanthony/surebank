@@ -1370,6 +1370,15 @@ func (h *Customers) AccountName(ctx context.Context, w http.ResponseWriter, r *h
 	return web.RespondJson(ctx, w, data, http.StatusCreated)
 }
 
+func (h *Customers) DBStat(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
+	
+	number, err := h.AccountRepo.DbConnCount(ctx)
+	if err != nil {
+		return err
+	}
+	return web.RespondJson(ctx, w, number, http.StatusCreated)
+}
+
 // Transaction handles displaying of a transaction
 func (h *Customers) Transaction(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
