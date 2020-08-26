@@ -415,7 +415,7 @@ func main() {
 	masterDb, err := sqlxtrace.Open(cfg.DB.Driver, dbUrl.String())
 	if err != nil {
 		log.Fatalf("main : Register DB : %s : %+v", cfg.DB.Driver, err)
-	}
+	} 
 	statement := `
 	WITH inactive_connections AS (
 		SELECT
@@ -440,7 +440,7 @@ func main() {
 			state in ('idle', 'idle in transaction', 'idle in transaction (aborted)', 'disabled') 
 		AND
 			-- Include old connections (found with the state_change field)
-			current_timestamp - state_change > interval '10 minutes' 
+			current_timestamp - state_change > interval '5 minutes' 
 	)
 	SELECT
 		pg_terminate_backend(pid)
