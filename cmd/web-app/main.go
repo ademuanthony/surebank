@@ -425,7 +425,7 @@ func main() {
 			pg_stat_activity
 		WHERE
 			-- Exclude the thread owned connection (ie no auto-kill)
-			pid <> pg_backend_pid( )
+			pid <> pg_backend_pid()
 		AND
 			-- Exclude known applications connections
 			application_name !~ '(?:psql)|(?:pgAdmin.+)'
@@ -437,7 +437,7 @@ func main() {
 			usename = current_user 
 		AND
 			-- Include inactive connections only
-			state in ('idle', 'idle in transaction', 'idle in transaction (aborted)', 'disabled') 
+			state in ('idle in transaction', 'idle in transaction (aborted)', 'disabled') 
 		AND
 			-- Include old connections (found with the state_change field)
 			current_timestamp - state_change > interval '5 minutes' 
