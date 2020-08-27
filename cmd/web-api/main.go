@@ -534,7 +534,7 @@ func main() {
 	th := fmt.Sprintf("%s:%d", cfg.Trace.Host, cfg.Trace.Port)
 	log.Printf("main : Tracing Started : %s", th)
 	sr := tracer.NewRateSampler(cfg.Trace.AnalyticsRate)
-	tracer.Start(tracer.WithAgentAddr(th), tracer.WithSampler(sr))
+	tracer.Start(tracer.WithAgentAddr(th), tracer.WithSampler(sr), tracer.WithAnalytics(true))
 	defer tracer.Stop()
 
 	// =========================================================================
