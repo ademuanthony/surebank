@@ -22,8 +22,8 @@ type Category struct {
 
 func (m Category) ToModel() models.Category {
 	return models.Category{
-		ID:          m.ID,
-		Name:        m.Name,
+		ID:   m.ID,
+		Name: m.Name,
 	}
 }
 
@@ -104,8 +104,10 @@ type CategoryFindRequest struct {
 	IncludeArchived bool          `json:"include-archived" example:"false"`
 }
 
-
 func (repo Repository) FindCategory(ctx context.Context, req CategoryFindRequest) (Categories, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.shop.FindCategory")
+	defer span.Finish()
+
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -135,9 +137,12 @@ func (repo Repository) FindCategory(ctx context.Context, req CategoryFindRequest
 
 // ReadCategoryByID gets the specified Category by ID from the database.
 func (repo *Repository) ReadCategoryByID(ctx context.Context, _ auth.Claims, id string) (*Category, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.shop.ReadCategoryByID")
+	defer span.Finish()
+
 	categoryModel, err := models.FindCategory(ctx, repo.DbConn, id)
 	if err != nil {
-		return  nil, fmt.Errorf("%s %s", err.Error(), id)
+		return nil, fmt.Errorf("%s %s", err.Error(), id)
 	}
 
 	return &Category{
@@ -171,8 +176,8 @@ func (repo *Repository) CreateCategory(ctx context.Context, claims auth.Claims, 
 	}
 
 	s := Category{
-		ID:          uuid.NewRandom().String(),
-		Name:        req.Name,
+		ID:   uuid.NewRandom().String(),
+		Name: req.Name,
 	}
 
 	catModel := s.ToModel()
@@ -224,7 +229,7 @@ func (repo *Repository) UpdateCategory(ctx context.Context, claims auth.Claims, 
 		return nil
 	}
 
-	_,err = models.Categories(models.CategoryWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
+	_, err = models.Categories(models.CategoryWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
 	return nil
 }

@@ -28,6 +28,9 @@ var (
 
 // Find gets all the customers from the database based on the request params.
 func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.Find")
+	defer span.Finish()
+
 	var queries = []QueryMod{
 		Load(models.CustomerRels.SalesRep),
 		Load(models.CustomerRels.Branch),
@@ -89,6 +92,9 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 // ReadByID gets the specified branch by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*Customer, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.ReadByID")
+	defer span.Finish()
+
 	customerModel, err := models.FindCustomer(ctx, repo.DbConn, id)
 	if err != nil {
 		if err.Error() == sql.ErrNoRows.Error() {
@@ -101,6 +107,9 @@ func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id str
 }
 
 func (repo *Repository) CustomersCount(ctx context.Context, claims auth.Claims) (int64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.CustomersCount")
+	defer span.Finish()
+
 	var queries []QueryMod
 	if !claims.HasRole(auth.RoleAdmin) {
 		queries = append(queries, models.CustomerWhere.SalesRepID.EQ(claims.Subject))

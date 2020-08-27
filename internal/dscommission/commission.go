@@ -12,9 +12,13 @@ import (
 
 	"github.com/jinzhu/now"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 func (repo *Repository) StartingNewCircle(ctx context.Context, accountID string, effectiveDate time.Time) (bool, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.commission.StartingNewCircle")
+	defer span.Finish()
+
 	lastCommission, err := repo.LattestCommission(ctx, accountID)
 	if err != nil {
 		if err.Error() == sql.ErrNoRows.Error() {
@@ -30,6 +34,9 @@ func (repo *Repository) StartingNewCircle(ctx context.Context, accountID string,
 }
 
 func (repo *Repository) LattestCommission(ctx context.Context, accountID string) (*DsCommission, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.commission.LattestCommission")
+	defer span.Finish()
+
 	c, err := models.DSCommissions(
 		models.DSCommissionWhere.AccountID.EQ(accountID),
 		OrderBy(fmt.Sprintf("%s desc", models.DSCommissionColumns.EffectiveDate)),
@@ -44,6 +51,9 @@ func (repo *Repository) LattestCommission(ctx context.Context, accountID string)
 
 // Find gets all the commissions from the database based on the request params.
 func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRequest) (*PagedResponseList, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.commission.Find")
+	defer span.Finish()
+
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -102,6 +112,9 @@ func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRe
 
 // ReadByID gets the specified commission by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) (*DsCommission, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.commission.ReadByID")
+	defer span.Finish()
+
 	queries := []QueryMod{
 		models.DSCommissionWhere.ID.EQ(id),
 		Load(models.DSCommissionRels.Account),
@@ -116,6 +129,9 @@ func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) 
 }
 
 func (repo *Repository) TotalAmountByWhere(ctx context.Context, where string, args []interface{}) (float64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.commission.TotalAmountByWhere")
+	defer span.Finish()
+
 	statement := `select sum(amount) total from ds_commission `
 	if len(where) > 0 {
 		statement += fmt.Sprintf(" where %s ", where)

@@ -119,6 +119,9 @@ type BrandFindRequest struct {
 }
 
 func (repo Repository) FindBrand(ctx context.Context, req BrandFindRequest) (Brands, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.shop.FindBranch")
+	defer span.Finish()
+
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -148,6 +151,9 @@ func (repo Repository) FindBrand(ctx context.Context, req BrandFindRequest) (Bra
 
 // ReadBrandByID gets the specified brand by ID from the database.
 func (repo *Repository) ReadBrandByID(ctx context.Context, _ auth.Claims, id string) (*Brand, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.shop.ReadBrandByID")
+	defer span.Finish()
+
 	brandModel, err := models.FindBrand(ctx, repo.DbConn, id)
 	if err != nil {
 		return nil, err

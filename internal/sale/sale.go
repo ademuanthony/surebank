@@ -31,6 +31,9 @@ var (
 
 // Find gets all the sales from the database based on the request params.
 func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.Sale.Find")
+	defer span.Finish()
+
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -93,6 +96,9 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 // ReadByID gets the specified sale by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*Sale, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.Sale.ReadByID")
+	defer span.Finish()
+
 	var queries = []QueryMod{
 		models.SaleWhere.ID.EQ(id),
 		Load(models.SaleRels.UpdatedBy),

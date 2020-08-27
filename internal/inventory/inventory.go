@@ -205,7 +205,7 @@ func (repo *Repository) AddStock(ctx context.Context, claims auth.Claims, req Ad
 
 // RemoveStock deducts from an inventory in the database.
 func (repo *Repository) RemoveStock(ctx context.Context, claims auth.Claims, req RemoveStockRequest, now time.Time) (*Inventory, error) {
-	span, ctx := tracer.StartSpanFromContext(ctx, "internal.inventory.removeStock")
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.inventory.RemoveStock")
 	defer span.Finish()
 	if claims.Subject == "" {
 		return nil, errors.WithStack(ErrForbidden)
@@ -231,7 +231,7 @@ func (repo *Repository) RemoveStock(ctx context.Context, claims auth.Claims, req
 
 // MakeStockDeduction inserts a new inventory transaction into the database.
 func (repo *Repository) MakeStockDeduction(ctx context.Context, claims auth.Claims, req MakeStockDeductionRequest, now time.Time, tx *sql.Tx) (*Inventory, error) {
-	span, ctx := tracer.StartSpanFromContext(ctx, "internal.inventory.makeStockDeduction")
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.inventory.MakeStockDeduction")
 	defer span.Finish()
 	if claims.Subject == "" {
 		return nil, errors.WithStack(ErrForbidden)
@@ -404,6 +404,9 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 }
 
 func (repo *Repository) Report(ctx context.Context, claims auth.Claims, req ReportRequest) (*PagedStockInfo, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.expenditure.Report")
+	defer span.Finish()
+
 	salesRep, err := models.FindUser(ctx, repo.DbConn, claims.Subject)
 	if err != nil {
 		return nil, errors.WithStack(ErrForbidden)

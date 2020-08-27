@@ -37,6 +37,8 @@ var (
 
 // Find gets all the transaction from the database based on the request params.
 func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRequest) (*PagedResponseList, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Find")
+	defer span.Finish()
 	var queries = []QueryMod{
 		Load(models.TransactionRels.SalesRep),
 		Load(models.TransactionRels.Account),
@@ -106,6 +108,8 @@ func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRe
 }
 
 func (repo *Repository) TxReport(ctx context.Context, claims auth.Claims, req FindRequest) ([]TxReportResponse, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.TxReport")
+	defer span.Finish()
 	statement := `select 
 		tx.id, 
 		tx.sales_rep_id,
@@ -169,6 +173,8 @@ func (repo *Repository) TxReport(ctx context.Context, claims auth.Claims, req Fi
 
 // ReadByID gets the specified transaction by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) (*Transaction, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.ReadByID")
+	defer span.Finish()
 	queries := []QueryMod{
 		models.TransactionWhere.ID.EQ(id),
 		Load(models.TransactionRels.Account),
@@ -183,21 +189,29 @@ func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) 
 }
 
 func (repo *Repository) TodayDepositAmount(ctx context.Context, claims auth.Claims) (float64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.TodayDepositAmount")
+	defer span.Finish()
 	startDate := now.BeginningOfDay()
 	return repo.TotalDepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
 }
 
 func (repo *Repository) ThisWeekDepositAmount(ctx context.Context, claims auth.Claims) (float64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.ThisWeekDepositAmount")
+	defer span.Finish()
 	startDate := now.BeginningOfWeek()
 	return repo.TotalDepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
 }
 
 func (repo *Repository) ThisMonthDepositAmount(ctx context.Context, claims auth.Claims) (float64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.ThisMonthDepositAmount")
+	defer span.Finish()
 	startDate := now.BeginningOfMonth()
 	return repo.TotalDepositAmount(ctx, claims, startDate.UTC().Unix(), time.Now().UTC().Unix())
 }
 
 func (repo *Repository) TotalDepositAmount(ctx context.Context, claims auth.Claims, startDate, endDate int64) (float64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.TotalDepositAmount")
+	defer span.Finish()
 	statement := `select sum(amount) total from transaction where tx_type = 'deposit' and created_at > $1 and created_at < $2`
 	args := []interface{}{startDate, endDate}
 	if !claims.HasRole(auth.RoleAdmin) {
@@ -213,6 +227,8 @@ func (repo *Repository) TotalDepositAmount(ctx context.Context, claims auth.Clai
 }
 
 func (repo *Repository) DepositAmountByWhere(ctx context.Context, where string, args []interface{}) (float64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.DepositAmountByWhere")
+	defer span.Finish()
 	statement := `select sum(amount) total from transaction where `
 	if len(where) > 0 {
 		statement += where + fmt.Sprintf(" AND %s = '%s' ", models.TransactionColumns.TXType, TransactionType_Deposit)
@@ -236,6 +252,8 @@ const accountBalanceStatement = `SELECT
 
 // AccountBalance gets the balance of the specified account from the database.
 func (repo *Repository) AccountBalance(ctx context.Context, accountID string) (float64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.AccountBalance")
+	defer span.Finish()
 	var result null.Float64
 	err := repo.DbConn.QueryRow(accountBalanceStatement, accountID).Scan(&result)
 	if err != nil && err.Error() == sql.ErrNoRows.Error() {
@@ -246,12 +264,16 @@ func (repo *Repository) AccountBalance(ctx context.Context, accountID string) (f
 
 // AccountBalanceTx gets the balance of the specified account from the database within a DB tx.
 func (repo *Repository) AccountBalanceTx(ctx context.Context, accountID string, tx *sql.Tx) (float64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.AccountBalanceTx")
+	defer span.Finish()
 	var result null.Float64
 	err := tx.QueryRow(accountBalanceStatement, accountID).Scan(&result)
 	return result.Float64, err
 }
 
 func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time) (*Transaction, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Deposit")
+	defer span.Finish()
 	dbTx, err := repo.DbConn.Begin()
 	if err != nil {
 		return nil, err
@@ -493,6 +515,8 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 
 // Withdraw inserts a new withdrawal transaction into the database.
 func (repo *Repository) Withdraw(ctx context.Context, claims auth.Claims, req WithdrawRequest, now time.Time) (*Transaction, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Withdraw")
+	defer span.Finish()
 	createReq := MakeDeductionRequest{
 		AccountNumber: req.AccountNumber,
 		Amount:        req.Amount,
@@ -549,7 +573,7 @@ func (repo *Repository) lastDeposit(ctx context.Context, accountID string) (*mod
 
 // Update replaces an exiting transaction in the database.
 func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req UpdateRequest, now time.Time) error {
-	span, ctx := tracer.StartSpanFromContext(ctx, "internal.deposit.Update")
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Update")
 	defer span.Finish()
 
 	if claims.Audience == "" {
@@ -645,7 +669,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 // Archive soft deleted the transaction from the database.
 func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req ArchiveRequest, now time.Time) error {
-	span, ctx := tracer.StartSpanFromContext(ctx, "internal.deposit.Archive")
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Archive")
 	defer span.Finish()
 
 	if claims.Audience == "" {
@@ -738,7 +762,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, req MakeDeductionRequest,
 	now time.Time, tx *sql.Tx) (*Transaction, error) {
 
-	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.makeDeduction")
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.MakeDeduction")
 	defer span.Finish()
 	if claims.Subject == "" {
 		return nil, errors.WithStack(ErrForbidden)
@@ -821,6 +845,9 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 
 // SaveDailySummary saves the provided daily summary info to the db
 func SaveDailySummary(ctx context.Context, income, expenditure, bankDeposit float64, date time.Time, tx *sql.Tx) error {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.SaveDailySummary")
+	defer span.Finish()
+
 	today := now.New(date).BeginningOfDay().Unix()
 	existingSummary, err := models.FindDailySummary(ctx, tx, today)
 	if err == nil {

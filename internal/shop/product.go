@@ -237,6 +237,8 @@ type ProductFindRequest struct {
 
 // FindProduct gets all the products from the database based on the request params.
 func (repo Repository) FindProduct(ctx context.Context, req ProductFindRequest) (Products, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.shop.FindProduct")
+	defer span.Finish()
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -273,6 +275,8 @@ func (repo Repository) FindProduct(ctx context.Context, req ProductFindRequest) 
 
 // ReadProductByID gets the specified Product by ID from the database.
 func (repo *Repository) ReadProductByID(ctx context.Context, _ auth.Claims, id string) (*Product, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.shop.ReadProductByID")
+	defer span.Finish()
 	queries := []QueryMod{
 		models.ProductWhere.ID.EQ(id),
 		Load(models.ProductRels.Brand),

@@ -30,6 +30,9 @@ var (
 
 // Find gets all the accounts from the database based on the request params.
 func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.Find")
+	defer span.Finish()
+
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -96,6 +99,9 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 // FindDs gets all the accounts from the database that are of DS type and have > 0 balance.
 func (repo *Repository) FindDs(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.FindDs")
+	defer span.Finish()
+
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -167,6 +173,9 @@ func (repo *Repository) FindDs(ctx context.Context, _ auth.Claims, req FindReque
 
 // FindDs gets all the accounts from the database that are of DS type and have > 0 balance.
 func (repo *Repository) Debtors(ctx context.Context, _ auth.Claims, req FindRequest, currentDate time.Time) (*PagedResponseList, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.Debtors")
+	defer span.Finish()
+
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -242,6 +251,9 @@ func (repo *Repository) Debtors(ctx context.Context, _ auth.Claims, req FindRequ
 
 // ReadByID gets the specified branch by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*Account, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.ReadByID")
+	defer span.Finish()
+
 	queries := []QueryMod{
 		models.AccountWhere.ID.EQ(id),
 		Load(models.AccountRels.Branch),
@@ -260,6 +272,9 @@ func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id str
 }
 
 func (repo *Repository) AccountsCount(ctx context.Context, claims auth.Claims) (int64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.AccountsCount")
+	defer span.Finish()
+
 	var queries []QueryMod
 	if !claims.HasRole(auth.RoleAdmin) {
 		queries = append(queries, models.AccountWhere.SalesRepID.EQ(claims.Subject))

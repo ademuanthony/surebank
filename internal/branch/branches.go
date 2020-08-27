@@ -25,6 +25,9 @@ var (
 
 // Find gets all the branches from the database based on the request params.
 func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (Branches, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.branch.Find")
+	defer span.Finish()
+
 	var queries []QueryMod
 
 	if req.Where != "" {
@@ -64,6 +67,9 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 // ReadByID gets the specified branch by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*Branch, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.branch.ReadByID")
+	defer span.Finish()
+
 	branchModel, err := models.FindBranch(ctx, repo.DbConn, id)
 	if err != nil {
 		return nil, err
@@ -121,10 +127,10 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	}
 
 	return &Branch{
-		ID:         m.ID,
-		Name:       m.Name,
-		CreatedAt:  time.Unix(m.CreatedAt, 0),
-		UpdatedAt:  time.Unix(m.UpdatedAt, 0),
+		ID:        m.ID,
+		Name:      m.Name,
+		CreatedAt: time.Unix(m.CreatedAt, 0),
+		UpdatedAt: time.Unix(m.UpdatedAt, 0),
 	}, nil
 }
 
@@ -181,7 +187,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	cols[models.BranchColumns.UpdatedAt] = now
 
-	_,err = models.Branches(models.BranchWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
+	_, err = models.Branches(models.BranchWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
 	return nil
 }
@@ -216,7 +222,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	_,err = models.Branches(models.BranchWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.BranchColumns.ArchivedAt: now})
+	_, err = models.Branches(models.BranchWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.BranchColumns.ArchivedAt: now})
 
 	return nil
 }

@@ -28,8 +28,10 @@ var (
 
 // Find gets all the expenditures from the database based on the request params.
 func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRequest) (*PagedResponseList, error) {
-	var queries = []QueryMod{
-	}
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.expenditure.Find")
+	defer span.Finish()
+
+	var queries = []QueryMod{}
 
 	if req.Where != "" {
 		queries = append(queries, Where(req.Where, req.Args...))
@@ -88,6 +90,9 @@ func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRe
 
 // ReadByID gets the specified expenditure by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) (*Expenditure, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.expenditure.ReadByID")
+	defer span.Finish()
+
 	queries := []QueryMod{
 		models.RepsExpenseWhere.ID.EQ(id),
 		Load(models.RepsExpenseRels.SalesRep),
@@ -139,11 +144,11 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, err
 	}
 	m := models.RepsExpense{
-		ID:        uuid.NewRandom().String(),
-		SalesRepID:      salesRep.ID,
-		Date: now.Unix(),
-		Amount: req.Amount,
-		Reason: req.Reason,
+		ID:         uuid.NewRandom().String(),
+		SalesRepID: salesRep.ID,
+		Date:       now.Unix(),
+		Amount:     req.Amount,
+		Reason:     req.Reason,
 	}
 
 	if err := m.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
@@ -153,9 +158,9 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	return &Expenditure{
 		ID:         m.ID,
 		SalesRepID: req.SalesRepPhoneNumber,
-		Date: now,
-		Amount: req.Amount,
-		Reason: req.Reason,
+		Date:       now,
+		Amount:     req.Amount,
+		Reason:     req.Reason,
 	}, nil
 }
 
@@ -203,7 +208,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	cols[models.BranchColumns.UpdatedAt] = now
 
-	_,err = models.RepsExpenses(models.RepsExpenseWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
+	_, err = models.RepsExpenses(models.RepsExpenseWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
 	return nil
 }
