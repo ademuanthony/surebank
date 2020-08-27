@@ -416,6 +416,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("main : Register DB : %s : %+v", cfg.DB.Driver, err)
 	} 
+	defer masterDb.Close()
+	
 	statement := `
 	WITH inactive_connections AS (
 		SELECT
@@ -462,7 +464,6 @@ func main() {
 			}
 		}
 	}()
-	defer masterDb.Close()
 
 	// Enable AWS to auto pause the DB when no activity.
 	masterDb.SetMaxOpenConns(60)
