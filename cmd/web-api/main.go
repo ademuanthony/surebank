@@ -109,7 +109,7 @@ func main() {
 			EnableHTTPS     bool          `default:"false" envconfig:"ENABLE_HTTPS"`
 			TemplateDir     string        `default:"./templates" envconfig:"TEMPLATE_DIR"`
 			Minify          bool          `envconfig:"MINIFY"`
-			DebugHost       string        `default:"0.0.0.0:4000" envconfig:"DEBUG_HOST"`
+			DebugHost       string        `default:"0.0.0.0:4001" envconfig:"DEBUG_HOST"`
 			ShutdownTimeout time.Duration `default:"5s" envconfig:"SHUTDOWN_TIMEOUT"`
 			ScaleToZero     time.Duration `envconfig:"SCALE_TO_ZERO"`
 		}

@@ -39,10 +39,7 @@ services:
     entrypoint: redis-server --appendonly yes
 
   datadog:
-    image: surebank/datadog:latest
-    build:
-      context: build/docker/datadog-agent
-      dockerfile: Dockerfile
+    image: ademuanthony/datadog:latest
     ports:
       - 8125:8125 # metrics
       - 8126:8126 # tracing
@@ -53,6 +50,7 @@ services:
     env_file:
       - configs/.env_docker_compose
     environment:
+      - DD_SITE=datadoghq.com
       - DD_LOGS_ENABLED=true
       - DD_APM_ENABLED=true
       - DD_RECEIVER_PORT=8126
