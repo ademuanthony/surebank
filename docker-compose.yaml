@@ -39,7 +39,7 @@ services:
     entrypoint: redis-server --appendonly yes
 
   datadog:
-    image: ademuanthony/datadog:latest
+    image: datadog/agent:latest
     ports:
       - 8125:8125 # metrics
       - 8126:8126 # tracing
