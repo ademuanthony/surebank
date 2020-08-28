@@ -439,7 +439,7 @@ func main() {
 			usename = current_user 
 		AND
 			-- Include inactive connections only
-			state in ('idle in transaction', 'idle in transaction (aborted)', 'disabled') 
+			state in ('idle', 'idle in transaction', 'idle in transaction (aborted)', 'disabled') 
 		AND
 			-- Include old connections (found with the state_change field)
 			current_timestamp - state_change > interval '5 minutes' 
