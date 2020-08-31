@@ -101,7 +101,7 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "name", Title: "Name", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-		{Field: "email", Title: "Email", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Email"},
+		{Field: "created_at", Title: "Start Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Email"},
 		{Field: "phone_number", Title: "Phone Number", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Phone Number"},
 		{Field: "sales_rep", Title: "Manager", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Manager"},
 		{Field: "branch", Title: "Branch", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Branch"},
@@ -117,9 +117,9 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 			case "name":
 				v.Value = q.Name
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.ID), v.Value)
-			case "email":
-				v.Value = q.Email
-				v.Formatted = q.Email
+			case "created_at":
+				v.Value = q.CreatedAt.LocalDate
+				v.Formatted = v.Value
 			case "phone_number":
 				v.Value = q.PhoneNumber
 				v.Formatted = q.PhoneNumber
