@@ -57,6 +57,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
+	"github.com/jmoiron/sqlx"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -381,43 +382,52 @@ func main() {
 		}
 	}
 
-	// =========================================================================
-	// Start Database
-	var dbUrl url.URL
-	{
-		// Query parameters.
-		var q url.Values = make(map[string][]string)
-
-		// Handle SSL Mode
-		if cfg.DB.DisableTLS {
-			q.Set("sslmode", "disable")
-		} else {
-			q.Set("sslmode", "require")
+	var masterDb *sqlx.DB
+	openDbFunc := func() error {
+		if masterDb != nil {
+			masterDb.Close()
 		}
+		// =========================================================================
+		// Start Database
+		var dbUrl url.URL
+		{
+			// Query parameters.
+			var q url.Values = make(map[string][]string)
 
-		q.Set("timezone", cfg.DB.Timezone)
+			// Handle SSL Mode
+			if cfg.DB.DisableTLS {
+				q.Set("sslmode", "disable")
+			} else {
+				q.Set("sslmode", "require")
+			}
 
-		// Construct url.
-		dbUrl = url.URL{
-			Scheme:   cfg.DB.Driver,
-			User:     url.UserPassword(cfg.DB.User, cfg.DB.Pass),
-			Host:     cfg.DB.Host,
-			Path:     cfg.DB.Database,
-			RawQuery: q.Encode(),
+			q.Set("timezone", cfg.DB.Timezone)
+
+			// Construct url.
+			dbUrl = url.URL{
+				Scheme:   cfg.DB.Driver,
+				User:     url.UserPassword(cfg.DB.User, cfg.DB.Pass),
+				Host:     cfg.DB.Host,
+				Path:     cfg.DB.Database,
+				RawQuery: q.Encode(),
+			}
 		}
+		log.Println("main : Started : Initialize Database")
+
+		// Register informs the sqlxtrace package of the driver that we will be using in our program.
+		// It uses a default service name, in the below case "postgres.db". To use a custom service
+		// name use RegisterWithServiceName.
+		sqltrace.Register(cfg.DB.Driver, &pq.Driver{}, sqltrace.WithServiceName(service))
+		var innerErr error
+		masterDb, innerErr = sqlxtrace.Open(cfg.DB.Driver, dbUrl.String())
+		return innerErr
 	}
-	log.Println("main : Started : Initialize Database")
 
-	// Register informs the sqlxtrace package of the driver that we will be using in our program.
-	// It uses a default service name, in the below case "postgres.db". To use a custom service
-	// name use RegisterWithServiceName.
-	sqltrace.Register(cfg.DB.Driver, &pq.Driver{}, sqltrace.WithServiceName(service))
-	masterDb, err := sqlxtrace.Open(cfg.DB.Driver, dbUrl.String())
-	if err != nil {
+	if err = openDbFunc(); err != nil {
 		log.Fatalf("main : Register DB : %s : %+v", cfg.DB.Driver, err)
-	} 
+	}
 	defer masterDb.Close()
-	
+
 	statement := `
 	WITH inactive_connections AS (
 		SELECT
@@ -442,7 +452,7 @@ func main() {
 			state in ('idle', 'idle in transaction', 'idle in transaction (aborted)', 'disabled') 
 		AND
 			-- Include old connections (found with the state_change field)
-			current_timestamp - state_change > interval '5 minutes' 
+			current_timestamp - state_change > interval '2 minutes' 
 	)
 	SELECT
 		pg_terminate_backend(pid)
@@ -1179,7 +1189,7 @@ func main() {
 	if cfg.HTTP.Host != "" {
 		api := http.Server{
 			Addr:           cfg.HTTP.Host,
-			Handler:        handlers.APP(shutdown, appCtx),
+			Handler:        handlers.APP(shutdown, appCtx, openDbFunc),
 			ReadTimeout:    cfg.HTTP.ReadTimeout,
 			WriteTimeout:   cfg.HTTP.WriteTimeout,
 			MaxHeaderBytes: 1 << 20,
@@ -1196,7 +1206,7 @@ func main() {
 	if cfg.HTTPS.Host != "" {
 		api := http.Server{
 			Addr:           cfg.HTTPS.Host,
-			Handler:        handlers.APP(shutdown, appCtx),
+			Handler:        handlers.APP(shutdown, appCtx, openDbFunc),
 			ReadTimeout:    cfg.HTTPS.ReadTimeout,
 			WriteTimeout:   cfg.HTTPS.WriteTimeout,
 			MaxHeaderBytes: 1 << 20,

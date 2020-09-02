@@ -2,10 +2,12 @@ package mid
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"merryworld/surebank/internal/platform/web"
+
 	"github.com/jmoiron/sqlx"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
@@ -25,7 +27,8 @@ type (
 		DB *sqlx.DB
 
 		// WaitHandler defines the handler to render for the user to when the database is being resumed.
-		WaitHandler web.Handler
+		WaitHandler  web.Handler
+		ReopenDBFunc func() error
 	}
 )
 
@@ -65,8 +68,13 @@ func WaitForDbResumed(config WaitForDbResumedConfig) web.Middleware {
 			}
 
 			if err := verifyDb(); err != nil {
-				ctx = context.WithValue(ctx, ServerlessKey, err)
-				return config.WaitHandler(ctx, w, r, params)
+				if err := config.ReopenDBFunc(); err != nil {
+					fmt.Println(err)
+				}
+				if err := verifyDb(); err != nil {
+					ctx = context.WithValue(ctx, ServerlessKey, err)
+					return config.WaitHandler(ctx, w, r, params)
+				}
 			}
 
 			return after(ctx, w, r, params)

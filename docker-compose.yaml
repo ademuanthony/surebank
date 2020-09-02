@@ -38,29 +38,6 @@ services:
           - redis
     entrypoint: redis-server --appendonly yes
 
-  datadog:
-    image: datadog/agent:latest
-    ports:
-      - 8125:8125 # metrics
-      - 8126:8126 # tracing
-    networks:
-      main:
-        aliases:
-          - datadog
-    env_file:
-      - configs/.env_docker_compose
-    environment:
-      - DD_SITE=datadoghq.com
-      - DD_LOGS_ENABLED=true
-      - DD_APM_ENABLED=true
-      - DD_RECEIVER_PORT=8126
-      - DD_APM_NON_LOCAL_TRAFFIC=true
-      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
-      - DD_TAGS=source:docker env:dev
-      - DD_DOGSTATSD_ORIGIN_DETECTION=true
-      - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
-      - DD_EXPVAR=service_name=web-app env=dev url=http://web-app:4000/debug/vars|service_name=web-api env=dev url=http://web-api:4001/debug/vars
-
   web-app:
     image: surebank/web-app:latest
     hostname: "web-app"
@@ -82,7 +59,6 @@ services:
     depends_on:
       - postgres
       - redis
-      - datadog
       - web-api
     env_file:
       - configs/.env_docker_compose
@@ -124,7 +100,6 @@ services:
     depends_on:
       - postgres
       - redis
-      - datadog
     env_file:
       - configs/.env_docker_compose
     environment:

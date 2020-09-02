@@ -3,6 +3,7 @@
         "Ajors",
         "ajor",
         "dscommission",
-        "sqlx"
+        "sqlx",
+        "sqlxtrace"
     ]
 }

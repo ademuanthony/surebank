@@ -83,7 +83,7 @@ type AppContext struct {
 }
 
 // API returns a handler for a set of routes.
-func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
+func APP(shutdown chan os.Signal, appCtx *AppContext, reopenDBFunc func () error) http.Handler {
 
 	// Include the pre middlewares first.
 	middlewares := appCtx.PreAppMiddleware
@@ -120,6 +120,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext) http.Handler {
 
 		// WaitHandler defines the handler to render for the user to when the database is being resumed.
 		WaitHandler: serverless.Pending,
+		ReopenDBFunc: reopenDBFunc,
 	})
 
 	// Build a sitemap.
