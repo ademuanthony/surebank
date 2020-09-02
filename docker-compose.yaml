@@ -26,6 +26,16 @@ services:
       - POSTGRES_DB=shared
       - POSTGRES_HOST_AUTH_METHOD=trust
 
+  mongodb:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongodb-data:/data/db
+
   redis:
     image: redis:latest
     expose:
@@ -58,6 +68,7 @@ services:
           - web-app
     depends_on:
       - postgres
+      - mongodb
       - redis
       - web-api
     env_file:
@@ -99,6 +110,7 @@ services:
           - web-api
     depends_on:
       - postgres
+      - mongodb
       - redis
     env_file:
       - configs/.env_docker_compose

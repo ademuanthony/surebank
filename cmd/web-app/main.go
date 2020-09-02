@@ -154,6 +154,12 @@ func main() {
 			Timezone   string `default:"utc" envconfig:"TIMEZONE"`
 			DisableTLS bool   `default:"true" envconfig:"DISABLE_TLS"`
 		}
+		Mongo struct {
+			Host       string `default:"127.0.0.1:5433" envconfig:"MONGO_HOST"`
+			User       string `default:"root" envconfig:"MONGO_USER"`
+			Pass       string `default:"rootpassword" envconfig:"MONGO_PASS" json:"-"` // don't print
+			Database   string `default:"main" envconfig:"MONGO_DATABASE"`
+		}
 		Trace struct {
 			Host          string  `default:"127.0.0.1" envconfig:"DD_TRACE_AGENT_HOSTNAME"`
 			Port          int     `default:"8126" envconfig:"DD_TRACE_AGENT_PORT"`

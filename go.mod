@@ -3,6 +3,7 @@ module merryworld/surebank
 require (
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
+	github.com/astaxie/beego v1.12.2
 	github.com/aws/aws-sdk-go v1.27.2
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -33,7 +34,6 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/onsi/gomega v1.8.1 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/pborman/uuid v1.2.0
@@ -56,13 +56,12 @@ require (
 	gitlab.com/geeks-accelerator/oss/devops v1.0.59
 	golang.org/x/crypto v0.0.0-20200109152110-61a87790db17
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
-	golang.org/x/sys v0.0.0-20200113162924-86b910548bc1 // indirect
 	golang.org/x/text v0.3.2
-	golang.org/x/tools v0.0.0-20200113223816-544dc8ea2d5f // indirect
 	gopkg.in/DataDog/dd-trace-go.v1 v1.16.1
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
+	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 	gotest.tools v2.2.0+incompatible // indirect
 )
 
