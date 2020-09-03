@@ -10,6 +10,7 @@ import (
 	"merryworld/surebank/internal/postgres/models"
 
 	"github.com/jmoiron/sqlx"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // Repository defines the required dependencies for Customer.
@@ -31,19 +32,19 @@ func NewRepository(db *sqlx.DB) *Repository {
 
 // Customer represents a workflow.
 type Customer struct {
-	ID          string     `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	Name        string     `json:"name"  validate:"required" example:"Rocket Launch"`
-	ShortName   string     `json:"short_name"`
-	Email       string     `json:"email" truss:"api-read"`
-	PhoneNumber string     `json:"phone_number" truss:"api-read"`
-	Address     string     `json:"address" truss:"api-read"`
-	SalesRepID  string     `json:"sales_rep_id" truss:"api-read"`
-	BranchID    string     `json:"branch_id" truss:"api-read"`
-	SalesRep    string     `json:"sales_rep" truss:"api-read"`
-	Branch      string     `json:"branch" truss:"api-read"`
-	CreatedAt   time.Time  `json:"created_at" truss:"api-read"`
-	UpdatedAt   time.Time  `json:"updated_at" truss:"api-read"`
-	ArchivedAt  *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
+	ID          bson.ObjectId `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	Name        string        `json:"name"  validate:"required" example:"Rocket Launch"`
+	ShortName   string        `json:"short_name"`
+	Email       string        `json:"email" truss:"api-read"`
+	PhoneNumber string        `json:"phone_number" truss:"api-read"`
+	Address     string        `json:"address" truss:"api-read"`
+	SalesRepID  string        `json:"sales_rep_id" truss:"api-read"`
+	BranchID    string        `json:"branch_id" truss:"api-read"`
+	SalesRep    string        `json:"sales_rep" truss:"api-read"`
+	Branch      string        `json:"branch" truss:"api-read"`
+	CreatedAt   time.Time     `json:"created_at" truss:"api-read"`
+	UpdatedAt   time.Time     `json:"updated_at" truss:"api-read"`
+	ArchivedAt  *time.Time    `json:"archived_at,omitempty" truss:"api-hide"`
 }
 
 func FromModel(rec *models.Customer) *Customer {
@@ -112,7 +113,7 @@ func (m *Customer) Response(ctx context.Context) *Response {
 	}
 
 	r := &Response{
-		ID:          m.ID,
+		ID:          m.ID.Hex(),
 		Name:        m.Name,
 		ShortName:   m.ShortName,
 		Email:       m.Email,

@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"gopkg.in/mgo.v2/bson"
 
+	"merryworld/surebank/internal/mongo"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
@@ -133,6 +133,11 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	req.SalesRepID = salesRep.ID
 	req.BranchID = salesRep.BranchID
 
+	branch, err := models.FindBranch(ctx, repo.DbConn, req.BranchID)
+	if err != nil {
+		return nil, err
+	}
+
 	// Validate the request.
 	v := webcontext.Validator()
 	err = v.Struct(req)
@@ -150,34 +155,25 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	// Postgres truncates times to milliseconds when storing. We and do the same
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
-	m := models.Customer{
-		ID:          uuid.NewRandom().String(),
+	m := Customer{
+		ID:          bson.NewObjectId(),
 		Email:       req.Email,
 		Name:        req.Name,
 		PhoneNumber: req.PhoneNumber,
 		Address:     req.Address,
 		SalesRepID:  req.SalesRepID,
-		CreatedAt:   now.Unix(),
+		SalesRep:    salesRep.FirstName + " " + salesRep.LastName,
+		CreatedAt:   now,
 		BranchID:    req.BranchID,
-		UpdatedAt:   now.Unix(),
+		Branch:      branch.Name,
+		UpdatedAt:   now,
 	}
 
-	if err := m.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
+	if err := mongo.Insert(mongo.NewDb().C(mongo.Collections.Customer), m); err != nil {
 		return nil, weberror.WithMessage(ctx, err, "Insert customer failed")
 	}
 
-	return &Customer{
-		ID:          m.ID,
-		Name:        m.Name,
-		Email:       m.Email,
-		PhoneNumber: m.PhoneNumber,
-		Address:     m.Address,
-		SalesRepID:  m.SalesRepID,
-		BranchID:    m.BranchID,
-		CreatedAt:   time.Unix(m.CreatedAt, 0),
-		UpdatedAt:   time.Unix(m.UpdatedAt, 0),
-		ArchivedAt:  nil,
-	}, nil
+	return &m, nil
 }
 
 // Update replaces an customer in the database.
@@ -200,7 +196,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 		return err
 	}
 
-	cols := models.M{}
+	cols := bson.M{}
 	if req.Name != nil {
 		cols[models.CustomerColumns.Name] = *req.Name
 	}

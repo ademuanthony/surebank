@@ -26,11 +26,12 @@ services:
       - POSTGRES_DB=shared
       - POSTGRES_HOST_AUTH_METHOD=trust
 
-  mongodb:
+  mongo:
     image: mongo:latest
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    networks:
+      main:
+        aliases:
+          - mongo
     ports:
       - 27017:27017
     volumes:
@@ -68,9 +69,8 @@ services:
           - web-app
     depends_on:
       - postgres
-      - mongodb
+      - mongo
       - redis
-      - web-api
     env_file:
       - configs/.env_docker_compose
     environment:
@@ -89,45 +89,5 @@ services:
       - DD_TRACE_AGENT_PORT=8126
       - DD_SERVICE_NAME=web-app
       - DD_ENV=dev
-      # - GODEBUG=gctrace=1
-
-  web-api:
-    image: surebank/web-api:latest
-    build:
-      context: .
-      target: dev
-      dockerfile: cmd/web-api/Dockerfile
-      args:
-        name: 'web-api'
-    volumes:
-      - ./:/go/src/gitlab.com/merryworld/surebank
-    ports:
-      - 3001:3001 # WEB API
-      - 4001:4001 # DEBUG API
-    networks:
-      main:
-        aliases:
-          - web-api
-    depends_on:
-      - postgres
-      - mongodb
-      - redis
-    env_file:
-      - configs/.env_docker_compose
-    environment:
-      - WEB_API_HTTP_HOST=:3001
-      - WEB_API_APP_BASE_URL=http://localhost:3001
-      - WEB_API_APP_DEBUG_HOST=:4001
-      - WEB_API_REDIS_HOST=redis:6379
-      - WEB_API_DB_HOST=postgres:5432
-      - WEB_API_DB_USER=postgres
-      - WEB_API_DB_PASS=postgres
-      - WEB_API_DB_DATABASE=shared
-      - WEB_API_DB_DISABLE_TLS=true
-      - WEB_APP_BASE_URL=http://localhost:3000
-      - USE_NETWORK_ALIAS=1
-      - DD_TRACE_AGENT_HOSTNAME=datadog
-      - DD_TRACE_AGENT_PORT=8126
-      - DD_SERVICE_NAME=web-app
-      - DD_ENV=dev
+      - MONGO_HOST=mongo:27017
       # - GODEBUG=gctrace=1

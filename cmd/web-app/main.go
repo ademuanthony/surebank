@@ -8,10 +8,6 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"merryworld/surebank/internal/dscommission"
-	"merryworld/surebank/internal/expenditure"
-	"merryworld/surebank/internal/inventory"
-	"merryworld/surebank/internal/sale"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -29,8 +25,12 @@ import (
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/customer"
+	"merryworld/surebank/internal/dscommission"
+	"merryworld/surebank/internal/expenditure"
 	"merryworld/surebank/internal/geonames"
+	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/mid"
+	"merryworld/surebank/internal/mongo"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/flag"
 	img_resize "merryworld/surebank/internal/platform/img-resize"
@@ -39,6 +39,7 @@ import (
 	template_renderer "merryworld/surebank/internal/platform/web/tmplrender"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
+	"merryworld/surebank/internal/sale"
 	"merryworld/surebank/internal/shop"
 	"merryworld/surebank/internal/signup"
 	"merryworld/surebank/internal/tenant"
@@ -155,10 +156,10 @@ func main() {
 			DisableTLS bool   `default:"true" envconfig:"DISABLE_TLS"`
 		}
 		Mongo struct {
-			Host       string `default:"127.0.0.1:5433" envconfig:"MONGO_HOST"`
-			User       string `default:"root" envconfig:"MONGO_USER"`
-			Pass       string `default:"rootpassword" envconfig:"MONGO_PASS" json:"-"` // don't print
-			Database   string `default:"main" envconfig:"MONGO_DATABASE"`
+			Host     string `default:"127.0.0.1:27017" envconfig:"MONGO_HOST"`
+			User     string `default:"root" envconfig:"MONGO_USER"`
+			Pass     string `default:"rootpassword" envconfig:"MONGO_PASS" json:"-"` // don't print
+			Database string `default:"main" envconfig:"MONGO_DATABASE"`
 		}
 		Trace struct {
 			Host          string  `default:"127.0.0.1" envconfig:"DD_TRACE_AGENT_HOSTNAME"`
@@ -485,6 +486,13 @@ func main() {
 	masterDb.SetMaxOpenConns(60)
 	masterDb.SetMaxIdleConns(30)
 	masterDb.SetConnMaxLifetime(1 * time.Minute)
+
+	// =========================================================================
+	// mongoURI := fmt.Sprintf("mongodb+srv://%s:%s@%s", cfg.Mongo.User, cfg.Mongo.Pass, cfg.Mongo.Host)
+	if err = mongo.Connect(cfg.Mongo.Host); err != nil {
+		log.Fatalf("main : mongo.Connect : %s : %+v", cfg.Mongo.Host, err)
+	}
+	log.Println("main : Completed : Connect Mongo")
 
 	// =========================================================================
 	// Notify Email
