@@ -11,7 +11,7 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"gopkg.in/mgo.v2/bson"
 
-	"merryworld/surebank/internal/mongo"
+	"merryworld/surebank/internal/dal"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
@@ -169,7 +169,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		UpdatedAt:   now,
 	}
 
-	if err := mongo.Insert(mongo.NewDb().C(mongo.Collections.Customer), m); err != nil {
+	if err := dal.Insert(dal.NewDb().C(dal.Collections.Customer), m); err != nil {
 		return nil, weberror.WithMessage(ctx, err, "Insert customer failed")
 	}
 
