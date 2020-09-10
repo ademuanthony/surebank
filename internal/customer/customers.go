@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
+	"go.mongodb.org/mongo-driver/mongo"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"gopkg.in/mgo.v2/bson"
 
@@ -90,20 +91,11 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	}, nil
 }
 
-// ReadByID gets the specified branch by ID from the database.
-func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*Customer, error) {
-	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.ReadByID")
-	defer span.Finish()
-
-	customerModel, err := models.FindCustomer(ctx, repo.DbConn, id)
-	if err != nil {
-		if err.Error() == sql.ErrNoRows.Error() {
-			return nil, weberror.WithMessage(ctx, err, "Invalid customer ID")
-		}
-		return nil, weberror.NewError(ctx, err, 500)
-	}
-
-	return FromModel(customerModel), nil
+func ReadByID(ctx context.Context, db *mongo.Database, id string) (*Customer, error) {
+	var rec Customer
+	collection := db.Collection(CollectionName)
+	err := collection.FindOne(ctx, bson.M{Columns.ID: id}).Decode(&rec)
+	return &rec, err
 }
 
 func (repo *Repository) CustomersCount(ctx context.Context, claims auth.Claims) (int64, error) {

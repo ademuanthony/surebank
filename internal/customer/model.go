@@ -10,12 +10,13 @@ import (
 	"merryworld/surebank/internal/postgres/models"
 
 	"github.com/jmoiron/sqlx"
-	"gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Repository defines the required dependencies for Customer.
 type Repository struct {
-	DbConn *sqlx.DB
+	DbConn  *sqlx.DB
+	mongoDb *mongo.Database
 }
 
 var AccountTypes = []string{
@@ -24,27 +25,54 @@ var AccountTypes = []string{
 }
 
 // NewRepository creates a new Repository that defines dependencies for Customer.
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *sqlx.DB, mongoDb *mongo.Database) *Repository {
 	return &Repository{
-		DbConn: db,
+		DbConn:  db,
+		mongoDb: mongoDb,
 	}
 }
 
 // Customer represents a workflow.
 type Customer struct {
-	ID          bson.ObjectId `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	Name        string        `json:"name"  validate:"required" example:"Rocket Launch"`
-	ShortName   string        `json:"short_name"`
-	Email       string        `json:"email" truss:"api-read"`
-	PhoneNumber string        `json:"phone_number" truss:"api-read"`
-	Address     string        `json:"address" truss:"api-read"`
-	SalesRepID  string        `json:"sales_rep_id" truss:"api-read"`
-	BranchID    string        `json:"branch_id" truss:"api-read"`
-	SalesRep    string        `json:"sales_rep" truss:"api-read"`
-	Branch      string        `json:"branch" truss:"api-read"`
-	CreatedAt   time.Time     `json:"created_at" truss:"api-read"`
-	UpdatedAt   time.Time     `json:"updated_at" truss:"api-read"`
-	ArchivedAt  *time.Time    `json:"archived_at,omitempty" truss:"api-hide"`
+	ID          string     `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	Name        string     `json:"name"  validate:"required" example:"Rocket Launch"`
+	ShortName   string     `json:"short_name"`
+	Email       string     `json:"email" truss:"api-read"`
+	PhoneNumber string     `json:"phone_number" truss:"api-read"`
+	Address     string     `json:"address" truss:"api-read"`
+	SalesRepID  string     `json:"sales_rep_id" truss:"api-read"`
+	BranchID    string     `json:"branch_id" truss:"api-read"`
+	SalesRep    string     `json:"sales_rep" truss:"api-read"`
+	Branch      string     `json:"branch" truss:"api-read"`
+	CreatedAt   time.Time  `json:"created_at" truss:"api-read"`
+	UpdatedAt   time.Time  `json:"updated_at" truss:"api-read"`
+	ArchivedAt  *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
+}
+
+const CollectionName = "customer"
+
+var Columns = struct {
+	ID          string
+	BranchID    string
+	Email       string
+	Name        string
+	PhoneNumber string
+	Address     string
+	SalesRepID  string
+	CreatedAt   string
+	UpdatedAt   string
+	ArchivedAt  string
+}{
+	ID:          "_id",
+	BranchID:    "branch_id",
+	Email:       "email",
+	Name:        "name",
+	PhoneNumber: "phone_number",
+	Address:     "address",
+	SalesRepID:  "sales_rep_id",
+	CreatedAt:   "created_at",
+	UpdatedAt:   "updated_at",
+	ArchivedAt:  "archived_at",
 }
 
 func FromModel(rec *models.Customer) *Customer {

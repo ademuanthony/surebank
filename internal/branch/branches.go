@@ -12,7 +12,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
+	"go.mongodb.org/mongo-driver/mongo"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var (
@@ -66,16 +68,11 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 }
 
 // ReadByID gets the specified branch by ID from the database.
-func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*Branch, error) {
-	span, ctx := tracer.StartSpanFromContext(ctx, "internal.branch.ReadByID")
-	defer span.Finish()
-
-	branchModel, err := models.FindBranch(ctx, repo.DbConn, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return FromModel(branchModel), nil
+func ReadByID(ctx context.Context, db *mongo.Database, id string) (*Branch, error) {
+	var rec Branch
+	collection := db.Collection(CollectionName)
+	err := collection.FindOne(ctx, bson.M{Columns.ID: id}).Decode(&rec)
+	return &rec, err
 }
 
 // Create inserts a new checklist into the database.

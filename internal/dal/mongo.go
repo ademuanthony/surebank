@@ -47,30 +47,6 @@ var Collections = struct {
 	Users:           "users",
 }
 
-var CustomerColumns = struct {
-	ID          string
-	BranchID    string
-	Email       string
-	Name        string
-	PhoneNumber string
-	Address     string
-	SalesRepID  string
-	CreatedAt   string
-	UpdatedAt   string
-	ArchivedAt  string
-}{
-	ID:          "_id",
-	BranchID:    "branch_id",
-	Email:       "email",
-	Name:        "name",
-	PhoneNumber: "phone_number",
-	Address:     "address",
-	SalesRepID:  "sales_rep_id",
-	CreatedAt:   "created_at",
-	UpdatedAt:   "updated_at",
-	ArchivedAt:  "archived_at",
-}
-
 type FindInput struct {
 	FilteringQuery interface{}
 	Offset         int

@@ -4,38 +4,58 @@ import (
 	"context"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
+
+	"github.com/jmoiron/sqlx"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Repository defines the required dependencies for Branch.
 type Repository struct {
-	DbConn *sqlx.DB
+	DbConn  *sqlx.DB
+	mongoDb *mongo.Database
 }
 
 // NewRepository creates a new Repository that defines dependencies for Branch.
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *sqlx.DB, mongoDb *mongo.Database) *Repository {
 	return &Repository{
-		DbConn: db,
+		DbConn:  db,
+		mongoDb: mongoDb,
 	}
 }
 
 // Branch represents a workflow.
 type Branch struct {
-	ID         string          `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	Name       string          `json:"name"  validate:"required" example:"Rocket Launch"`
-	CreatedAt  time.Time       `json:"created_at" truss:"api-read"`
-	UpdatedAt  time.Time       `json:"updated_at" truss:"api-read"`
-	ArchivedAt *time.Time    `json:"archived_at,omitempty" truss:"api-hide"`
+	ID         string     `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	Name       string     `json:"name"  validate:"required" example:"Rocket Launch"`
+	CreatedAt  time.Time  `json:"created_at" truss:"api-read"`
+	UpdatedAt  time.Time  `json:"updated_at" truss:"api-read"`
+	ArchivedAt *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
+}
+
+const CollectionName = "branch"
+
+var Columns = struct {
+	ID         string
+	Name       string
+	CreatedAt  string
+	UpdatedAt  string
+	ArchivedAt string
+}{
+	ID:         "id",
+	Name:       "name",
+	CreatedAt:  "created_at",
+	UpdatedAt:  "updated_at",
+	ArchivedAt: "archived_at",
 }
 
 func FromModel(rec *models.Branch) *Branch {
 	b := &Branch{
-		ID:         rec.ID,
-		Name:       rec.Name,
-		CreatedAt:  time.Unix(rec.CreatedAt, 0),
-		UpdatedAt:  time.Unix(rec.UpdatedAt, 0),
+		ID:        rec.ID,
+		Name:      rec.Name,
+		CreatedAt: time.Unix(rec.CreatedAt, 0),
+		UpdatedAt: time.Unix(rec.UpdatedAt, 0),
 	}
 	if rec.ArchivedAt.Valid {
 		archivedAt := time.Unix(rec.ArchivedAt.Int64, 0)
@@ -93,7 +113,7 @@ func (m *Branches) Response(ctx context.Context) []*Response {
 
 // CreateRequest contains information needed to create a new Branch.
 type CreateRequest struct {
-	Name      string           `json:"name" validate:"required"  example:"Rocket Launch"`
+	Name string `json:"name" validate:"required"  example:"Rocket Launch"`
 }
 
 // ReadRequest defines the information needed to read a checklist.
@@ -107,8 +127,8 @@ type ReadRequest struct {
 // changed. It uses pointer fields so we can differentiate between a field that
 // was not provided and a field that was provided as explicitly blank.
 type UpdateRequest struct {
-	ID     string           `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	Name   *string          `json:"name,omitempty" validate:"omitempty,unique" example:"Rocket Launch to Moon"`
+	ID   string  `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	Name *string `json:"name,omitempty" validate:"omitempty,unique" example:"Rocket Launch to Moon"`
 }
 
 // ArchiveRequest defines the information needed to archive a checklist. This will archive (soft-delete) the
