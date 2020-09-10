@@ -141,7 +141,7 @@ func (m *Customer) Response(ctx context.Context) *Response {
 	}
 
 	r := &Response{
-		ID:          m.ID.Hex(),
+		ID:          m.ID,
 		Name:        m.Name,
 		ShortName:   m.ShortName,
 		Email:       m.Email,
@@ -164,7 +164,7 @@ func (m *Customer) Response(ctx context.Context) *Response {
 }
 
 // Customers a list of Customers.
-type Customers []*Customer
+type Customers []Customer
 
 // Response transforms a list of Customers to a list of Responses.
 func (m *Customers) Response(ctx context.Context) []*Response {
@@ -236,7 +236,7 @@ type FindRequest struct {
 	Args             []interface{} `json:"args" swaggertype:"array,string" example:"Moon Launch,active"`
 	Order            []string      `json:"order" example:"created_at desc"`
 	Limit            *uint         `json:"limit" example:"10"`
-	Offset           *uint         `json:"offset" example:"20"`
+	Offset           *int64        `json:"offset" example:"20"`
 	IncludeArchived  bool          `json:"include-archived" example:"false"`
 	IncludeAccountNo bool          `json:"include-account-no" example:"false"`
 }

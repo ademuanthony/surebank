@@ -2,17 +2,17 @@ package customer
 
 import (
 	"context"
-	"database/sql"
+	"strings"
 	"time"
 
+	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-	. "github.com/volatiletech/sqlboiler/queries/qm"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
-	"gopkg.in/mgo.v2/bson"
 
-	"merryworld/surebank/internal/dal"
+	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
@@ -32,53 +32,53 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.Find")
 	defer span.Finish()
 
-	var queries = []QueryMod{
-		Load(models.CustomerRels.SalesRep),
-		Load(models.CustomerRels.Branch),
-	}
+	collection := repo.mongoDb.Collection(CollectionName)
 
-	if req.Where != "" {
-		queries = append(queries, Where(req.Where, req.Args...))
-	}
-
+	var queries = bson.D{}
 	if !req.IncludeArchived {
-		queries = append(queries, And("archived_at is null"))
+		queries = append(queries, primitive.E{Key: Columns.ArchivedAt, Value: nil})
 	}
 
-	if req.IncludeAccountNo {
-		queries = append(queries, qm.Load(models.CustomerRels.Accounts))
-	}
-
-	totalCount, err := models.Customers(queries...).Count(ctx, repo.DbConn)
+	totalCount, err := collection.CountDocuments(ctx, queries)
 	if err != nil {
 		return nil, weberror.WithMessage(ctx, err, "Cannot get customer count")
 	}
 
+	findOptions := options.Find()
+
+	sort := bson.D{}
 	if len(req.Order) > 0 {
 		for _, s := range req.Order {
-			queries = append(queries, OrderBy(s))
+			sortInfo := strings.Split(s, " ")
+			if len(sortInfo) != 2 {
+				continue
+			}
+			sort = append(sort, primitive.E{Key: sortInfo[0], Value: sortInfo[1]})
 		}
 	}
+	findOptions.SetSort(sort)
 
 	if req.Limit != nil {
-		queries = append(queries, Limit(int(*req.Limit)))
+		findOptions.SetLimit(int64(*req.Limit))
 	}
 
 	if req.Offset != nil {
-		queries = append(queries, Offset(int(*req.Offset)))
+		findOptions.Skip = req.Offset
 	}
 
-	customerSlice, err := models.Customers(queries...).All(ctx, repo.DbConn)
+	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		if err.Error() == sql.ErrNoRows.Error() {
-			return &PagedResponseList{}, nil
-		}
 		return nil, weberror.WithMessage(ctx, err, "Cannot get customer list")
 	}
-
+	defer cursor.Close(ctx)
 	var result Customers
-	for _, rec := range customerSlice {
-		result = append(result, FromModel(rec))
+	for cursor.Next(ctx) {
+		var c Customer
+		cursor.Decode(&c)
+		result = append(result, c)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, weberror.WithMessage(ctx, err, "Cannot get customer list")
 	}
 
 	if len(result) == 0 {
@@ -91,9 +91,9 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	}, nil
 }
 
-func ReadByID(ctx context.Context, db *mongo.Database, id string) (*Customer, error) {
+func (repo *Repository) ReadByID(ctx context.Context, id string) (*Customer, error) {
 	var rec Customer
-	collection := db.Collection(CollectionName)
+	collection := repo.mongoDb.Collection(CollectionName)
 	err := collection.FindOne(ctx, bson.M{Columns.ID: id}).Decode(&rec)
 	return &rec, err
 }
@@ -102,12 +102,13 @@ func (repo *Repository) CustomersCount(ctx context.Context, claims auth.Claims) 
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.CustomersCount")
 	defer span.Finish()
 
-	var queries []QueryMod
+	query := bson.M{}
 	if !claims.HasRole(auth.RoleAdmin) {
-		queries = append(queries, models.CustomerWhere.SalesRepID.EQ(claims.Subject))
+		query[Columns.SalesRepID] = claims.Subject
 	}
 
-	return models.Customers(queries...).Count(ctx, repo.DbConn)
+	collection := repo.mongoDb.Collection(CollectionName)
+	return collection.CountDocuments(ctx, query)
 }
 
 // Create inserts a new customer into the database.
@@ -125,7 +126,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	req.SalesRepID = salesRep.ID
 	req.BranchID = salesRep.BranchID
 
-	branch, err := models.FindBranch(ctx, repo.DbConn, req.BranchID)
+	branch, err := branch.ReadByID(ctx, repo.mongoDb, req.BranchID)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +149,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 	m := Customer{
-		ID:          bson.NewObjectId(),
+		ID:          uuid.NewRandom().String(),
 		Email:       req.Email,
 		Name:        req.Name,
 		PhoneNumber: req.PhoneNumber,
@@ -161,7 +162,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		UpdatedAt:   now,
 	}
 
-	if err := dal.Insert(dal.NewDb().C(dal.Collections.Customer), m); err != nil {
+	if _, err := repo.mongoDb.Collection(CollectionName).InsertOne(ctx, m); err != nil {
 		return nil, weberror.WithMessage(ctx, err, "Insert customer failed")
 	}
 
@@ -190,19 +191,19 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	cols := bson.M{}
 	if req.Name != nil {
-		cols[models.CustomerColumns.Name] = *req.Name
+		cols[Columns.Name] = *req.Name
 	}
 
 	if req.Email != nil {
-		cols[models.CustomerColumns.Email] = *req.Email
+		cols[Columns.Email] = *req.Email
 	}
 
 	if req.Address != nil {
-		cols[models.CustomerColumns.Address] = *req.Address
+		cols[Columns.Address] = *req.Address
 	}
 
 	if req.PhoneNumber != nil {
-		cols[models.CustomerColumns.PhoneNumber] = *req.PhoneNumber
+		cols[Columns.PhoneNumber] = *req.PhoneNumber
 	}
 
 	if len(cols) == 0 {
@@ -220,11 +221,12 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	cols[models.CustomerColumns.UpdatedAt] = now.Unix()
+	cols[Columns.UpdatedAt] = now.Unix()
 
-	_, err = models.Customers(models.CustomerWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
+	collection := repo.mongoDb.Collection(CollectionName)
+	_, err = collection.UpdateOne(ctx, bson.M{Columns.ID: req.ID}, bson.M{"$set": cols})
 
-	return nil
+	return err
 }
 
 // Archive soft deleted the customer from the database.
@@ -246,43 +248,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return err
 	}
 
-	tx, err := repo.DbConn.Begin()
-	if err != nil {
-		return err
-	}
-	accounts, err := models.Accounts(models.AccountWhere.CustomerID.EQ(req.ID)).All(ctx, tx)
-	if err != nil {
-		if err.Error() != sql.ErrNoRows.Error() {
-			_ = tx.Rollback()
-			return err
-		}
-	}
-
-	for _, acc := range accounts {
-		if _, err := models.Transactions(models.TransactionWhere.AccountID.EQ(acc.ID)).DeleteAll(ctx, tx); err != nil {
-			_ = tx.Rollback()
-			return err
-		}
-
-		if _, err := models.DSCommissions(models.DSCommissionWhere.AccountID.EQ(acc.ID)).DeleteAll(ctx, tx); err != nil {
-			_ = tx.Rollback()
-			return err
-		}
-
-		if _, err = models.Accounts(models.AccountWhere.ID.EQ(acc.ID)).DeleteAll(ctx, tx); err != nil {
-			_ = tx.Rollback()
-			return err
-		}
-	}
-
-	if _, err = models.Customers(models.CustomerWhere.ID.EQ(req.ID)).DeleteAll(ctx, tx); err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
+	collection := repo.mongoDb.Collection(CollectionName)
+	_, err = collection.DeleteOne(ctx, bson.M{Columns.ID: req.ID})
+	return err
 }
