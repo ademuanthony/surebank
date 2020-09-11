@@ -40,14 +40,9 @@ func urlBranchesView(branchID string) string {
 func urlBranchesUpdate(branchID string) string {
 	return fmt.Sprintf("/branches/%s/update", branchID)
 }
-
+ 
 // Index handles listing all the branches.
 func (h *Branches) Index(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
-
-	claims, err := auth.ClaimsFromContext(ctx)
-	if err != nil {
-		return err
-	}
 
 	fields := []datatable.DisplayField{
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
@@ -56,7 +51,7 @@ func (h *Branches) Index(ctx context.Context, w http.ResponseWriter, r *http.Req
 		{Field: "created_at", Title: "Created", Visible: true, Searchable: true, Orderable: true, Filterable: false},
 	}
 
-	mapFunc := func(q *branch.Branch, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q branch.Branch, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -90,7 +85,7 @@ func (h *Branches) Index(ctx context.Context, w http.ResponseWriter, r *http.Req
 			order = strings.Split(sorting, ",")
 		}
 
-		res, err := h.Repo.Find(ctx, claims, branch.FindRequest{
+		res, err := h.Repo.Find(ctx, branch.FindRequest{
 			Order: order,
 		})
 		if err != nil {

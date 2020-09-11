@@ -81,7 +81,7 @@ func (m *Branch) Response(ctx context.Context) *Response {
 }
 
 // Branches a list of Branches.
-type Branches []*Branch
+type Branches []Branch
 
 // Response transforms a list of Branches to a list of Responses.
 func (m *Branches) Response(ctx context.Context) []*Response {
@@ -133,6 +133,6 @@ type FindRequest struct {
 	Args            []interface{} `json:"args" swaggertype:"array,string" example:"Moon Launch,active"`
 	Order           []string      `json:"order" example:"created_at desc"`
 	Limit           *uint         `json:"limit" example:"10"`
-	Offset          *uint         `json:"offset" example:"20"`
+	Offset          *int64        `json:"offset" example:"20"`
 	IncludeArchived bool          `json:"include-archived" example:"false"`
 }

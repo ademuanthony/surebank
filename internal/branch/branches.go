@@ -2,19 +2,21 @@ package branch
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"merryworld/surebank/internal/dal"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/boil"
-	. "github.com/volatiletech/sqlboiler/queries/qm"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
-	"gopkg.in/mgo.v2/bson"
 )
 
 var (
@@ -26,42 +28,55 @@ var (
 )
 
 // Find gets all the branches from the database based on the request params.
-func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest) (Branches, error) {
+func (repo *Repository) Find(ctx context.Context, req FindRequest) (Branches, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.branch.Find")
 	defer span.Finish()
 
-	var queries []QueryMod
-
-	if req.Where != "" {
-		queries = append(queries, Where(req.Where, req.Args...))
-	}
+	queries := bson.M{}
 
 	if !req.IncludeArchived {
-		queries = append(queries, And("archived_at is null"))
+		queries[dal.AccountColumns.ArchivedAt] = nil
 	}
 
+	findOptions := options.Find()
+
+	sort := bson.D{}
 	if len(req.Order) > 0 {
 		for _, s := range req.Order {
-			queries = append(queries, OrderBy(s))
+			sortInfo := strings.Split(s, " ")
+			if len(sortInfo) != 2 {
+				continue
+			}
+			sort = append(sort, primitive.E{Key: sortInfo[0], Value: sortInfo[1]})
 		}
 	}
+	findOptions.SetSort(sort)
 
 	if req.Limit != nil {
-		queries = append(queries, Limit(int(*req.Limit)))
+		findOptions.SetLimit(int64(*req.Limit))
 	}
 
 	if req.Offset != nil {
-		queries = append(queries, Offset(int(*req.Offset)))
+		findOptions.Skip = req.Offset
 	}
 
-	branchSlice, err := models.Branches(queries...).All(ctx, repo.DbConn)
+	cursor, err := repo.mongoDb.Collection(dal.C.Branch).Find(ctx, bson.M{})
 	if err != nil {
-		return nil, err
+		return nil, weberror.WithMessage(ctx, err, "Cannot get customer list")
+	}
+	defer cursor.Close(ctx)
+	var result Branches
+	for cursor.Next(ctx) {
+		var c Branch
+		cursor.Decode(&c)
+		result = append(result, c)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, weberror.WithMessage(ctx, err, "Cannot get customer list")
 	}
 
-	var result Branches
-	for _, rec := range branchSlice {
-		result = append(result, FromModel(rec))
+	if len(result) == 0 {
+		return Branches{}, nil
 	}
 
 	return result, nil
@@ -94,6 +109,13 @@ func (repo *Repository) migrate(ctx context.Context) error {
 	return nil
 }
 
+func (repo *Repository) branchExist(ctx context.Context, name string) bool {
+	var rec Branch
+	collection := repo.mongoDb.Collection(dal.C.Branch)
+	_ = collection.FindOne(ctx, bson.M{dal.BranchColumns.Name: name}).Decode(&rec)
+	return rec.ID != ""
+}
+
 // Create inserts a new checklist into the database.
 func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req CreateRequest, now time.Time) (*Branch, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.branch.Create")
@@ -107,16 +129,12 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, errors.WithStack(ErrForbidden)
 	}
 
-	exists, err := models.Branches(models.BranchWhere.Name.EQ(req.Name)).Exists(ctx, repo.DbConn)
-	if err != nil {
-		return nil, err
-	}
-	ctx = webcontext.ContextAddUniqueValue(ctx, req, "Name", !exists)
+	ctx = webcontext.ContextAddUniqueValue(ctx, req, "Name", !repo.branchExist(ctx, req.Name))
 	// ctx = context.WithValue(ctx, webcontext.KeyTagUnique, !exists)
 
 	// Validate the request.
 	v := webcontext.Validator()
-	err = v.StructCtx(ctx, req)
+	err := v.StructCtx(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -131,23 +149,18 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	// Postgres truncates times to milliseconds when storing. We and do the same
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
-	m := models.Branch{
+	m := Branch{
 		ID:        uuid.NewRandom().String(),
 		Name:      req.Name,
-		CreatedAt: now.Unix(),
-		UpdatedAt: now.Unix(),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
-	if err := m.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
+	if _, err := repo.mongoDb.Collection(dal.C.Branch).InsertOne(ctx, m); err != nil {
 		return nil, errors.WithMessage(err, "Insert branch failed")
 	}
 
-	return &Branch{
-		ID:        m.ID,
-		Name:      m.Name,
-		CreatedAt: time.Unix(m.CreatedAt, 0),
-		UpdatedAt: time.Unix(m.UpdatedAt, 0),
-	}, nil
+	return &m, nil
 }
 
 // Update replaces an branch in the database.
@@ -165,11 +178,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	var unique = true
 	if req.Name != nil {
-		exists, err := models.Branches(models.BranchWhere.Name.EQ(*req.Name), models.BranchWhere.ID.NEQ(req.ID)).Exists(ctx, repo.DbConn)
-		if err != nil {
-			return err
-		}
-		unique = !exists
+		unique = !repo.branchExist(ctx, *req.Name)
 	}
 
 	ctx = webcontext.ContextAddUniqueValue(ctx, req, "Name", unique)
@@ -181,7 +190,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 		return err
 	}
 
-	cols := models.M{}
+	cols := bson.M{}
 	if req.Name != nil {
 		cols[models.BrandColumns.Name] = *req.Name
 	}
@@ -203,9 +212,9 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	cols[models.BranchColumns.UpdatedAt] = now
 
-	_, err = models.Branches(models.BranchWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
+	_, err = repo.mongoDb.Collection(dal.C.Branch).UpdateOne(ctx, bson.M{dal.BranchColumns.ID: req.ID}, cols)
 
-	return nil
+	return err
 }
 
 // Archive soft deleted the checklist from the database.
@@ -238,9 +247,11 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	_, err = models.Branches(models.BranchWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, models.M{models.BranchColumns.ArchivedAt: now})
+	cols := bson.M{dal.BranchColumns.ArchivedAt: now}
 
-	return nil
+	_, err = repo.mongoDb.Collection(dal.C.Branch).UpdateOne(ctx, bson.M{dal.BranchColumns.ID: req.ID}, cols)
+
+	return err
 }
 
 // Delete removes an checklist from the database.
@@ -264,7 +275,7 @@ func (repo *Repository) Delete(ctx context.Context, claims auth.Claims, req Dele
 		return errors.WithStack(ErrForbidden)
 	}
 
-	_, err = models.Branches(models.BranchWhere.ID.EQ(req.ID)).DeleteAll(ctx, repo.DbConn)
+	_, err = repo.mongoDb.Collection(dal.C.Branch).DeleteOne(ctx, bson.M{dal.BranchColumns.ID: req.ID})
 	if err != nil {
 		return errors.WithStack(err)
 	}

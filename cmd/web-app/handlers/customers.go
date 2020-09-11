@@ -812,6 +812,7 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 	data["transactions"] = tranxListResp.Transactions
 
 	data["urlCustomersIndex"] = urlCustomersIndex()
+	data["urlCustomersView"] = urlCustomersView(customerID)
 	data["urlCustomersAccountsUpdate"] = urlCustomersAccountsUpdate(customerID, accountID)
 	data["urlCustomersAccountUpdate"] = urlCustomersAddAccount(customerID)
 	data["urlCustomersAccountTransactions"] = urlCustomersAccountTransactions(customerID, accountID)

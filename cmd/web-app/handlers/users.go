@@ -301,7 +301,7 @@ func (h *Users) Create(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		return err
 	}
 
-	data["branches"], err = h.BranchRepo.Find(ctx, claims, branch.FindRequest{
+	data["branches"], err = h.BranchRepo.Find(ctx, branch.FindRequest{
 		Order:           []string{"name"},
 	})
 	if err != nil {
