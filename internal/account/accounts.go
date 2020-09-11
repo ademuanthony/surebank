@@ -11,12 +11,12 @@ import (
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
+	"merryworld/surebank/internal/dal"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
@@ -46,8 +46,8 @@ func (repo *Repository) FindDs(ctx context.Context, claims auth.Claims, req Find
 	defer span.Finish()
 
 	var queries = bson.M{
-		Columns.AccountType: models.AccountTypeDS,
-		Columns.Balance:     bson.M{"$gt": 0},
+		dal.AccountColumns.AccountType: models.AccountTypeDS,
+		dal.AccountColumns.Balance:     bson.M{"$gt": 0},
 	}
 
 	return repo.find(ctx, claims, req, queries)
@@ -62,11 +62,11 @@ func (repo *Repository) Debtors(ctx context.Context, claims auth.Claims, req Fin
 	thirtyDaysAgo := currentDate.Add(-30 * 24 * time.Hour).Unix()
 
 	var queries = bson.M{
-		Columns.LastPaymentDate: bson.M{"$gte": thirtyDaysAgo},
-		Columns.LastPaymentDate: bson.M{"$lte": threeDaysAgo},
+		dal.AccountColumns.LastPaymentDate: bson.M{"$gte": thirtyDaysAgo},
+		dal.AccountColumns.LastPaymentDate: bson.M{"$lte": threeDaysAgo},
 	}
 
-	req.Order = append(req.Order, fmt.Sprintf("%s -1", Columns.LastPaymentDate))
+	req.Order = append(req.Order, fmt.Sprintf("%s -1", dal.AccountColumns.LastPaymentDate))
 
 	return repo.find(ctx, claims, req, queries)
 }
@@ -142,8 +142,8 @@ func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id str
 	defer span.Finish()
 
 	var rec Account
-	collection := repo.mongoDb.Collection(CollectionName)
-	err := collection.FindOne(ctx, bson.M{Columns.ID: id}).Decode(&rec)
+	collection := repo.mongoDb.Collection(dal.C.Account)
+	err := collection.FindOne(ctx, bson.M{dal.AccountColumns.ID: id}).Decode(&rec)
 	return &rec, err
 }
 
@@ -153,10 +153,10 @@ func (repo *Repository) AccountsCount(ctx context.Context, claims auth.Claims) (
 
 	query := bson.M{}
 	if !claims.HasRole(auth.RoleAdmin) {
-		query[Columns.SalesRepID] = claims.Subject
+		query[dal.AccountColumns.SalesRepID] = claims.Subject
 	}
 
-	collection := repo.mongoDb.Collection(CollectionName)
+	collection := repo.mongoDb.Collection(dal.C.Account)
 	return collection.CountDocuments(ctx, query)
 }
 
@@ -178,7 +178,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, weberror.NewErrorMessage(ctx, err, 400, "Something went wrong. Cannot get your branch")
 	}
 
-	customer, err := repo.customerRepo.ReadByID(ctx, req.CustomerID)
+	cust, err := repo.customerRepo.ReadByID(ctx, req.CustomerID)
 	if err != nil {
 		return nil, weberror.NewErrorMessage(ctx, err, 500, "Cannot read customer info")
 	}
@@ -218,11 +218,18 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 
 		SalesRep: user.FromModel(salesRep),
 		Branch:   branch,
-		Customer: customer,
+		Customer: cust,
 	}
 
-	if _, err := repo.mongoDb.Collection(CollectionName).InsertOne(ctx, m); err != nil {
+	if _, err := repo.mongoDb.Collection(dal.C.Account).InsertOne(ctx, m); err != nil {
 		return nil, weberror.WithMessage(ctx, err, "Insert account failed")
+	}
+	// add the account to the customer
+	filter := bson.M{dal.CustomerColumns.ID: cust.ID}
+	update := bson.M{"$set": bson.M{dal.CustomerColumns.Accounts: cust.Accounts}}
+	if _, err := repo.mongoDb.Collection(dal.C.Customer).UpdateOne(ctx, filter, update); err != nil {
+		repo.mongoDb.Collection(dal.C.Customer).DeleteOne(ctx, bson.M{dal.AccountColumns.ID: m.ID})
+		return nil, err
 	}
 
 	return &m, nil
@@ -242,8 +249,8 @@ func (repo *Repository) generateAccountNumber(ctx context.Context, accountType s
 
 func (repo *Repository) accountNumberExists(ctx context.Context, number string) bool {
 	var rec Account
-	collection := repo.mongoDb.Collection(CollectionName)
-	_ = collection.FindOne(ctx, bson.M{Columns.Number: number}).Decode(&rec)
+	collection := repo.mongoDb.Collection(dal.C.Account)
+	_ = collection.FindOne(ctx, bson.M{dal.AccountColumns.Number: number}).Decode(&rec)
 	return rec.ID == ""
 }
 
@@ -326,11 +333,11 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return err
 	}
 
-	collection := repo.mongoDb.Collection(CollectionName)
-	_, err = collection.DeleteOne(ctx, bson.M{Columns.ID: req.ID})
+	collection := repo.mongoDb.Collection(dal.C.Account)
+	_, err = collection.DeleteOne(ctx, bson.M{dal.AccountColumns.ID: req.ID})
 	// TODO: delete transactions
 
-	return nil
+	return err
 }
 
 func (repo *Repository) DbConnCount(ctx context.Context) (int, error) {

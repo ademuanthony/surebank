@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"merryworld/surebank/internal/dal"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/postgres/models"
@@ -69,8 +70,8 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 // ReadByID gets the specified branch by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, id string) (*Branch, error) {
 	var rec Branch
-	collection := repo.mongoDb.Collection(CollectionName)
-	err := collection.FindOne(ctx, bson.M{Columns.ID: id}).Decode(&rec)
+	collection := repo.mongoDb.Collection(dal.C.Branch)
+	err := collection.FindOne(ctx, bson.M{dal.BranchColumns.ID: id}).Decode(&rec)
 	return &rec, err
 }
 

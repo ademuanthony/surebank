@@ -1,8 +1,124 @@
 package dal
 
 import (
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"context"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+var C = struct {
+	Account         string
+	BankAccount     string
+	BankDeposit     string
+	Branch          string
+	Brand           string
+	Category        string
+	Customer        string
+	DailySummary    string
+	DSCommission    string
+	Expenditure     string
+	Inventory       string
+	Payment         string
+	Product         string
+	ProductCategory string
+	RepsExpense     string
+	Sale            string
+	SaleItem        string
+	Transaction     string
+	Users           string
+}{
+	Account:         "account",
+	BankAccount:     "bank_account",
+	BankDeposit:     "bank_deposit",
+	Branch:          "branch",
+	Brand:           "brand",
+	Category:        "category",
+	Customer:        "customer",
+	DailySummary:    "daily_summary",
+	DSCommission:    "ds_commission",
+	Expenditure:     "expenditure",
+	Inventory:       "inventory",
+	Payment:         "payment",
+	Product:         "product",
+	ProductCategory: "product_category",
+	RepsExpense:     "reps_expense",
+	Sale:            "sale",
+	SaleItem:        "sale_item",
+	Transaction:     "transaction",
+	Users:           "users",
+}
+
+var (
+	AccountColumns = struct {
+		ID              string
+		BranchID        string
+		Number          string
+		CustomerID      string
+		AccountType     string
+		Target          string
+		TargetInfo      string
+		SalesRepID      string
+		CreatedAt       string
+		UpdatedAt       string
+		ArchivedAt      string
+		Balance         string
+		LastPaymentDate string
+	}{
+		ID:              "id",
+		BranchID:        "branch_id",
+		Number:          "number",
+		CustomerID:      "customer_id",
+		AccountType:     "account_type",
+		Target:          "target",
+		TargetInfo:      "target_info",
+		SalesRepID:      "sales_rep_id",
+		CreatedAt:       "created_at",
+		UpdatedAt:       "updated_at",
+		ArchivedAt:      "archived_at",
+		Balance:         "balance",
+		LastPaymentDate: "last_payment_date",
+	}
+
+	BranchColumns = struct {
+		ID         string
+		Name       string
+		CreatedAt  string
+		UpdatedAt  string
+		ArchivedAt string
+	}{
+		ID:         "id",
+		Name:       "name",
+		CreatedAt:  "created_at",
+		UpdatedAt:  "updated_at",
+		ArchivedAt: "archived_at",
+	}
+
+	CustomerColumns = struct {
+		ID          string
+		BranchID    string
+		Email       string
+		Name        string
+		PhoneNumber string
+		Address     string
+		SalesRepID  string
+		CreatedAt   string
+		UpdatedAt   string
+		ArchivedAt  string
+		Accounts    string
+	}{
+		ID:          "id",
+		BranchID:    "branch_id",
+		Email:       "email",
+		Name:        "name",
+		PhoneNumber: "phone_number",
+		Address:     "address",
+		SalesRepID:  "sales_rep_id",
+		CreatedAt:   "created_at",
+		UpdatedAt:   "updated_at",
+		ArchivedAt:  "archived_at",
+		Accounts:    "accounts",
+	}
 )
 
 type FindInput struct {
@@ -12,77 +128,19 @@ type FindInput struct {
 	SortFields     []string
 }
 
-var session *mgo.Session
+var client *mongo.Client
 
-func Connect(server string) (err error) {
-	session, err = mgo.Dial(server)
+func Connect(ctx context.Context, server string) (err error) {
+	// "mongodb://localhost:27017"
+	clientOptions := options.Client().ApplyURI(server)
+	client, err = mongo.Connect(ctx, clientOptions)
 	return
 }
 
-func NewDb(databaseName ...string) *mgo.Database {
-	newSession := session.Copy()
+func NewDb(databaseName ...string) *mongo.Database {
 	dbName := "main"
 	if len(databaseName) > 0 {
 		dbName = databaseName[0]
 	}
-	db := newSession.DB(dbName)
-	return db
-}
-
-func Insert(collection *mgo.Collection, obj ...interface{}) error {
-	err := collection.Insert(obj...)
-	return err
-}
-
-func Save(collection *mgo.Collection, obj interface{}) error {
-	err := collection.Insert(obj)
-	return err
-}
-
-func Update(collection *mgo.Collection, selector interface{}, obj interface{}) error {
-	err := collection.Update(selector, obj)
-	return err
-}
-
-func Patch(collection *mgo.Collection, selector interface{}, changes interface{}) error {
-	_, err := collection.UpdateAll(selector, changes)
-	return err
-}
-
-func FindAll(collection *mgo.Collection, input FindInput, receiver interface{}) (err error) {
-	query := collection.Find(input.FilteringQuery)
-	if len(input.SortFields) > 0 {
-		query = query.Sort(input.SortFields...)
-	}
-	if input.Limit > 0 {
-		query = query.Limit(input.Limit)
-	}
-	if input.Offset != 0 {
-		query = query.Skip(input.Offset)
-	}
-	err = query.All(receiver)
-	return
-}
-
-func FindOne(collection *mgo.Collection, filteringQuery interface{}, receiver interface{}) (err error) {
-	query := collection.Find(filteringQuery)
-	err = query.One(receiver)
-	return
-}
-
-func FindById(collection *mgo.Collection, id bson.ObjectId, receiver interface{}) (err error) {
-	err = collection.FindId(id).One(receiver)
-	return
-}
-
-func Exists(collection *mgo.Collection, filteringQuery interface{}) (bool, error) {
-	count, err := collection.Find(filteringQuery).Count()
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
-}
-
-func Count(collection *mgo.Collection, filteringQuery interface{}) (int, error) {
-	return collection.Find(filteringQuery).Count()
+	return client.Database(dbName)
 }

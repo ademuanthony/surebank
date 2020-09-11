@@ -34,22 +34,6 @@ type Branch struct {
 	ArchivedAt *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
 }
 
-const CollectionName = "branch"
-
-var Columns = struct {
-	ID         string
-	Name       string
-	CreatedAt  string
-	UpdatedAt  string
-	ArchivedAt string
-}{
-	ID:         "id",
-	Name:       "name",
-	CreatedAt:  "created_at",
-	UpdatedAt:  "updated_at",
-	ArchivedAt: "archived_at",
-}
-
 func FromModel(rec *models.Branch) *Branch {
 	b := &Branch{
 		ID:        rec.ID,

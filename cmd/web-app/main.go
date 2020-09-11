@@ -25,12 +25,12 @@ import (
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/customer"
+	"merryworld/surebank/internal/dal"
 	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/expenditure"
 	"merryworld/surebank/internal/geonames"
 	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/mid"
-	"merryworld/surebank/internal/mongo"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/flag"
 	img_resize "merryworld/surebank/internal/platform/img-resize"
@@ -489,10 +489,11 @@ func main() {
 
 	// =========================================================================
 	// mongoURI := fmt.Sprintf("mongodb+srv://%s:%s@%s", cfg.Mongo.User, cfg.Mongo.Pass, cfg.Mongo.Host)
-	if err = mongo.Connect(cfg.Mongo.Host); err != nil {
+	if err = dal.Connect(context.Background(), cfg.Mongo.Host); err != nil {
 		log.Fatalf("main : mongo.Connect : %s : %+v", cfg.Mongo.Host, err)
 	}
 	log.Println("main : Completed : Connect Mongo")
+	mongoDb := dal.NewDb()
 
 	// =========================================================================
 	// Notify Email
@@ -547,7 +548,7 @@ func main() {
 	}
 
 	// =========================================================================
-	// Init repositories and AppContext
+	// Init repositories and AppContext 01448880129 +23414220004
 
 	webRoute, err := webroute.New(cfg.Project.WebApiBaseUrl, cfg.Service.BaseUrl)
 	if err != nil {
@@ -564,9 +565,9 @@ func main() {
 	inviteRepo := invite.NewRepository(masterDb, usrRepo, usrAccRepo, accRepo, webRoute.UserInviteAccept, notifyEmail, cfg.Project.SharedSecretKey)
 	chklstRepo := checklist.NewRepository(masterDb)
 	shopRepo := shop.NewRepository(masterDb)
-	branchRepo := branch.NewRepository(masterDb)
-	customerRepo := customer.NewRepository(masterDb)
-	accountRepo := account.NewRepository(masterDb)
+	branchRepo := branch.NewRepository(masterDb, mongoDb)
+	customerRepo := customer.NewRepository(masterDb, mongoDb, branchRepo)
+	accountRepo := account.NewRepository(masterDb, mongoDb, customerRepo, branchRepo)
 	commissionRepo := dscommission.NewRepository(masterDb)
 	transactionRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS)
 	inventoryRepo := inventory.NewRepository(masterDb)

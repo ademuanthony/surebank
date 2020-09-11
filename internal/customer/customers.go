@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
+	"merryworld/surebank/internal/dal"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
@@ -31,11 +32,11 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.customer.Find")
 	defer span.Finish()
 
-	collection := repo.mongoDb.Collection(CollectionName)
+	collection := repo.mongoDb.Collection(dal.C.Customer)
 
 	var queries = bson.D{}
 	if !req.IncludeArchived {
-		queries = append(queries, primitive.E{Key: Columns.ArchivedAt, Value: nil})
+		queries = append(queries, primitive.E{Key: dal.CustomerColumns.ArchivedAt, Value: nil})
 	}
 
 	totalCount, err := collection.CountDocuments(ctx, queries)
@@ -92,8 +93,8 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 func (repo *Repository) ReadByID(ctx context.Context, id string) (*Customer, error) {
 	var rec Customer
-	collection := repo.mongoDb.Collection(CollectionName)
-	err := collection.FindOne(ctx, bson.M{Columns.ID: id}).Decode(&rec)
+	collection := repo.mongoDb.Collection(dal.C.Customer)
+	err := collection.FindOne(ctx, bson.M{dal.CustomerColumns.ID: id}).Decode(&rec)
 	return &rec, err
 }
 
@@ -103,10 +104,10 @@ func (repo *Repository) CustomersCount(ctx context.Context, claims auth.Claims) 
 
 	query := bson.M{}
 	if !claims.HasRole(auth.RoleAdmin) {
-		query[Columns.SalesRepID] = claims.Subject
+		query[dal.CustomerColumns.SalesRepID] = claims.Subject
 	}
 
-	collection := repo.mongoDb.Collection(CollectionName)
+	collection := repo.mongoDb.Collection(dal.C.Customer)
 	return collection.CountDocuments(ctx, query)
 }
 
@@ -161,7 +162,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		UpdatedAt:   now,
 	}
 
-	if _, err := repo.mongoDb.Collection(CollectionName).InsertOne(ctx, m); err != nil {
+	if _, err := repo.mongoDb.Collection(dal.C.Customer).InsertOne(ctx, m); err != nil {
 		return nil, weberror.WithMessage(ctx, err, "Insert customer failed")
 	}
 
@@ -190,19 +191,19 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	cols := bson.M{}
 	if req.Name != nil {
-		cols[Columns.Name] = *req.Name
+		cols[dal.CustomerColumns.Name] = *req.Name
 	}
 
 	if req.Email != nil {
-		cols[Columns.Email] = *req.Email
+		cols[dal.CustomerColumns.Email] = *req.Email
 	}
 
 	if req.Address != nil {
-		cols[Columns.Address] = *req.Address
+		cols[dal.CustomerColumns.Address] = *req.Address
 	}
 
 	if req.PhoneNumber != nil {
-		cols[Columns.PhoneNumber] = *req.PhoneNumber
+		cols[dal.CustomerColumns.PhoneNumber] = *req.PhoneNumber
 	}
 
 	if len(cols) == 0 {
@@ -220,10 +221,10 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	cols[Columns.UpdatedAt] = now.Unix()
+	cols[dal.CustomerColumns.UpdatedAt] = now.Unix()
 
-	collection := repo.mongoDb.Collection(CollectionName)
-	_, err = collection.UpdateOne(ctx, bson.M{Columns.ID: req.ID}, bson.M{"$set": cols})
+	collection := repo.mongoDb.Collection(dal.C.Customer)
+	_, err = collection.UpdateOne(ctx, bson.M{dal.CustomerColumns.ID: req.ID}, bson.M{"$set": cols})
 
 	return err
 }
@@ -247,7 +248,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return err
 	}
 
-	collection := repo.mongoDb.Collection(CollectionName)
-	_, err = collection.DeleteOne(ctx, bson.M{Columns.ID: req.ID})
+	collection := repo.mongoDb.Collection(dal.C.Customer)
+	_, err = collection.DeleteOne(ctx, bson.M{dal.CustomerColumns.ID: req.ID})
 	return err
 }

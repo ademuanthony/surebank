@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
@@ -18,7 +19,7 @@ import (
 type Repository struct {
 	DbConn     *sqlx.DB
 	mongoDb    *mongo.Database
-	branchRepo branch.Repository
+	branchRepo *branch.Repository
 }
 
 var AccountTypes = []string{
@@ -27,7 +28,7 @@ var AccountTypes = []string{
 }
 
 // NewRepository creates a new Repository that defines dependencies for Customer.
-func NewRepository(db *sqlx.DB, mongoDb *mongo.Database, branchRepo branch.Repository) *Repository {
+func NewRepository(db *sqlx.DB, mongoDb *mongo.Database, branchRepo *branch.Repository) *Repository {
 	return &Repository{
 		DbConn:     db,
 		mongoDb:    mongoDb,
@@ -50,32 +51,8 @@ type Customer struct {
 	CreatedAt   time.Time  `json:"created_at" truss:"api-read"`
 	UpdatedAt   time.Time  `json:"updated_at" truss:"api-read"`
 	ArchivedAt  *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
-}
 
-const CollectionName = "customer"
-
-var Columns = struct {
-	ID          string
-	BranchID    string
-	Email       string
-	Name        string
-	PhoneNumber string
-	Address     string
-	SalesRepID  string
-	CreatedAt   string
-	UpdatedAt   string
-	ArchivedAt  string
-}{
-	ID:          "_id",
-	BranchID:    "branch_id",
-	Email:       "email",
-	Name:        "name",
-	PhoneNumber: "phone_number",
-	Address:     "address",
-	SalesRepID:  "sales_rep_id",
-	CreatedAt:   "created_at",
-	UpdatedAt:   "updated_at",
-	ArchivedAt:  "archived_at",
+	Accounts account.Accounts `json:"accounts"`
 }
 
 func FromModel(rec *models.Customer) *Customer {

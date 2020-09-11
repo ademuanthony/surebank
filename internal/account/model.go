@@ -21,13 +21,13 @@ type Repository struct {
 	DbConn       *sqlx.DB
 	accNumMtx    sync.Mutex
 	mongoDb      *mongo.Database
-	customerRepo customer.Repository
-	branchRepo   branch.Repository
+	customerRepo *customer.Repository
+	branchRepo   *branch.Repository
 }
 
 // NewRepository creates a new Repository that defines dependencies for Account.
-func NewRepository(db *sqlx.DB, mongoDb *mongo.Database, customerRepo customer.Repository,
-	branchRepo branch.Repository) *Repository {
+func NewRepository(db *sqlx.DB, mongoDb *mongo.Database, customerRepo *customer.Repository,
+	branchRepo *branch.Repository) *Repository {
 	return &Repository{
 		DbConn:       db,
 		mongoDb:      mongoDb,
@@ -55,38 +55,6 @@ type Account struct {
 	Customer *customer.Customer `json:"customer"`
 	SalesRep *user.User         `json:"sales_rep" truss:"api-read"`
 	Branch   *branch.Branch     `json:"branch" truss:"api-read"`
-}
-
-const CollectionName = "account"
-
-var Columns = struct {
-	ID              string
-	BranchID        string
-	Number          string
-	CustomerID      string
-	AccountType     string
-	Target          string
-	TargetInfo      string
-	SalesRepID      string
-	CreatedAt       string
-	UpdatedAt       string
-	ArchivedAt      string
-	Balance         string
-	LastPaymentDate string
-}{
-	ID:              "id",
-	BranchID:        "branch_id",
-	Number:          "number",
-	CustomerID:      "customer_id",
-	AccountType:     "account_type",
-	Target:          "target",
-	TargetInfo:      "target_info",
-	SalesRepID:      "sales_rep_id",
-	CreatedAt:       "created_at",
-	UpdatedAt:       "updated_at",
-	ArchivedAt:      "archived_at",
-	Balance:         "balance",
-	LastPaymentDate: "last_payment_date",
 }
 
 func FromModel(rec *models.Account) *Account {
