@@ -12,7 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
-	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
@@ -126,7 +125,7 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	req.SalesRepID = salesRep.ID
 	req.BranchID = salesRep.BranchID
 
-	branch, err := branch.ReadByID(ctx, repo.mongoDb, req.BranchID)
+	branch, err := repo.branchRepo.ReadByID(ctx, req.BranchID)
 	if err != nil {
 		return nil, err
 	}

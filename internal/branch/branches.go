@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
-	"go.mongodb.org/mongo-driver/mongo"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -68,9 +67,9 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 }
 
 // ReadByID gets the specified branch by ID from the database.
-func ReadByID(ctx context.Context, db *mongo.Database, id string) (*Branch, error) {
+func (repo *Repository) ReadByID(ctx context.Context, id string) (*Branch, error) {
 	var rec Branch
-	collection := db.Collection(CollectionName)
+	collection := repo.mongoDb.Collection(CollectionName)
 	err := collection.FindOne(ctx, bson.M{Columns.ID: id}).Decode(&rec)
 	return &rec, err
 }

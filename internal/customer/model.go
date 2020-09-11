@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
 
@@ -15,8 +16,9 @@ import (
 
 // Repository defines the required dependencies for Customer.
 type Repository struct {
-	DbConn  *sqlx.DB
-	mongoDb *mongo.Database
+	DbConn     *sqlx.DB
+	mongoDb    *mongo.Database
+	branchRepo branch.Repository
 }
 
 var AccountTypes = []string{
@@ -25,10 +27,11 @@ var AccountTypes = []string{
 }
 
 // NewRepository creates a new Repository that defines dependencies for Customer.
-func NewRepository(db *sqlx.DB, mongoDb *mongo.Database) *Repository {
+func NewRepository(db *sqlx.DB, mongoDb *mongo.Database, branchRepo branch.Repository) *Repository {
 	return &Repository{
-		DbConn:  db,
-		mongoDb: mongoDb,
+		DbConn:     db,
+		mongoDb:    mongoDb,
+		branchRepo: branchRepo,
 	}
 }
 

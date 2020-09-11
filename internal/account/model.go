@@ -8,22 +8,31 @@ import (
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/user"
-	
-	"github.com/jmoiron/sqlx"
+
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
+
+	"github.com/jmoiron/sqlx"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Repository defines the required dependencies for Account.
 type Repository struct {
-	DbConn    *sqlx.DB
-	accNumMtx sync.Mutex
+	DbConn       *sqlx.DB
+	accNumMtx    sync.Mutex
+	mongoDb      *mongo.Database
+	customerRepo customer.Repository
+	branchRepo   branch.Repository
 }
 
 // NewRepository creates a new Repository that defines dependencies for Account.
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *sqlx.DB, mongoDb *mongo.Database, customerRepo customer.Repository,
+	branchRepo branch.Repository) *Repository {
 	return &Repository{
-		DbConn: db,
+		DbConn:       db,
+		mongoDb:      mongoDb,
+		customerRepo: customerRepo,
+		branchRepo:   branchRepo,
 	}
 }
 
@@ -46,6 +55,38 @@ type Account struct {
 	Customer *customer.Customer `json:"customer"`
 	SalesRep *user.User         `json:"sales_rep" truss:"api-read"`
 	Branch   *branch.Branch     `json:"branch" truss:"api-read"`
+}
+
+const CollectionName = "account"
+
+var Columns = struct {
+	ID              string
+	BranchID        string
+	Number          string
+	CustomerID      string
+	AccountType     string
+	Target          string
+	TargetInfo      string
+	SalesRepID      string
+	CreatedAt       string
+	UpdatedAt       string
+	ArchivedAt      string
+	Balance         string
+	LastPaymentDate string
+}{
+	ID:              "id",
+	BranchID:        "branch_id",
+	Number:          "number",
+	CustomerID:      "customer_id",
+	AccountType:     "account_type",
+	Target:          "target",
+	TargetInfo:      "target_info",
+	SalesRepID:      "sales_rep_id",
+	CreatedAt:       "created_at",
+	UpdatedAt:       "updated_at",
+	ArchivedAt:      "archived_at",
+	Balance:         "balance",
+	LastPaymentDate: "last_payment_date",
 }
 
 func FromModel(rec *models.Account) *Account {
@@ -146,7 +187,7 @@ func (m *Account) Response(ctx context.Context) *Response {
 }
 
 // Accounts a list of Accounts.
-type Accounts []*Account
+type Accounts []Account
 
 // Response transforms a list of Accounts to a list of Responses.
 func (m *Accounts) Response(ctx context.Context) []*Response {
@@ -210,7 +251,7 @@ type FindRequest struct {
 	Args            []interface{} `json:"args" swaggertype:"array,string" example:"Moon Launch,active"`
 	Order           []string      `json:"order" example:"created_at desc"`
 	Limit           *uint         `json:"limit" example:"10"`
-	Offset          *uint         `json:"offset" example:"20"`
+	Offset          *int64        `json:"offset" example:"20"`
 	IncludeArchived bool          `json:"include-archived" example:"false"`
 	IncludeCustomer bool          `json:"include_customer" example:"false"`
 	IncludeBranch   bool          `json:"include_branch" example:"false"`

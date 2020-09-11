@@ -5,48 +5,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-var Collections = struct {
-	Account         string
-	BankAccount     string
-	BankDeposit     string
-	Branch          string
-	Brand           string
-	Category        string
-	Customer        string
-	DailySummary    string
-	DSCommission    string
-	Expenditure     string
-	Inventory       string
-	Payment         string
-	Product         string
-	ProductCategory string
-	RepsExpense     string
-	Sale            string
-	SaleItem        string
-	Transaction     string
-	Users           string
-}{
-	Account:         "account",
-	BankAccount:     "bank_account",
-	BankDeposit:     "bank_deposit",
-	Branch:          "branch",
-	Brand:           "brand",
-	Category:        "category",
-	Customer:        "customer",
-	DailySummary:    "daily_summary",
-	DSCommission:    "ds_commission",
-	Expenditure:     "expenditure",
-	Inventory:       "inventory",
-	Payment:         "payment",
-	Product:         "product",
-	ProductCategory: "product_category",
-	RepsExpense:     "reps_expense",
-	Sale:            "sale",
-	SaleItem:        "sale_item",
-	Transaction:     "transaction",
-	Users:           "users",
-}
-
 type FindInput struct {
 	FilteringQuery interface{}
 	Offset         int
