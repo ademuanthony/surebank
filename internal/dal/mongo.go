@@ -2,6 +2,7 @@ package dal
 
 import (
 	"context"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -131,8 +132,7 @@ type FindInput struct {
 var client *mongo.Client
 
 func Connect(ctx context.Context, server string) (err error) {
-	// "mongodb://localhost:27017"
-	clientOptions := options.Client().ApplyURI(server)
+	clientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s", server))
 	client, err = mongo.Connect(ctx, clientOptions)
 	return
 }

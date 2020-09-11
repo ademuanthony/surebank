@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/platform/notify"
 	"merryworld/surebank/internal/platform/web"
@@ -21,7 +20,7 @@ import (
 // BulkSMS represents the endpoint for sending SMS notification to customers
 type BulkSMS struct {
 	CustomerRepo *customer.Repository
-	AccountRepo  *account.Repository
+	AccountRepo  *customer.AccountRepository
 	NotifySMS    notify.SMS
 	Renderer     web.Renderer
 	Redis        *redis.Client

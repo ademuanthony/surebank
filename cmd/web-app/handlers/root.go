@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
@@ -27,7 +26,7 @@ import (
 type Root struct {
 	ShopRepo *shop.Repository
 	CustomerRepo *customer.Repository
-	AccountRepo *account.Repository
+	AccountRepo *customer.AccountRepository
 	TransactionRepo *transaction.Repository
 	Renderer web.Renderer
 	Sitemap  *stm.Sitemap

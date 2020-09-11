@@ -22,7 +22,7 @@ import (
 // Customers represents the Customer API method handler set.
 type Customers struct {
 	Repository  *customer.Repository
-	AccountRepo *account.Repository
+	AccountRepo *account.AccountRepository
 	notifySMS notify.SMS
 
 	// ADD OTHER STATE LIKE THE LOGGER IF NEEDED.
@@ -209,7 +209,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 		}
 	}
 
-	accReq := account.CreateRequest{
+	accReq := account.CreateAccountRequest{
 		CustomerID: res.ID,
 		Type:       req.Type,
 		Target:     req.Target,

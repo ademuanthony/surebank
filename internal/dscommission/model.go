@@ -6,7 +6,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
@@ -33,7 +32,7 @@ type DsCommission struct {
 	EffectiveDate int64   `boil:"effective_date" json:"effective_date" toml:"effective_date" yaml:"effective_date"`
 
 	Customer *customer.Customer
-	Account  *account.Account
+	Account  *customer.Account
 }
 
 func FromModel(rec *models.DSCommission) *DsCommission {
@@ -48,7 +47,7 @@ func FromModel(rec *models.DSCommission) *DsCommission {
 
 	if rec.R != nil {
 		if rec.R.Account != nil {
-			a.Account = account.FromModel(rec.R.Account)
+			a.Account = customer.AccountFromModel(rec.R.Account)
 		}
 
 		if rec.R.Customer != nil {

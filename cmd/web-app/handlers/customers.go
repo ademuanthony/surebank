@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/datatable"
@@ -31,7 +30,7 @@ import (
 // Customers represents the Customers API method handler set.
 type Customers struct {
 	CustomerRepo    *customer.Repository
-	AccountRepo     *account.Repository
+	AccountRepo     *customer.AccountRepository
 	TransactionRepo *transaction.Repository
 	NotifySMS       notify.SMS
 	Renderer        web.Renderer
@@ -233,7 +232,7 @@ func (h *Customers) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 				}
 			}
 
-			accReq := account.CreateRequest{
+			accReq := customer.CreateAccountRequest{
 				CustomerID: res.ID,
 				Type:       req.Type,
 				Target:     req.Target,
@@ -341,14 +340,14 @@ func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return nil
 	}
 
-	cust, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	cust, err := h.CustomerRepo.ReadByID(ctx, customerID)
 	if err != nil {
 		return err
 	}
 	data["customer"] = cust.Response(ctx)
 
-	accountsResp, err := h.AccountRepo.Find(ctx, claims, account.FindRequest{
-		Where: "customer_id = ?", Args: []interface{}{customerID}, IncludeSalesRep: true, IncludeBranch: true,
+	accountsResp, err := h.AccountRepo.Find(ctx, claims, customer.FindAccountRequest{
+		CustomerID: customerID, IncludeSalesRep: true, IncludeBranch: true,
 	})
 	if err != nil {
 		return err
@@ -470,7 +469,7 @@ func (h *Customers) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 		return nil
 	}
 
-	cust, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	cust, err := h.CustomerRepo.ReadByID(ctx, customerID)
 	if err != nil {
 		return err
 	}
@@ -571,13 +570,13 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 		return resp, nil
 	}
 
-	customer, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	cust, err := h.CustomerRepo.ReadByID(ctx, customerID)
 	if err != nil {
 		return err
 	}
 
-	accountsResp, err := h.AccountRepo.Find(ctx, claims, account.FindRequest{
-		Where: "customer_id = ?", Args: []interface{}{customerID},
+	accountsResp, err := h.AccountRepo.Find(ctx, claims, customer.FindAccountRequest{
+		CustomerID: customerID,
 	})
 	if err != nil {
 		return err
@@ -644,7 +643,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 	}
 
 	data := map[string]interface{}{
-		"customer":                         customer,
+		"customer":                         cust,
 		"datatable":                        dt.Response(),
 		"urlCustomersTransactionsCreate":   urlCustomersTransactionsCreate(customerID, accountID),
 		"urlCustomersTransactionsWithdraw": urlCustomersTransactionsWithdraw(customerID, accountID),
@@ -671,7 +670,7 @@ func (h *Customers) AddAccount(ctx context.Context, w http.ResponseWriter, r *ht
 	}
 
 	//
-	req := new(account.CreateRequest)
+	req := new(customer.CreateAccountRequest)
 	data := make(map[string]interface{})
 	f := func() (bool, error) {
 		if r.Method == http.MethodPost {
@@ -719,7 +718,7 @@ func (h *Customers) AddAccount(ctx context.Context, w http.ResponseWriter, r *ht
 		return nil
 	}
 
-	customerRes, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	customerRes, err := h.CustomerRepo.ReadByID(ctx, customerID)
 	if err != nil {
 		return err
 	}
@@ -730,7 +729,7 @@ func (h *Customers) AddAccount(ctx context.Context, w http.ResponseWriter, r *ht
 	data["urlCustomersIndex"] = urlCustomersIndex()
 	data["urlCustomersView"] = urlCustomersView(customerID)
 
-	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(account.CreateRequest{})); ok {
+	if verr, ok := weberror.NewValidationError(ctx, webcontext.Validator().Struct(customer.CreateAccountRequest{})); ok {
 		data["validationDefaults"] = verr.(*weberror.Error)
 	}
 
@@ -758,7 +757,7 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 
 			switch r.PostForm.Get("action") {
 			case "archive":
-				err = h.AccountRepo.Archive(ctx, claims, account.ArchiveRequest{
+				err = h.AccountRepo.Archive(ctx, claims, customer.ArchiveAccountRequest{
 					ID: customerID,
 				})
 				if err != nil {
@@ -783,13 +782,13 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 		return nil
 	}
 
-	cust, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	cust, err := h.CustomerRepo.ReadByID(ctx, customerID)
 	if err != nil {
 		return err
 	}
 	data["customer"] = cust.Response(ctx)
 
-	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
+	acc, err := h.AccountRepo.ReadByID(ctx, accountID)
 	if err != nil {
 		return weberror.NewError(ctx, err, 404)
 	}
@@ -838,7 +837,7 @@ func (h *Customers) UpdateAccount(ctx context.Context, w http.ResponseWriter, r 
 	}
 
 	//
-	req := new(account.UpdateRequest)
+	req := new(customer.UpdateAccountRequest)
 	data := make(map[string]interface{})
 	f := func() (bool, error) {
 		if r.Method == http.MethodPost {
@@ -885,7 +884,7 @@ func (h *Customers) UpdateAccount(ctx context.Context, w http.ResponseWriter, r 
 		return nil
 	}
 
-	cust, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	cust, err := h.CustomerRepo.ReadByID(ctx, customerID)
 	if err != nil {
 		return err
 	}
@@ -896,7 +895,7 @@ func (h *Customers) UpdateAccount(ctx context.Context, w http.ResponseWriter, r 
 	data["urlCustomersView"] = urlCustomersView(customerID)
 	data["urlCustomersAccountView"] = urlCustomersAccountsView(customerID, accountID)
 
-	account, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
+	account, err := h.AccountRepo.ReadByID(ctx, accountID)
 	if err != nil {
 		return err
 	}
@@ -927,12 +926,12 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 
 	accountID := params["account_id"]
 
-	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
+	acc, err := h.AccountRepo.ReadByID(ctx, accountID)
 	if err != nil {
 		return err
 	}
 
-	cust, err := h.CustomerRepo.ReadByID(ctx, claims, acc.CustomerID)
+	cust, err := h.CustomerRepo.ReadByID(ctx, acc.CustomerID)
 	if err != nil {
 		return err
 	}
@@ -1114,7 +1113,7 @@ func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.
 		return err
 	}
 
-	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
+	acc, err := h.AccountRepo.ReadByID(ctx, accountID)
 	if err != nil {
 		return err
 	}
@@ -1168,7 +1167,7 @@ func (h *Customers) Deposit(ctx context.Context, w http.ResponseWriter, r *http.
 		return nil
 	}
 
-	customerRes, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	customerRes, err := h.CustomerRepo.ReadByID(ctx, customerID)
 	if err != nil {
 		return err
 	}
@@ -1204,7 +1203,7 @@ func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.
 		return err
 	}
 
-	acc, err := h.AccountRepo.ReadByID(ctx, claims, accountID)
+	acc, err := h.AccountRepo.ReadByID(ctx, accountID)
 	if err != nil {
 		return weberror.NewErrorMessage(ctx, err, 400, "accountID"+accountID)
 	}
@@ -1258,7 +1257,7 @@ func (h *Customers) Withraw(ctx context.Context, w http.ResponseWriter, r *http.
 		return nil
 	}
 
-	customerRes, err := h.CustomerRepo.ReadByID(ctx, claims, customerID)
+	customerRes, err := h.CustomerRepo.ReadByID(ctx, customerID)
 	if err != nil {
 		return weberror.NewErrorMessage(ctx, err, 400, "customerID"+customerID)
 	}
@@ -1319,7 +1318,7 @@ func (h *Customers) DirectDeposit(ctx context.Context, w http.ResponseWriter, r 
 					}
 				}
 			}
-			acc, err := h.AccountRepo.ReadByID(ctx, claims, res.AccountID)
+			acc, err := h.AccountRepo.ReadByID(ctx, res.AccountID)
 			if err != nil {
 				return false, err
 			}
@@ -1371,7 +1370,7 @@ func (h *Customers) AccountName(ctx context.Context, w http.ResponseWriter, r *h
 }
 
 func (h *Customers) DBStat(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
-	
+
 	number, err := h.AccountRepo.DbConnCount(ctx)
 	if err != nil {
 		return err
@@ -1436,12 +1435,12 @@ func (h *Customers) Transaction(ctx context.Context, w http.ResponseWriter, r *h
 		return err
 	}
 
-	acc, err := h.AccountRepo.ReadByID(ctx, claims, tranx.AccountID)
+	acc, err := h.AccountRepo.ReadByID(ctx, tranx.AccountID)
 	if err != nil {
 		return err
 	}
 
-	cust, err := h.CustomerRepo.ReadByID(ctx, claims, acc.CustomerID)
+	cust, err := h.CustomerRepo.ReadByID(ctx, acc.CustomerID)
 	if err != nil {
 		return err
 	}

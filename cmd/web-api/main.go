@@ -20,7 +20,6 @@ import (
 
 	"merryworld/surebank/cmd/web-api/docs"
 	"merryworld/surebank/cmd/web-api/handlers"
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/dscommission"
@@ -475,7 +474,7 @@ func main() {
 	inviteRepo := invite.NewRepository(masterDb, usrRepo, usrAccRepo, accRepo, webRoute.UserInviteAccept, notifyEmail, cfg.Project.SharedSecretKey)
 	chklstRepo := checklist.NewRepository(masterDb)
 	customerRepo := customer.NewRepository(masterDb)
-	accountRepo := account.NewRepository(masterDb)
+	accountRepo := account.NewAccountRepository(masterDb)
 	commissionRepo := dscommission.NewRepository(masterDb)
 	depositRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS)
 

@@ -1,4 +1,4 @@
-package account
+package customer
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -24,16 +25,8 @@ import (
 	"merryworld/surebank/internal/user"
 )
 
-var (
-	// ErrNotFound abstracts the postgres not found error.
-	ErrNotFound = errors.New("Entity not found")
-
-	// ErrForbidden occurs when a user tries to do something that is forbidden to them according to our access control policies.
-	ErrForbidden = errors.New("Attempted action is not allowed")
-)
-
 // Find gets all the accounts from the database based on the request params.
-func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRequest) (*PagedResponseList, error) {
+func (repo *AccountRepository) Find(ctx context.Context, claims auth.Claims, req FindAccountRequest) (*AccountPagedResponseList, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.Find")
 	defer span.Finish()
 
@@ -41,7 +34,7 @@ func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRe
 }
 
 // FindDs gets all the accounts from the database that are of DS type and have > 0 balance.
-func (repo *Repository) FindDs(ctx context.Context, claims auth.Claims, req FindRequest) (*PagedResponseList, error) {
+func (repo *AccountRepository) FindDs(ctx context.Context, claims auth.Claims, req FindAccountRequest) (*AccountPagedResponseList, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.FindDs")
 	defer span.Finish()
 
@@ -54,7 +47,7 @@ func (repo *Repository) FindDs(ctx context.Context, claims auth.Claims, req Find
 }
 
 // FindDs gets all the accounts from the database that are of DS type and have > 0 balance.
-func (repo *Repository) Debtors(ctx context.Context, claims auth.Claims, req FindRequest, currentDate time.Time) (*PagedResponseList, error) {
+func (repo *AccountRepository) Debtors(ctx context.Context, claims auth.Claims, req FindAccountRequest, currentDate time.Time) (*AccountPagedResponseList, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.Debtors")
 	defer span.Finish()
 
@@ -71,17 +64,21 @@ func (repo *Repository) Debtors(ctx context.Context, claims auth.Claims, req Fin
 	return repo.find(ctx, claims, req, queries)
 }
 
-func (repo *Repository) find(ctx context.Context, claims auth.Claims, req FindRequest,
-	queries primitive.M) (*PagedResponseList, error) {
+func (repo *AccountRepository) find(ctx context.Context, claims auth.Claims, req FindAccountRequest,
+	queries primitive.M) (*AccountPagedResponseList, error) {
 
-	collection := repo.mongoDb.Collection(CollectionName)
+	collection := repo.mongoDb.Collection(dal.C.Account)
 
 	if !req.IncludeArchived {
-		queries[Columns.ArchivedAt] = nil
+		queries[dal.AccountColumns.ArchivedAt] = nil
 	}
 
 	if !claims.HasRole(auth.RoleAdmin) {
-		queries[Columns.SalesRepID] = claims.Subject
+		queries[dal.AccountColumns.SalesRepID] = claims.Subject
+	}
+
+	if req.CustomerID != "" {
+		queries[dal.AccountColumns.CustomerID] = req.CustomerID
 	}
 
 	totalCount, err := collection.CountDocuments(ctx, queries)
@@ -127,17 +124,17 @@ func (repo *Repository) find(ctx context.Context, claims auth.Claims, req FindRe
 	}
 
 	if len(result) == 0 {
-		return &PagedResponseList{}, nil
+		return &AccountPagedResponseList{}, nil
 	}
 
-	return &PagedResponseList{
+	return &AccountPagedResponseList{
 		Accounts:   result.Response(ctx),
 		TotalCount: totalCount,
 	}, nil
 }
 
 // ReadByID gets the specified branch by ID from the database.
-func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id string) (*Account, error) {
+func (repo *AccountRepository) ReadByID(ctx context.Context, id string) (*Account, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.ReadByID")
 	defer span.Finish()
 
@@ -147,7 +144,7 @@ func (repo *Repository) ReadByID(ctx context.Context, claims auth.Claims, id str
 	return &rec, err
 }
 
-func (repo *Repository) AccountsCount(ctx context.Context, claims auth.Claims) (int64, error) {
+func (repo *AccountRepository) AccountsCount(ctx context.Context, claims auth.Claims) (int64, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.AccountsCount")
 	defer span.Finish()
 
@@ -161,7 +158,7 @@ func (repo *Repository) AccountsCount(ctx context.Context, claims auth.Claims) (
 }
 
 // Create inserts a new account into the database.
-func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req CreateRequest, now time.Time) (*Account, error) {
+func (repo *AccountRepository) Create(ctx context.Context, claims auth.Claims, req CreateAccountRequest, now time.Time) (*Account, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.Create")
 	defer span.Finish()
 	if claims.Audience == "" {
@@ -178,11 +175,13 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		return nil, weberror.NewErrorMessage(ctx, err, 400, "Something went wrong. Cannot get your branch")
 	}
 
+	spew.Dump("\n Get customer \n")
 	cust, err := repo.customerRepo.ReadByID(ctx, req.CustomerID)
 	if err != nil {
 		return nil, weberror.NewErrorMessage(ctx, err, 500, "Cannot read customer info")
 	}
 
+	spew.Dump("\n Got customer \n")
 	// Validate the request.
 	v := webcontext.Validator()
 	err = v.Struct(req)
@@ -216,9 +215,10 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		BranchID:   req.BranchID,
 		UpdatedAt:  now,
 
-		SalesRep: user.FromModel(salesRep),
-		Branch:   branch,
-		Customer: cust,
+		SalesRep:    user.FromModel(salesRep),
+		Branch:      branch,
+		Customer:    cust.Name,
+		PhoneNumber: cust.PhoneNumber,
 	}
 
 	if _, err := repo.mongoDb.Collection(dal.C.Account).InsertOne(ctx, m); err != nil {
@@ -228,14 +228,14 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 	filter := bson.M{dal.CustomerColumns.ID: cust.ID}
 	update := bson.M{"$set": bson.M{dal.CustomerColumns.Accounts: cust.Accounts}}
 	if _, err := repo.mongoDb.Collection(dal.C.Customer).UpdateOne(ctx, filter, update); err != nil {
-		repo.mongoDb.Collection(dal.C.Customer).DeleteOne(ctx, bson.M{dal.AccountColumns.ID: m.ID})
+		_, _ = repo.mongoDb.Collection(dal.C.Customer).DeleteOne(ctx, bson.M{dal.AccountColumns.ID: m.ID})
 		return nil, err
 	}
 
 	return &m, nil
 }
 
-func (repo *Repository) generateAccountNumber(ctx context.Context, accountType string) string {
+func (repo *AccountRepository) generateAccountNumber(ctx context.Context, accountType string) string {
 	var accountNumber string
 	for accountNumber == "" || repo.accountNumberExists(ctx, accountNumber) {
 		accountNumber = accountType
@@ -247,15 +247,15 @@ func (repo *Repository) generateAccountNumber(ctx context.Context, accountType s
 	return accountNumber
 }
 
-func (repo *Repository) accountNumberExists(ctx context.Context, number string) bool {
+func (repo *AccountRepository) accountNumberExists(ctx context.Context, number string) bool {
 	var rec Account
 	collection := repo.mongoDb.Collection(dal.C.Account)
 	_ = collection.FindOne(ctx, bson.M{dal.AccountColumns.Number: number}).Decode(&rec)
-	return rec.ID == ""
+	return rec.ID != ""
 }
 
 // Update replaces an account in the database.
-func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req UpdateRequest, now time.Time) error {
+func (repo *AccountRepository) Update(ctx context.Context, claims auth.Claims, req UpdateAccountRequest, now time.Time) error {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.Update")
 	defer span.Finish()
 
@@ -276,15 +276,15 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	cols := bson.M{}
 	if req.TargetInfo != nil {
-		cols[Columns.TargetInfo] = *req.TargetInfo
+		cols[dal.AccountColumns.TargetInfo] = *req.TargetInfo
 	}
 
 	if req.Target != nil {
-		cols[Columns.Target] = *req.Target
+		cols[dal.AccountColumns.Target] = *req.Target
 	}
 
 	if req.Type != nil {
-		cols[Columns.AccountType] = *req.Type
+		cols[dal.AccountColumns.AccountType] = *req.Type
 	}
 
 	if len(cols) == 0 {
@@ -302,10 +302,10 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 	// here so the value we return is consistent with what we store.
 	now = now.Truncate(time.Millisecond)
 
-	cols[Columns.UpdatedAt] = now.Unix()
+	cols[dal.AccountColumns.UpdatedAt] = now.Unix()
 
-	collection := repo.mongoDb.Collection(CollectionName)
-	_, err = collection.UpdateOne(ctx, bson.M{Columns.ID: req.ID}, bson.M{"$set": cols})
+	collection := repo.mongoDb.Collection(dal.C.Account)
+	_, err = collection.UpdateOne(ctx, bson.M{dal.AccountColumns.ID: req.ID}, bson.M{"$set": cols})
 
 	if err != nil {
 		return weberror.NewError(ctx, err, 500)
@@ -315,7 +315,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 }
 
 // Archive soft deleted the account from the database.
-func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req ArchiveRequest) error {
+func (repo *AccountRepository) Archive(ctx context.Context, claims auth.Claims, req ArchiveAccountRequest) error {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.Archive")
 	defer span.Finish()
 
@@ -340,7 +340,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	return err
 }
 
-func (repo *Repository) DbConnCount(ctx context.Context) (int, error) {
+func (repo *AccountRepository) DbConnCount(ctx context.Context) (int, error) {
 	result := struct {
 		Number int `json:"number"`
 	}{}

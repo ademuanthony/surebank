@@ -3,7 +3,10 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"merryworld/surebank/internal/account"
+	"net/http"
+	"strings"
+	"time"
+
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/platform/auth"
@@ -13,9 +16,6 @@ import (
 	"merryworld/surebank/internal/shop"
 	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/user"
-	"net/http"
-	"strings"
-	"time"
 
 	"github.com/jinzhu/now"
 	"github.com/pkg/errors"
@@ -27,7 +27,7 @@ import (
 // Customers represents the Customers API method handler set.
 type Reports struct {
 	CustomerRepo    *customer.Repository
-	AccountRepo     *account.Repository
+	AccountRepo     *customer.AccountRepository
 	TransactionRepo *transaction.Repository
 	ShopRepo        *shop.Repository
 	UserRepos       *user.Repository
@@ -232,7 +232,7 @@ func (h *Reports) Ds(ctx context.Context, w http.ResponseWriter, r *http.Request
 		{Field: "created_at", Title: "Registration Date", Visible: true, Searchable: false, Orderable: true, Filterable: false},
 	}
 
-	mapFunc := func(q *account.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q *customer.AccountResponse, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -240,8 +240,8 @@ func (h *Reports) Ds(ctx context.Context, w http.ResponseWriter, r *http.Request
 			case "id":
 				v.Value = fmt.Sprintf("%s", q.ID)
 			case "customer":
-				v.Value = q.Customer.Name
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.CustomerID), q.Customer.Name)
+				v.Value = q.Customer
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.CustomerID), q.Customer)
 			case "number":
 				v.Value = q.Number
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersAccountsView(q.CustomerID, q.ID), q.Number)
@@ -275,7 +275,7 @@ func (h *Reports) Ds(ctx context.Context, w http.ResponseWriter, r *http.Request
 			order = strings.Split(sorting, ",")
 		}
 
-		res, err := h.AccountRepo.FindDs(ctx, claims, account.FindRequest{
+		res, err := h.AccountRepo.FindDs(ctx, claims, customer.FindAccountRequest{
 			Order:           order,
 			IncludeBranch:   true,
 			IncludeCustomer: true,
@@ -345,7 +345,7 @@ func (h *Reports) Debtors(ctx context.Context, w http.ResponseWriter, r *http.Re
 		{Field: "created_at", Title: "Registration Date", Visible: true, Searchable: false, Orderable: true, Filterable: false},
 	}
 
-	mapFunc := func(q *account.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q *customer.AccountResponse, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -353,10 +353,10 @@ func (h *Reports) Debtors(ctx context.Context, w http.ResponseWriter, r *http.Re
 			case "id":
 				v.Value = fmt.Sprintf("%s", q.ID)
 			case "customer":
-				v.Value = q.Customer.ShortName
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.CustomerID), q.Customer.ShortName)
+				v.Value = q.Customer
+				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.CustomerID), q.Customer)
 			case "phone_number":
-				v.Value = q.Customer.PhoneNumber
+				v.Value = q.PhoneNumber
 				v.Formatted = v.Value
 			case "number":
 				v.Value = q.Number
@@ -394,7 +394,7 @@ func (h *Reports) Debtors(ctx context.Context, w http.ResponseWriter, r *http.Re
 			order = strings.Split(sorting, ",")
 		}
 
-		res, err := h.AccountRepo.Debtors(ctx, claims, account.FindRequest{
+		res, err := h.AccountRepo.Debtors(ctx, claims, customer.FindAccountRequest{
 			Order:           order,
 			IncludeBranch:   true,
 			IncludeCustomer: true,

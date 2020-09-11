@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/expenditure"
@@ -66,7 +65,7 @@ type AppContext struct {
 	InventoryRepo     *inventory.Repository
 	BranchRepo        *branch.Repository
 	CustomerRepo      *customer.Repository
-	AccountRepo       *account.Repository
+	AccountRepo       *customer.AccountRepository
 	CommissionRepo    *dscommission.Repository
 	TransactionRepo   *transaction.Repository
 	SaleRepo          *sale.Repository

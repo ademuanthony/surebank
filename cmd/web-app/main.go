@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"merryworld/surebank/cmd/web-app/handlers"
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/customer"
@@ -567,7 +566,7 @@ func main() {
 	shopRepo := shop.NewRepository(masterDb)
 	branchRepo := branch.NewRepository(masterDb, mongoDb)
 	customerRepo := customer.NewRepository(masterDb, mongoDb, branchRepo)
-	accountRepo := account.NewRepository(masterDb, mongoDb, customerRepo, branchRepo)
+	accountRepo := customer.NewAccountRepository(masterDb, mongoDb, customerRepo, branchRepo)
 	commissionRepo := dscommission.NewRepository(masterDb)
 	transactionRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS)
 	inventoryRepo := inventory.NewRepository(masterDb)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
+	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/platform/notify"
 	"sync"
@@ -14,7 +15,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/volatiletech/null"
 
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
 	"merryworld/surebank/internal/user"
@@ -53,8 +53,8 @@ type Transaction struct {
 	UpdatedAt      time.Time       `json:"updated_at" truss:"api-read"`
 	ArchivedAt     *time.Time      `json:"archived_at,omitempty" truss:"api-hide"`
 
-	SalesRep *user.User       `json:"sales_rep" truss:"api-read"`
-	Account  *account.Account `json:"account" truss:"api-read"`
+	SalesRep *user.User        `json:"sales_rep" truss:"api-read"`
+	Account  *customer.Account `json:"account" truss:"api-read"`
 }
 
 func FromModel(rec *models.Transaction) *Transaction {
@@ -75,7 +75,7 @@ func FromModel(rec *models.Transaction) *Transaction {
 
 	if rec.R != nil {
 		if rec.R.Account != nil {
-			a.Account = account.FromModel(rec.R.Account)
+			a.Account = customer.AccountFromModel(rec.R.Account)
 		}
 
 		if rec.R.SalesRep != nil {

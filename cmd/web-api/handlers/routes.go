@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/checklist"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/dscommission"
@@ -43,7 +42,7 @@ type AppContext struct {
 	InviteRepo        *invite.Repository
 	ChecklistRepo     *checklist.Repository
 	CustomerRepo      *customer.Repository
-	AccountRepo 	  *account.Repository
+	AccountRepo 	  *customer.AccountRepository
 	DepositRepo		  *transaction.Repository
 	CommissionRepo	  *dscommission.Repository
 	Authenticator     *auth.Authenticator

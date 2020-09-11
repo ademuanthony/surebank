@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"merryworld/surebank/internal/account"
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
@@ -52,7 +51,7 @@ type Customer struct {
 	UpdatedAt   time.Time  `json:"updated_at" truss:"api-read"`
 	ArchivedAt  *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
 
-	Accounts account.Accounts `json:"accounts"`
+	Accounts Accounts `json:"accounts"`
 }
 
 func FromModel(rec *models.Customer) *Customer {

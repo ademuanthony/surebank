@@ -126,7 +126,7 @@ func (h *Branches) Index(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	data := map[string]interface{}{
-		"datatable":           dt.Response(),
+		"datatable":         dt.Response(),
 		"urlBranchesCreate": urlBranchesCreate(),
 	}
 
@@ -291,7 +291,7 @@ func (h *Branches) View(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return nil
 	}
 
-	prj, err := h.Repo.ReadByID(ctx, claims, branchID)
+	prj, err := h.Repo.ReadByID(ctx, branchID)
 	if err != nil {
 		return err
 	}
@@ -368,7 +368,7 @@ func (h *Branches) Update(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return nil
 	}
 
-	prj, err := h.Repo.ReadByID(ctx, claims, branchID)
+	prj, err := h.Repo.ReadByID(ctx, branchID)
 	if err != nil {
 		return err
 	}

@@ -19,7 +19,7 @@ import (
 
 // Accounts represents the Account API method handler set.
 type Accounts struct {
-	Repository *account.Repository
+	Repository *account.AccountRepository
 
 	// ADD OTHER STATE LIKE THE LOGGER IF NEEDED.
 }
@@ -50,7 +50,7 @@ func (h *Accounts) Find(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return errors.New("claims missing from context")
 	}
 
-	var req account.FindRequest
+	var req account.FindAccountRequest
 
 	// Handle where query value if set.
 	if v := r.URL.Query().Get("where"); v != "" {
@@ -200,7 +200,7 @@ func (h *Accounts) Create(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return err
 	}
 
-	var req account.CreateRequest
+	var req account.CreateAccountRequest
 	if err := web.Decode(ctx, r, &req); err != nil {
 		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
 			err = weberror.NewError(ctx, err, http.StatusBadRequest)
@@ -250,7 +250,7 @@ func (h *Accounts) Update(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return err
 	}
 
-	var req account.UpdateRequest
+	var req account.UpdateAccountRequest
 	if err := web.Decode(ctx, r, &req); err != nil {
 		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
 			err = weberror.NewError(ctx, err, http.StatusBadRequest)
@@ -297,7 +297,7 @@ func (h *Accounts) Archive(ctx context.Context, w http.ResponseWriter, r *http.R
 		return err
 	}
 
-	var req account.ArchiveRequest
+	var req account.ArchiveAccountRequest
 	if err := web.Decode(ctx, r, &req); err != nil {
 		if _, ok := errors.Cause(err).(*weberror.Error); !ok {
 			err = weberror.NewError(ctx, err, http.StatusBadRequest)

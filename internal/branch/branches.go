@@ -72,7 +72,26 @@ func (repo *Repository) ReadByID(ctx context.Context, id string) (*Branch, error
 	var rec Branch
 	collection := repo.mongoDb.Collection(dal.C.Branch)
 	err := collection.FindOne(ctx, bson.M{dal.BranchColumns.ID: id}).Decode(&rec)
+	// if err != nil {
+	// 	if err = repo.migrate(ctx); err != nil {
+	// 		return nil, err
+	// 	}
+	// 	err = collection.FindOne(ctx, bson.M{dal.BranchColumns.ID: id}).Decode(&rec)
+	// }
 	return &rec, err
+}
+
+func (repo *Repository) migrate(ctx context.Context) error {
+	branches, err := models.Branches().All(ctx, repo.DbConn)
+	if err != nil {
+		return err
+	}
+	for _, b := range branches {
+		if _, err := repo.mongoDb.Collection(dal.C.Branch).InsertOne(ctx, FromModel(b)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Create inserts a new checklist into the database.
