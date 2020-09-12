@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"go.mongodb.org/mongo-driver/mongo"
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/jmoiron/sqlx"
@@ -17,21 +18,26 @@ import (
 
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
-	"merryworld/surebank/internal/user"
 )
 
 // Repository defines the required dependencies for Transaction.
 type Repository struct {
 	DbConn         *sqlx.DB
 	CommissionRepo *dscommission.Repository
+	AccountRepo    *customer.AccountRepository
+	mongoDb        *mongo.Database
 	notifySMS      notify.SMS
 	accNumMtx      sync.Mutex
 }
 
 // NewRepository creates a new Repository that defines dependencies for Transaction.
-func NewRepository(db *sqlx.DB, commissionRepo *dscommission.Repository, notifySMS notify.SMS) *Repository {
+func NewRepository(db *sqlx.DB, mongoDb *mongo.Database, commissionRepo *dscommission.Repository,
+	accountRepo *customer.AccountRepository, notifySMS notify.SMS) *Repository {
+
 	return &Repository{
 		DbConn:         db,
+		AccountRepo:    accountRepo,
+		mongoDb:        mongoDb,
 		CommissionRepo: commissionRepo,
 		notifySMS:      notifySMS,
 	}
@@ -41,20 +47,21 @@ func NewRepository(db *sqlx.DB, commissionRepo *dscommission.Repository, notifyS
 type Transaction struct {
 	ID             string          `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
 	AccountID      string          `json:"account_id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	AccountNumber  string          `json:"account_number"`
+	CustomerID     string          `json:"customer_id"`
+	Customer       string          `json:"customer"`
 	Type           TransactionType `json:"type" example:"deposit"`
 	OpeningBalance float64         `json:"opening_balance" exmaple:"34500.01"`
 	Amount         float64         `json:"amount" truss:"api-read"`
 	Narration      string          `json:"narration" truss:"api-read"`
 	PaymentMethod  string          `json:"payment_method" truss:"api-read"`
 	SalesRepID     string          `json:"sales_rep_id" truss:"api-read"`
+	SalesRep       string          `json:"sales_rep" truss:"api-read"`
 	ReceiptNo      string          `json:"receipt_no"`
-	EffectiveDate  time.Time       `json:"effective_date"`
-	CreatedAt      time.Time       `json:"created_at" truss:"api-read"`
-	UpdatedAt      time.Time       `json:"updated_at" truss:"api-read"`
+	EffectiveDate  int64           `json:"effective_date"`
+	CreatedAt      int64           `json:"created_at" truss:"api-read"`
+	UpdatedAt      int64           `json:"updated_at" truss:"api-read"`
 	ArchivedAt     *time.Time      `json:"archived_at,omitempty" truss:"api-hide"`
-
-	SalesRep *user.User        `json:"sales_rep" truss:"api-read"`
-	Account  *customer.Account `json:"account" truss:"api-read"`
 }
 
 func FromModel(rec *models.Transaction) *Transaction {
@@ -68,18 +75,18 @@ func FromModel(rec *models.Transaction) *Transaction {
 		PaymentMethod:  rec.PaymentMethod,
 		SalesRepID:     rec.SalesRepID,
 		ReceiptNo:      rec.ReceiptNo,
-		EffectiveDate:  time.Unix(rec.EffectiveDate, 0).UTC(),
-		CreatedAt:      time.Unix(rec.CreatedAt, 0).UTC(),
-		UpdatedAt:      time.Unix(rec.UpdatedAt, 0).UTC(),
+		EffectiveDate:  rec.EffectiveDate,
+		CreatedAt:      rec.CreatedAt,
+		UpdatedAt:      rec.UpdatedAt,
 	}
 
 	if rec.R != nil {
 		if rec.R.Account != nil {
-			a.Account = customer.AccountFromModel(rec.R.Account)
+			a.AccountNumber = rec.R.Account.Number
 		}
 
 		if rec.R.SalesRep != nil {
-			a.SalesRep = user.FromModel(rec.R.SalesRep)
+			a.SalesRep = rec.R.SalesRep.FirstName + " " + rec.R.SalesRep.LastName
 		}
 	}
 
@@ -98,6 +105,7 @@ type Response struct {
 	Type           TransactionType   `json:"type,omitempty" example:"deposit"`
 	AccountNumber  string            `json:"account_number" example:"SB10003001" truss:"api-read"`
 	CustomerID     string            `json:"customer_id" truss:"api-read"`
+	Customer       string            `json:"customer"`
 	OpeningBalance float64           `json:"opening_balance" truss:"api-read"`
 	Amount         float64           `json:"amount" truss:"api-read"`
 	Narration      string            `json:"narration" truss:"api-read"`
@@ -113,14 +121,17 @@ type Response struct {
 
 // Response transforms Transaction to the Response that is used for display.
 // Additional filtering by context values or translations could be applied.
-func (m *Transaction) Response(ctx context.Context) *Response {
+func (m *Transaction) Response(ctx context.Context) Response {
 	if m == nil {
-		return nil
+		return Response{}
 	}
 
-	r := &Response{
+	r := Response{
 		ID:             m.ID,
 		AccountID:      m.AccountID,
+		AccountNumber:  m.AccountNumber,
+		CustomerID:     m.CustomerID,
+		Customer:       m.Customer,
 		Type:           m.Type,
 		OpeningBalance: m.OpeningBalance,
 		Amount:         m.Amount,
@@ -128,23 +139,15 @@ func (m *Transaction) Response(ctx context.Context) *Response {
 		PaymentMethod:  m.PaymentMethod,
 		ReceiptNo:      m.ReceiptNo,
 		SalesRepID:     m.SalesRepID,
-		EffectiveDate:  web.NewTimeResponse(ctx, m.EffectiveDate),
-		CreatedAt:      web.NewTimeResponse(ctx, m.CreatedAt),
-		UpdatedAt:      web.NewTimeResponse(ctx, m.UpdatedAt),
+		SalesRep:       m.SalesRep,
+		EffectiveDate:  web.NewTimeResponse(ctx, time.Unix(m.EffectiveDate, 0)),
+		CreatedAt:      web.NewTimeResponse(ctx, time.Unix(m.CreatedAt, 0)),
+		UpdatedAt:      web.NewTimeResponse(ctx, time.Unix(m.UpdatedAt, 0)),
 	}
 
 	if m.ArchivedAt != nil && !m.ArchivedAt.IsZero() {
 		at := web.NewTimeResponse(ctx, *m.ArchivedAt)
 		r.ArchivedAt = &at
-	}
-
-	if m.Account != nil {
-		r.AccountNumber = m.Account.Number
-		r.CustomerID = m.Account.CustomerID
-	}
-
-	if m.SalesRep != nil {
-		r.SalesRep = m.SalesRep.LastName + " " + m.SalesRep.FirstName
 	}
 
 	return r
@@ -170,11 +173,11 @@ type TxReportResponse struct {
 }
 
 // Transactions a list of Transactions.
-type Transactions []*Transaction
+type Transactions []Transaction
 
 // Response transforms a list of Transactions to a list of Responses.
-func (m *Transactions) Response(ctx context.Context) []*Response {
-	var l = make([]*Response, 0)
+func (m *Transactions) Response(ctx context.Context) []Response {
+	var l = make([]Response, 0)
 	if m != nil && len(*m) > 0 {
 		for _, n := range *m {
 			l = append(l, n.Response(ctx))
@@ -186,8 +189,8 @@ func (m *Transactions) Response(ctx context.Context) []*Response {
 
 // PagedResponseList holds list of transaction and total count for pagination
 type PagedResponseList struct {
-	Transactions []*Response `json:"transactions"`
-	TotalCount   int64       `json:"total_count"`
+	Transactions []Response `json:"transactions"`
+	TotalCount   int64      `json:"total_count"`
 }
 
 // CreateRequest contains information needed to make a new Transaction.
@@ -254,15 +257,18 @@ type DeleteRequest struct {
 // FindRequest defines the possible options to search for accounts. By default
 // archived checklist will be excluded from response.
 type FindRequest struct {
-	Where            string        `json:"where" example:"type = deposit and account_id = ? and created_at > ? and created_at < ?"`
-	Args             []interface{} `json:"args" swaggertype:"array,string" example:"Moon Launch,active"`
-	Order            []string      `json:"order" example:"created_at desc"`
-	Limit            *uint         `json:"limit" example:"10"`
-	Offset           *uint         `json:"offset" example:"20"`
-	IncludeArchived  bool          `json:"include-archived" example:"false"`
-	IncludeAccount   bool          `json:"include_account" example:"false"`
-	IncludeAccountNo bool          `json:"include_account_no" example:"false"`
-	IncludeSalesRep  bool          `json:"include_sales_rep" example:"false"`
+	CustomerID      string          `json:"customer_id"`
+	AccountID       string          `json:"account_id"`
+	AccountNumber   string          `json:"account_number"`
+	SalesRepID      string          `json:"sales_rep_id"`
+	PaymentMethod   string          `json:"payment_method"`
+	StartDate       int64           `json:"start_date"`
+	EndDate         int64           `json:"end_date"`
+	Type            TransactionType `json:"type"`
+	Order           []string        `json:"order" example:"created_at desc"`
+	Limit           *uint           `json:"limit" example:"10"`
+	Offset          *int64          `json:"offset" example:"20"`
+	IncludeArchived bool            `json:"include-archived" example:"false"`
 }
 
 // ChecklistStatus represents the status of checklist.
@@ -287,9 +293,9 @@ var TransactionType_Values = []TransactionType{
 
 // TransactionType_ValuesInterface returns the TransactionType options as a slice interface.
 func TransactionType_ValuesInterface() []interface{} {
-	var l []interface{}
-	for _, v := range TransactionType_Values {
-		l = append(l, v.String())
+	var l = make([]interface{}, len(TransactionType_Values))
+	for i, v := range TransactionType_Values {
+		l[i] = v.String()
 	}
 	return l
 }
@@ -323,4 +329,12 @@ func (s TransactionType) String() string {
 
 var PaymentMethods = []string{
 	PaymentMethod_Bank, PaymentMethod_Cash,
+}
+
+// DailySummary is an object representing the database table.
+type DailySummary struct {
+	Income      float64 `boil:"income" json:"income" toml:"income" yaml:"income"`
+	Expenditure float64 `boil:"expenditure" json:"expenditure" toml:"expenditure" yaml:"expenditure"`
+	BankDeposit float64 `boil:"bank_deposit" json:"bank_deposit" toml:"bank_deposit" yaml:"bank_deposit"`
+	Date        int64   `boil:"date" json:"date" toml:"date" yaml:"date"`
 }

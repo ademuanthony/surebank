@@ -56,7 +56,7 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
 	}
 
-	mapFunc := func(q transaction.TxReportResponse, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q transaction.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -68,9 +68,8 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 				p := message.NewPrinter(language.English)
 				v.Formatted = p.Sprintf("<a href='%s'>%.2f</a>", urlCustomersTransactionsView(q.CustomerID, q.AccountID, q.ID), q.Amount)
 			case "created_at":
-				date := web.NewTimeResponse(ctx, time.Unix(q.CreatedAt, 0))
-				v.Value = date.LocalDate
-				v.Formatted = date.LocalDate
+				v.Value = q.CreatedAt.LocalDate
+				v.Formatted = q.CreatedAt.LocalDate
 			case "narration":
 				values := strings.Split(q.Narration, ":")
 				if len(values) > 1 {
@@ -86,7 +85,7 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 				v.Value = q.PaymentMethod
 				v.Formatted = q.PaymentMethod
 			case "customer_name":
-				v.Value = q.CustomerName
+				v.Value = q.Customer
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.CustomerID), v.Value)
 			case "account":
 				v.Value = q.AccountNumber
@@ -103,19 +102,17 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 		return resp, nil
 	}
 
-	var txWhere = []string{"tx_type = 'deposit'"}
-	var txArgs []interface{}
+	var req transaction.FindRequest
+	req.Type = transaction.TransactionType_Deposit
 	// todo sales rep filtering
 	if v := r.URL.Query().Get("sales_rep_id"); v != "" {
-		txWhere = append(txWhere, "sales_rep_id = $1")
-		txArgs = append(txArgs, v)
 		data["salesRepID"] = v
+		req.SalesRepID = v
 	}
 
 	if v := r.URL.Query().Get("payment_method"); v != "" {
-		txWhere = append(txWhere, fmt.Sprintf("payment_method = $%d", len(txArgs)+1))
-		txArgs = append(txArgs, v)
 		data["paymentMethod"] = v
+		req.PaymentMethod = v
 	}
 
 	var date = time.Now()
@@ -125,11 +122,10 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 			date = time.Now()
 			return err
 		}
+		req.StartDate = date.Unix()
 	}
 	date = date.Truncate(time.Millisecond)
 	date = now.New(date).BeginningOfDay().Add(-1 * time.Hour)
-	txWhere = append(txWhere, fmt.Sprintf("created_at >= $%d", len(txArgs)+1))
-	txArgs = append(txArgs, date.UTC().Unix())
 	data["startDate"] = date.Format("01/02/2006")
 
 	date = time.Now()
@@ -139,12 +135,10 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 			date = time.Now()
 			return err
 		}
-
+		req.EndDate = date.Unix()
 	}
 	date = date.Truncate(time.Millisecond)
 	date = now.New(date).EndOfDay().Add(-1 * time.Hour)
-	txWhere = append(txWhere, fmt.Sprintf("created_at <= $%d", len(txArgs)+1))
-	txArgs = append(txArgs, date.Unix())
 	data["endDate"] = date.Format("01/02/2006")
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
@@ -153,18 +147,14 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 		if len(sorting) > 0 {
 			order = strings.Split(sorting, ",")
 		}
+		req.Order = order
 
-		for i := range txWhere {
-			txWhere[i] = "tx." + txWhere[i]
-		}
-		res, err := h.TransactionRepo.TxReport(ctx, claims, transaction.FindRequest{
-			Order: order, Where: strings.Join(txWhere, " AND "), Args: txArgs,
-		})
+		res, err := h.TransactionRepo.Find(ctx, claims, req)
 		if err != nil {
 			return resp, err
 		}
 
-		for _, a := range res {
+		for _, a := range res.Transactions {
 			l, err := mapFunc(a, fields)
 			if err != nil {
 				return resp, errors.Wrapf(err, "Failed to map brand for display.")
@@ -199,7 +189,7 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 		return err
 	}
 
-	total, err = h.TransactionRepo.DepositAmountByWhere(ctx, strings.Join(txWhere, " and "), txArgs)
+	total, err = h.TransactionRepo.DepositAmountByWhere(ctx, h.TransactionRepo.BuildQuery(claims, req))
 	if err != nil {
 		return err
 	}
@@ -456,7 +446,7 @@ func (h *Reports) DsCommissions(ctx context.Context, w http.ResponseWriter, r *h
 		{Field: "date", Title: "Created At", Visible: true, Searchable: true, Orderable: true, Filterable: false},
 	}
 
-	mapFunc := func(q *dscommission.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q dscommission.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -488,8 +478,7 @@ func (h *Reports) DsCommissions(ctx context.Context, w http.ResponseWriter, r *h
 		return resp, nil
 	}
 
-	var txWhere []string
-	var txArgs []interface{}
+	var req dscommission.FindRequest
 
 	if v := r.URL.Query().Get("start_date"); v != "" {
 		date, err := time.Parse("01/02/2006", v)
@@ -498,8 +487,7 @@ func (h *Reports) DsCommissions(ctx context.Context, w http.ResponseWriter, r *h
 		}
 		date = date.Truncate(time.Millisecond)
 		date = now.New(date).BeginningOfDay().Add(-1 * time.Hour)
-		txWhere = append(txWhere, fmt.Sprintf("effective_date >= $%d", len(txArgs)+1))
-		txArgs = append(txArgs, date.UTC().Unix())
+		req.StateDate = date.Unix()
 		data["startDate"] = v
 	}
 
@@ -510,8 +498,7 @@ func (h *Reports) DsCommissions(ctx context.Context, w http.ResponseWriter, r *h
 		}
 		date = date.Truncate(time.Millisecond)
 		date = now.New(date).EndOfDay().Add(-1 * time.Hour)
-		txWhere = append(txWhere, fmt.Sprintf("effective_date <= $%d", len(txArgs)+1))
-		txArgs = append(txArgs, date.Unix())
+		req.EndDate = date.Unix()
 		data["endDate"] = v
 	}
 
@@ -521,12 +508,9 @@ func (h *Reports) DsCommissions(ctx context.Context, w http.ResponseWriter, r *h
 		if len(sorting) > 0 {
 			order = strings.Split(sorting, ",")
 		}
+		req.Order = order
 
-		res, err := h.CommissionRepo.Find(ctx, claims, dscommission.FindRequest{
-			Order: order, Where: strings.Join(txWhere, " AND "), Args: txArgs,
-			IncludeCustomer: true,
-			IncludeAccount:  true,
-		})
+		res, err := h.CommissionRepo.Find(ctx, claims, req)
 		if err != nil {
 			return resp, err
 		}
@@ -559,7 +543,7 @@ func (h *Reports) DsCommissions(ctx context.Context, w http.ResponseWriter, r *h
 		return nil
 	}
 
-	total, err := h.CommissionRepo.TotalAmountByWhere(ctx, strings.Join(txWhere, " and "), txArgs)
+	total, err := h.CommissionRepo.TotalAmountByWhere(ctx, req)
 	if err != nil {
 		return err
 	}

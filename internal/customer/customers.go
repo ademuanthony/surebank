@@ -7,6 +7,7 @@ import (
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -36,7 +37,7 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	var queries = bson.D{}
 	if !req.IncludeArchived {
-		queries = append(queries, primitive.E{Key: dal.CustomerColumns.ArchivedAt, Value: nil})
+		queries = append(queries, primitive.E{Key: dal.CustomerColumns.ArchivedAt, Value: bson.M{"$ne": nil}})
 	}
 
 	totalCount, err := collection.CountDocuments(ctx, queries)
@@ -156,10 +157,10 @@ func (repo *Repository) Create(ctx context.Context, claims auth.Claims, req Crea
 		Address:     req.Address,
 		SalesRepID:  req.SalesRepID,
 		SalesRep:    salesRep.FirstName + " " + salesRep.LastName,
-		CreatedAt:   now,
+		CreatedAt:   now.Unix(),
 		BranchID:    req.BranchID,
 		Branch:      branch.Name,
-		UpdatedAt:   now,
+		UpdatedAt:   now.Unix(),
 	}
 
 	if _, err := repo.mongoDb.Collection(dal.C.Customer).InsertOne(ctx, m); err != nil {
@@ -251,4 +252,20 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 	collection := repo.mongoDb.Collection(dal.C.Customer)
 	_, err = collection.DeleteOne(ctx, bson.M{dal.CustomerColumns.ID: req.ID})
 	return err
+}
+
+func (repo *Repository) Migrate(ctx context.Context) error {
+	if c, _ := repo.mongoDb.Collection(dal.C.Customer).CountDocuments(ctx, bson.M{}); c > 0 {
+		return nil
+	}
+	records, err := models.Customers(qm.Load(models.CustomerRels.Accounts)).All(ctx, repo.DbConn)
+	if err != nil {
+		return err
+	}
+	for _, b := range records {
+		if _, err := repo.mongoDb.Collection(dal.C.Customer).InsertOne(ctx, FromModel(b)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

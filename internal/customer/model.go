@@ -47,9 +47,9 @@ type Customer struct {
 	BranchID    string     `json:"branch_id" truss:"api-read"`
 	SalesRep    string     `json:"sales_rep" truss:"api-read"`
 	Branch      string     `json:"branch" truss:"api-read"`
-	CreatedAt   time.Time  `json:"created_at" truss:"api-read"`
-	UpdatedAt   time.Time  `json:"updated_at" truss:"api-read"`
-	ArchivedAt  *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
+	CreatedAt   int64  `json:"created_at" truss:"api-read"`
+	UpdatedAt   int64  `json:"updated_at" truss:"api-read"`
+	ArchivedAt  int64 `json:"archived_at,omitempty" truss:"api-hide"`
 
 	Accounts Accounts `json:"accounts"`
 }
@@ -64,8 +64,8 @@ func FromModel(rec *models.Customer) *Customer {
 		Address:     rec.Address,
 		BranchID:    rec.BranchID,
 		SalesRepID:  rec.SalesRepID,
-		CreatedAt:   time.Unix(rec.CreatedAt, 0),
-		UpdatedAt:   time.Unix(rec.UpdatedAt, 0),
+		CreatedAt:   rec.CreatedAt,
+		UpdatedAt:   rec.UpdatedAt,
 	}
 
 	if rec.R != nil {
@@ -80,7 +80,8 @@ func FromModel(rec *models.Customer) *Customer {
 		if accs := rec.R.Accounts; accs != nil {
 			var numbers []string
 			for _, a := range accs {
-				numbers = append(numbers, a.Number)
+				ac := AccountFromModel(a)
+				c.Accounts = append(c.Accounts, *ac)
 			}
 
 			c.Name = fmt.Sprintf("%s (%s)", c.Name, strings.Join(numbers, ", "))
@@ -88,8 +89,7 @@ func FromModel(rec *models.Customer) *Customer {
 	}
 
 	if rec.ArchivedAt.Valid {
-		archivedAt := time.Unix(rec.ArchivedAt.Int64, 0)
-		c.ArchivedAt = &archivedAt
+		c.ArchivedAt = rec.ArchivedAt.Int64
 	}
 
 	return c
@@ -130,12 +130,12 @@ func (m *Customer) Response(ctx context.Context) *Response {
 		SalesRep:    m.SalesRep,
 		BranchID:    m.BranchID,
 		Branch:      m.Branch,
-		CreatedAt:   web.NewTimeResponse(ctx, m.CreatedAt),
-		UpdatedAt:   web.NewTimeResponse(ctx, m.UpdatedAt),
+		CreatedAt:   web.NewTimeResponse(ctx, time.Unix(m.CreatedAt, 0)),
+		UpdatedAt:   web.NewTimeResponse(ctx, time.Unix(m.UpdatedAt, 0)),
 	}
 
-	if m.ArchivedAt != nil && !m.ArchivedAt.IsZero() {
-		at := web.NewTimeResponse(ctx, *m.ArchivedAt)
+	if m.ArchivedAt > 0 {
+		at := web.NewTimeResponse(ctx, time.Unix(m.ArchivedAt, 0))
 		r.ArchivedAt = &at
 	}
 

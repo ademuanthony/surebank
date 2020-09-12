@@ -96,19 +96,6 @@ func (repo *Repository) ReadByID(ctx context.Context, id string) (*Branch, error
 	return &rec, err
 }
 
-func (repo *Repository) migrate(ctx context.Context) error {
-	branches, err := models.Branches().All(ctx, repo.DbConn)
-	if err != nil {
-		return err
-	}
-	for _, b := range branches {
-		if _, err := repo.mongoDb.Collection(dal.C.Branch).InsertOne(ctx, FromModel(b)); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (repo *Repository) branchExist(ctx context.Context, name string) bool {
 	var rec Branch
 	collection := repo.mongoDb.Collection(dal.C.Branch)
@@ -280,5 +267,21 @@ func (repo *Repository) Delete(ctx context.Context, claims auth.Claims, req Dele
 		return errors.WithStack(err)
 	}
 
+	return nil
+}
+
+func (repo *Repository) Migrate(ctx context.Context) error {
+	if c, _ := repo.mongoDb.Collection(dal.C.Branch).CountDocuments(ctx, bson.M{}); c > 0 {
+		return nil
+	}
+	branches, err := models.Branches().All(ctx, repo.DbConn)
+	if err != nil {
+		return err
+	}
+	for _, b := range branches {
+		if _, err := repo.mongoDb.Collection(dal.C.Branch).InsertOne(ctx, FromModel(b)); err != nil {
+			return err
+		}
+	}
 	return nil
 }

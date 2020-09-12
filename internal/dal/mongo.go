@@ -120,6 +120,68 @@ var (
 		ArchivedAt:  "archived_at",
 		Accounts:    "accounts",
 	}
+
+	DailySummaryColumns = struct {
+		Income      string
+		Expenditure string
+		BankDeposit string
+		Date        string
+	}{
+		Income:      "income",
+		Expenditure: "expenditure",
+		BankDeposit: "bank_deposit",
+		Date:        "date",
+	}
+
+	DSCommissionColumns = struct {
+		ID            string
+		AccountID     string
+		CustomerID    string
+		Amount        string
+		Date          string
+		EffectiveDate string
+	}{
+		ID:            "id",
+		AccountID:     "account_id",
+		CustomerID:    "customer_id",
+		Amount:        "amount",
+		Date:          "date",
+		EffectiveDate: "effective_date",
+	}
+
+	TransactionColumns = struct {
+		ID             string
+		AccountID      string
+		AccountNumber  string
+		CustomerID     string
+		Type           string
+		OpeningBalance string
+		Amount         string
+		Narration      string
+		SalesRepID     string
+		CreatedAt      string
+		UpdatedAt      string
+		ArchivedAt     string
+		ReceiptNo      string
+		EffectiveDate  string
+		PaymentMethod  string
+	}{
+		ID:             "id",
+		AccountID:      "accountid",
+		AccountNumber:  "accountnumber",
+		CustomerID:     "customerid",
+		Type:           "type",
+		OpeningBalance: "openingbalance",
+		Amount:         "amount",
+		Narration:      "narration",
+		SalesRepID:     "salesrepid",
+		CreatedAt:      "createdat",
+		UpdatedAt:      "updatedat",
+		ArchivedAt:     "archivedat",
+		ReceiptNo:      "receiptno",
+		EffectiveDate:  "effectivedate",
+		PaymentMethod:  "paymentmethod",
+	}
 )
 
 type FindInput struct {

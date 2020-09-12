@@ -4,14 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
+	"merryworld/surebank/internal/dal"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
 
 	"github.com/jinzhu/now"
 	. "github.com/volatiletech/sqlboiler/queries/qm"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
@@ -37,16 +42,16 @@ func (repo *Repository) LattestCommission(ctx context.Context, accountID string)
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.commission.LattestCommission")
 	defer span.Finish()
 
-	c, err := models.DSCommissions(
-		models.DSCommissionWhere.AccountID.EQ(accountID),
-		OrderBy(fmt.Sprintf("%s desc", models.DSCommissionColumns.EffectiveDate)),
-		Limit(1),
-	).One(ctx, repo.DbConn)
+	var comm DsCommission
+	q := bson.M{dal.DSCommissionColumns.AccountID: accountID}
+	findOption := options.FindOne()
+	findOption.SetSort(bson.M{dal.DSCommissionColumns.EffectiveDate: "-1"})
+	err := repo.mongoDb.Collection(dal.C.DSCommission).FindOne(ctx, q, findOption).Decode(&comm)
 
 	if err != nil {
 		return nil, err
 	}
-	return FromModel(c), nil
+	return &comm, nil
 }
 
 // Find gets all the commissions from the database based on the request params.
@@ -54,50 +59,57 @@ func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRe
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.commission.Find")
 	defer span.Finish()
 
-	var queries []QueryMod
-
-	if req.Where != "" {
-		queries = append(queries, Where(req.Where, req.Args...))
+	var queries bson.M
+	if req.StateDate > 0 {
+		queries[dal.DSCommissionColumns.Date] = bson.M{"$gte": req.StateDate}
+	}
+	if req.EndDate > 0 {
+		queries[dal.DSCommissionColumns.Date] = bson.M{"$lte": req.EndDate}
 	}
 
-	totalCount, err := models.DSCommissions(queries...).Count(ctx, repo.DbConn)
+	collection := repo.mongoDb.Collection(dal.C.DSCommission)
+	totalCount, err := collection.CountDocuments(ctx, queries)
 	if err != nil {
-		return nil, weberror.WithMessage(ctx, err, "Cannot get commission count")
+		return nil, weberror.WithMessage(ctx, err, "Cannot get customer count")
 	}
 
-	if req.IncludeAccount {
-		queries = append(queries, Load(models.DSCommissionRels.Account))
-	}
+	findOptions := options.Find()
 
-	if req.IncludeCustomer {
-		queries = append(queries, Load(models.DSCommissionRels.Customer))
-	}
-
+	sort := bson.D{}
 	if len(req.Order) > 0 {
 		for _, s := range req.Order {
-			queries = append(queries, OrderBy(s))
+			sortInfo := strings.Split(s, " ")
+			if len(sortInfo) != 2 {
+				continue
+			}
+			sort = append(sort, primitive.E{Key: sortInfo[0], Value: sortInfo[1]})
 		}
 	}
+	findOptions.SetSort(sort)
 
 	if req.Limit != nil {
-		queries = append(queries, Limit(int(*req.Limit)))
+		findOptions.SetLimit(int64(*req.Limit))
 	}
 
 	if req.Offset != nil {
-		queries = append(queries, Offset(int(*req.Offset)))
+		findOptions.Skip = req.Offset
 	}
 
-	slice, err := models.DSCommissions(queries...).All(ctx, repo.DbConn)
+	cursor, err := collection.Find(ctx, queries, findOptions)
 	if err != nil {
-		if err.Error() == sql.ErrNoRows.Error() {
-			return &PagedResponseList{}, nil
-		}
-		return nil, weberror.NewError(ctx, err, 500)
+		return nil, weberror.WithMessage(ctx, err, "Cannot get customer list")
 	}
-
+	defer cursor.Close(ctx)
 	var result DsCommissions
-	for _, rec := range slice {
-		result = append(result, FromModel(rec))
+	for cursor.Next(ctx) {
+		var c DsCommission
+		if err = cursor.Decode(&c); err != nil {
+			return nil, fmt.Errorf("Decode, %v", err)
+		}
+		result = append(result, c)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, weberror.WithMessage(ctx, err, "Cannot get customer list")
 	}
 
 	if len(result) == 0 {
@@ -128,17 +140,45 @@ func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) 
 	return FromModel(model), nil
 }
 
-func (repo *Repository) TotalAmountByWhere(ctx context.Context, where string, args []interface{}) (float64, error) {
+func (repo *Repository) TotalAmountByWhere(ctx context.Context, req FindRequest) (float64, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.commission.TotalAmountByWhere")
 	defer span.Finish()
 
-	statement := `select sum(amount) total from ds_commission `
-	if len(where) > 0 {
-		statement += fmt.Sprintf(" where %s ", where)
+	var queries bson.M
+	if req.StateDate > 0 {
+		queries[dal.DSCommissionColumns.Date] = bson.M{"$gte": req.StateDate}
 	}
+	if req.EndDate > 0 {
+		queries[dal.DSCommissionColumns.Date] = bson.M{"$lte": req.EndDate}
+	}
+
 	var result struct {
-		Total sql.NullFloat64
+		Total float64
 	}
-	err := models.NewQuery(SQL(statement, args...)).Bind(ctx, repo.DbConn, &result)
-	return result.Total.Float64, err
+
+	pipeline := []bson.M{
+		{
+			"$match": queries,
+		},
+		{
+			"$group": bson.M{
+				"_id":   "",
+				"total": bson.M{"$sum": "$" + dal.DSCommissionColumns.Amount},
+			},
+		},
+		{
+			"$project": bson.M{
+				"_id":   0,
+				"total": 1,
+			},
+		},
+	}
+
+	cursor, err := repo.mongoDb.Collection(dal.C.Transaction).Aggregate(ctx, pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("TotalAmountByWhere -> Aggregate, %s", err.Error())
+	}
+
+	err = cursor.All(ctx, &result)
+	return result.Total, err
 }

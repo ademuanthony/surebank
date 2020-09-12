@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"merryworld/surebank/internal/branch"
-	"merryworld/surebank/internal/user"
-
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
 
@@ -37,24 +35,23 @@ func NewAccountRepository(db *sqlx.DB, mongoDb *mongo.Database, customerRepo *Re
 
 // Account represents a customer account.
 type Account struct {
-	ID              string     `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	CustomerID      string     `json:"customer_id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
-	Number          string     `json:"number"  validate:"required" example:"Rocket Launch"`
-	Type            string     `json:"type" truss:"api-read"`
-	Balance         float64    `json:"balance" truss:"api-read"`
-	Target          float64    `json:"target" truss:"api-read"`
-	TargetInfo      string     `json:"target_info" truss:"api-read"`
-	SalesRepID      string     `json:"sales_rep_id" truss:"api-read"`
-	BranchID        string     `json:"branch_id" truss:"api-read"`
-	LastPaymentDate time.Time  `json:"last_payment_date"`
-	CreatedAt       time.Time  `json:"created_at" truss:"api-read"`
-	UpdatedAt       time.Time  `json:"updated_at" truss:"api-read"`
-	ArchivedAt      *time.Time `json:"archived_at,omitempty" truss:"api-hide"`
-	Customer        string     `json:"customer"`
-	PhoneNumber     string     `json:"phone_number"`
-
-	SalesRep *user.User     `json:"sales_rep" truss:"api-read"`
-	Branch   *branch.Branch `json:"branch" truss:"api-read"`
+	ID              string  `json:"id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	CustomerID      string  `json:"customer_id" validate:"required,uuid" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86"`
+	Number          string  `json:"number"  validate:"required" example:"Rocket Launch"`
+	Type            string  `json:"type" truss:"api-read"`
+	Balance         float64 `json:"balance" truss:"api-read"`
+	Target          float64 `json:"target" truss:"api-read"`
+	TargetInfo      string  `json:"target_info" truss:"api-read"`
+	SalesRepID      string  `json:"sales_rep_id" truss:"api-read"`
+	BranchID        string  `json:"branch_id" truss:"api-read"`
+	LastPaymentDate int64   `json:"last_payment_date"`
+	CreatedAt       int64   `json:"created_at" truss:"api-read"`
+	UpdatedAt       int64   `json:"updated_at" truss:"api-read"`
+	ArchivedAt      int64   `json:"archived_at,omitempty" truss:"api-hide"`
+	Customer        string  `json:"customer"`
+	PhoneNumber     string  `json:"phone_number"`
+	SalesRep        string  `json:"sales_rep" truss:"api-read"`
+	Branch          string  `json:"branch" truss:"api-read"`
 }
 
 func AccountFromModel(rec *models.Account) *Account {
@@ -68,14 +65,14 @@ func AccountFromModel(rec *models.Account) *Account {
 		TargetInfo:      rec.TargetInfo,
 		SalesRepID:      rec.SalesRepID,
 		BranchID:        rec.BranchID,
-		LastPaymentDate: time.Unix(rec.LastPaymentDate, 0),
-		CreatedAt:       time.Unix(rec.CreatedAt, 0),
-		UpdatedAt:       time.Unix(rec.UpdatedAt, 0),
+		LastPaymentDate: rec.LastPaymentDate,
+		CreatedAt:       rec.CreatedAt,
+		UpdatedAt:       rec.UpdatedAt,
 	}
 
 	if rec.R != nil {
 		if rec.R.Branch != nil {
-			a.Branch = branch.FromModel(rec.R.Branch)
+			a.Branch = rec.R.Branch.Name
 		}
 
 		if rec.R.Customer != nil {
@@ -83,13 +80,12 @@ func AccountFromModel(rec *models.Account) *Account {
 		}
 
 		if rec.R.SalesRep != nil {
-			a.SalesRep = user.FromModel(rec.R.SalesRep)
+			a.SalesRep = rec.R.SalesRep.FirstName + " " + rec.R.SalesRep.LastName
 		}
 	}
 
 	if rec.ArchivedAt.Valid {
-		archivedAt := time.Unix(rec.ArchivedAt.Int64, 0)
-		a.ArchivedAt = &archivedAt
+		a.ArchivedAt = rec.ArchivedAt.Int64
 	}
 
 	return a
@@ -135,22 +131,22 @@ func (m *Account) Response(ctx context.Context) *AccountResponse {
 		TargetInfo:      m.TargetInfo,
 		SalesRepID:      m.SalesRepID,
 		BranchID:        m.BranchID,
-		LastPaymentDate: web.NewTimeResponse(ctx, m.LastPaymentDate),
-		CreatedAt:       web.NewTimeResponse(ctx, m.CreatedAt),
-		UpdatedAt:       web.NewTimeResponse(ctx, m.UpdatedAt),
+		LastPaymentDate: web.NewTimeResponse(ctx, time.Unix(m.LastPaymentDate, 0)),
+		CreatedAt:       web.NewTimeResponse(ctx, time.Unix(m.CreatedAt, 0)),
+		UpdatedAt:       web.NewTimeResponse(ctx, time.Unix(m.UpdatedAt, 0)),
 	}
 
-	if m.ArchivedAt != nil && !m.ArchivedAt.IsZero() {
-		at := web.NewTimeResponse(ctx, *m.ArchivedAt)
+	if m.ArchivedAt > 0 {
+		at := web.NewTimeResponse(ctx, time.Unix(m.ArchivedAt, 0))
 		r.ArchivedAt = &at
 	}
 
-	if m.SalesRep != nil {
-		r.SalesRep = m.SalesRep.FullName()
+	if m.SalesRep != "" {
+		r.SalesRep = m.SalesRep
 	}
 
-	if m.Branch != nil {
-		r.Branch = m.Branch.Name
+	if m.Branch != "" {
+		r.Branch = m.Branch
 	}
 
 	return r

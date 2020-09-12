@@ -22,7 +22,6 @@ import (
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
-	"merryworld/surebank/internal/user"
 )
 
 // Find gets all the accounts from the database based on the request params.
@@ -70,7 +69,7 @@ func (repo *AccountRepository) find(ctx context.Context, claims auth.Claims, req
 	collection := repo.mongoDb.Collection(dal.C.Account)
 
 	if !req.IncludeArchived {
-		queries[dal.AccountColumns.ArchivedAt] = nil
+		queries[dal.AccountColumns.ArchivedAt] = bson.M{"$ne": nil}
 	}
 
 	if !claims.HasRole(auth.RoleAdmin) {
@@ -133,7 +132,7 @@ func (repo *AccountRepository) find(ctx context.Context, claims auth.Claims, req
 	}, nil
 }
 
-// ReadByID gets the specified branch by ID from the database.
+// ReadByID gets the specified account by ID from the database.
 func (repo *AccountRepository) ReadByID(ctx context.Context, id string) (*Account, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.ReadByID")
 	defer span.Finish()
@@ -141,6 +140,17 @@ func (repo *AccountRepository) ReadByID(ctx context.Context, id string) (*Accoun
 	var rec Account
 	collection := repo.mongoDb.Collection(dal.C.Account)
 	err := collection.FindOne(ctx, bson.M{dal.AccountColumns.ID: id}).Decode(&rec)
+	return &rec, err
+}
+
+// ReadByNumber gets the specified account by number from the database.
+func (repo *AccountRepository) ReadByNumber(ctx context.Context, number string) (*Account, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.ReadByID")
+	defer span.Finish()
+
+	var rec Account
+	collection := repo.mongoDb.Collection(dal.C.Account)
+	err := collection.FindOne(ctx, bson.M{dal.AccountColumns.Number: number}).Decode(&rec)
 	return &rec, err
 }
 
@@ -211,12 +221,12 @@ func (repo *AccountRepository) Create(ctx context.Context, claims auth.Claims, r
 		Target:     req.Target,
 		TargetInfo: req.TargetInfo,
 		SalesRepID: claims.Subject,
-		CreatedAt:  now,
+		CreatedAt:  now.Unix(),
 		BranchID:   req.BranchID,
-		UpdatedAt:  now,
+		UpdatedAt:  now.Unix(),
 
-		SalesRep:    user.FromModel(salesRep),
-		Branch:      branch,
+		SalesRep:    salesRep.FirstName + " " + salesRep.LastName,
+		Branch:      branch.Name,
 		Customer:    cust.Name,
 		PhoneNumber: cust.PhoneNumber,
 	}
@@ -349,4 +359,20 @@ func (repo *AccountRepository) DbConnCount(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	return result.Number, nil
+}
+
+func (repo *AccountRepository) Migrate(ctx context.Context) error {
+	if c, _ := repo.mongoDb.Collection(dal.C.Account).CountDocuments(ctx, bson.M{}); c > 0 {
+		return nil
+	}
+	records, err := models.Accounts(qm.Load(models.AccountRels.Customer)).All(ctx, repo.DbConn)
+	if err != nil {
+		return err
+	}
+	for _, b := range records {
+		if _, err := repo.mongoDb.Collection(dal.C.Account).InsertOne(ctx, AccountFromModel(b)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

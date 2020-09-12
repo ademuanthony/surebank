@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"merryworld/surebank/internal/customer"
+	"merryworld/surebank/internal/dal"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/datatable"
 	"merryworld/surebank/internal/platform/notify"
@@ -353,9 +354,10 @@ func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return err
 	}
 
+	var req transaction.FindRequest
+	req.CustomerID = customerID
+
 	var accountBalance float64
-	var txWhere []string
-	var txArgs []interface{}
 	for _, acc := range accountsResp.Accounts {
 		accBal, err := h.TransactionRepo.AccountBalance(ctx, acc.ID)
 		if err != nil {
@@ -363,30 +365,18 @@ func (h *Customers) View(ctx context.Context, w http.ResponseWriter, r *http.Req
 		}
 		acc.Balance = accBal
 		accountBalance += acc.Balance
-		txWhere = append(txWhere, "account_id = ?")
-		txArgs = append(txArgs, acc.ID)
 	}
 
 	data["accounts"] = accountsResp.Accounts
 	data["accountBalance"] = accountBalance
 
 	var limit uint = 5
-	var offset uint = 0
-	var tranxListResp = &transaction.PagedResponseList{}
-	// 0 length implies that the customer has no associated account
-	if len(txWhere) > 0 {
-		tranxListResp, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
-			Where:           strings.Join(txWhere, " OR "),
-			Args:            txArgs,
-			Order:           []string{"created_at desc"},
-			Limit:           &limit,
-			Offset:          &offset,
-			IncludeAccount:  true,
-			IncludeSalesRep: true,
-		})
-		if err != nil && err.Error() != sql.ErrNoRows.Error() {
-			return err
-		}
+	var offset int64 = 0
+	req.Limit = &limit
+	req.Offset = &offset
+	tranxListResp, err := h.TransactionRepo.Find(ctx, claims, req)
+	if err != nil && err.Error() != sql.ErrNoRows.Error() {
+		return err
 	}
 
 	data["transactions"] = tranxListResp.Transactions
@@ -517,7 +507,7 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
 	}
 
-	mapFunc := func(q *transaction.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q transaction.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -582,12 +572,8 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 		return err
 	}
 
-	var txWhere []string
-	var txArgs []interface{}
-	for _, acc := range accountsResp.Accounts {
-		txWhere = append(txWhere, "account_id = ?")
-		txArgs = append(txArgs, acc.ID)
-	}
+	var req transaction.FindRequest
+	req.CustomerID = customerID
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 
@@ -595,18 +581,15 @@ func (h *Customers) Transactions(ctx context.Context, w http.ResponseWriter, r *
 		if len(sorting) > 0 {
 			order = strings.Split(sorting, ",")
 		} else {
-			order = append(order, "created_at DESC")
+			order = append(order, dal.TransactionColumns.CreatedAt + " -1")
 		}
+		req.Order = order
 
 		var res = &transaction.PagedResponseList{}
 		// 0 where means this customer has no associated account
-		if len(txWhere) > 0 {
-			res, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
-				Order: order, Where: strings.Join(txWhere, " OR "), Args: txArgs,
-			})
-			if err != nil {
-				return resp, err
-			}
+		res, err = h.TransactionRepo.Find(ctx, claims, req)
+		if err != nil {
+			return resp, err
 		}
 
 		for _, a := range res.Transactions {
@@ -795,16 +778,14 @@ func (h *Customers) Account(ctx context.Context, w http.ResponseWriter, r *http.
 	data["account"] = acc.Response(ctx)
 
 	var limit uint = 5
-	var offset uint = 0
-	tranxListResp, err := h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
-		Where:           "account_id = ?",
-		Args:            []interface{}{accountID},
-		Order:           []string{"created_at desc"},
-		Limit:           &limit,
-		Offset:          &offset,
-		IncludeAccount:  true,
-		IncludeSalesRep: true,
-	})
+	var offset int64 = 0
+	req := transaction.FindRequest{
+		Limit:     &limit,
+		Offset:    &offset,
+		AccountID: accountID,
+		Order:     []string{dal.TransactionColumns.CreatedAt + " -1"},
+	}
+	tranxListResp, err := h.TransactionRepo.Find(ctx, claims, req)
 	if err != nil && err.Error() != sql.ErrNoRows.Error() {
 		return err
 	}
@@ -949,7 +930,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		{Field: "sales_rep_id", Title: "Recorded By", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter Recorder"},
 	}
 
-	mapFunc := func(q *transaction.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
+	mapFunc := func(q transaction.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
 			var v datatable.ColumnValue
@@ -1003,8 +984,9 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 	}
 
 	var data = make(map[string]interface{})
-	var txWhere = []string{"account_id = $1"}
-	var txArgs = []interface{}{accountID}
+	req := transaction.FindRequest {
+		AccountID: accountID,
+	}
 
 	if v := r.URL.Query().Get("start_date"); v != "" {
 		date, err := time.Parse("01/02/2006", v)
@@ -1013,8 +995,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		}
 		date = date.Truncate(time.Millisecond)
 		date = now.New(date).BeginningOfDay().Add(-1 * time.Hour)
-		txWhere = append(txWhere, fmt.Sprintf("created_at >= $%d", len(txArgs)+1))
-		txArgs = append(txArgs, date.UTC().Unix())
+		req.StartDate = date.Unix()
 		data["startDate"] = v
 		// 1581897600
 		// 1581897323
@@ -1027,8 +1008,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		}
 		date = date.Truncate(time.Millisecond)
 		date = now.New(date).EndOfDay().Add(-1 * time.Hour)
-		txWhere = append(txWhere, fmt.Sprintf("created_at <= $%d", len(txArgs)+1))
-		txArgs = append(txArgs, date.Unix())
+		req.EndDate = date.Unix()
 		data["endDate"] = v
 	}
 
@@ -1038,15 +1018,12 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		if len(sorting) > 0 {
 			order = strings.Split(sorting, ",")
 		} else {
-			order = append(order, "created_at DESC")
+			order = append(order, dal.TransactionColumns.CreatedAt + " -1")
 		}
+		req.Order = order
 
 		var res = &transaction.PagedResponseList{}
-		res, err = h.TransactionRepo.Find(ctx, claims, transaction.FindRequest{
-			Order: order,
-			Where: strings.Join(txWhere, " AND "),
-			Args:  txArgs,
-		})
+		res, err = h.TransactionRepo.Find(ctx, claims, req)
 		if err != nil {
 			return resp, err
 		}
@@ -1063,7 +1040,7 @@ func (h *Customers) AccountTransactions(ctx context.Context, w http.ResponseWrit
 		return resp, nil
 	}
 
-	totalDeposit, err := h.TransactionRepo.DepositAmountByWhere(ctx, strings.Join(txWhere, " and "), txArgs)
+	totalDeposit, err := h.TransactionRepo.DepositAmountByWhere(ctx, h.TransactionRepo.BuildQuery(claims, req))
 	if err != nil {
 		return err
 	}
@@ -1431,7 +1408,7 @@ func (h *Customers) Transaction(ctx context.Context, w http.ResponseWriter, r *h
 		return nil
 	}
 
-	tranx, err := h.TransactionRepo.ReadByID(ctx, claims, transactionID)
+	tranx, err := h.TransactionRepo.ReadByID(ctx, transactionID)
 	if err != nil {
 		return err
 	}
