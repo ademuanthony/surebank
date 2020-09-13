@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	. "github.com/volatiletech/sqlboiler/queries/qm"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
@@ -45,10 +47,10 @@ func (repo *Repository) LattestCommission(ctx context.Context, accountID string)
 	var comm DsCommission
 	q := bson.M{dal.DSCommissionColumns.AccountID: accountID}
 	findOption := options.FindOne()
-	findOption.SetSort(bson.M{dal.DSCommissionColumns.EffectiveDate: "-1"})
+	findOption.SetSort(bson.M{dal.DSCommissionColumns.EffectiveDate: -1})
 	err := repo.mongoDb.Collection(dal.C.DSCommission).FindOne(ctx, q, findOption).Decode(&comm)
 
-	if err != nil {
+	if err != nil && err != mongo.ErrNoDocuments {
 		return nil, err
 	}
 	return &comm, nil
@@ -82,7 +84,8 @@ func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRe
 			if len(sortInfo) != 2 {
 				continue
 			}
-			sort = append(sort, primitive.E{Key: sortInfo[0], Value: sortInfo[1]})
+			s, _ := strconv.Atoi(sortInfo[1])
+			sort = append(sort, primitive.E{Key: sortInfo[0], Value: s})
 		}
 	}
 	findOptions.SetSort(sort)
@@ -152,7 +155,7 @@ func (repo *Repository) TotalAmountByWhere(ctx context.Context, req FindRequest)
 		queries[dal.DSCommissionColumns.Date] = bson.M{"$lte": req.EndDate}
 	}
 
-	var result struct {
+	var result []struct {
 		Total float64
 	}
 
@@ -180,5 +183,11 @@ func (repo *Repository) TotalAmountByWhere(ctx context.Context, req FindRequest)
 	}
 
 	err = cursor.All(ctx, &result)
-	return result.Total, err
+	if err != nil {
+		return 0, fmt.Errorf("TotalAmountByWhere -> All, %s", err.Error())
+	}
+	if len(result) > 0 {
+		return result[0].Total, err
+	}
+	return 0, err
 }

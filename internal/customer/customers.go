@@ -2,6 +2,7 @@ package customer
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
@@ -54,7 +55,8 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 			if len(sortInfo) != 2 {
 				continue
 			}
-			sort = append(sort, primitive.E{Key: sortInfo[0], Value: sortInfo[1]})
+			s, _ := strconv.Atoi(sortInfo[1])
+			sort = append(sort, primitive.E{Key: sortInfo[0], Value: s})
 		}
 	}
 	findOptions.SetSort(sort)

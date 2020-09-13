@@ -493,6 +493,11 @@ func main() {
 	}
 	log.Println("main : Completed : Connect Mongo")
 	mongoDb := dal.NewDb()
+	defer func() {
+		if err = dal.Client.Disconnect(context.Background()); err != nil {
+			panic(err)
+		}
+	}()
 
 	// =========================================================================
 	// Notify Email
@@ -567,8 +572,8 @@ func main() {
 	branchRepo := branch.NewRepository(masterDb, mongoDb)
 	customerRepo := customer.NewRepository(masterDb, mongoDb, branchRepo)
 	accountRepo := customer.NewAccountRepository(masterDb, mongoDb, customerRepo, branchRepo)
-	commissionRepo := dscommission.NewRepository(masterDb)
-	transactionRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS)
+	commissionRepo := dscommission.NewRepository(masterDb, mongoDb)
+	transactionRepo := transaction.NewRepository(masterDb, mongoDb, commissionRepo, accountRepo, notifySMS)
 	inventoryRepo := inventory.NewRepository(masterDb)
 	saleRepo := sale.NewRepository(masterDb, shopRepo, inventoryRepo, transactionRepo)
 	expendituresRepo := expenditure.NewRepository(masterDb)

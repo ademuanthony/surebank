@@ -204,7 +204,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 			AccountNumber: req.AccountNumber,
 			Amount:        amount,
 			Narration:     fmt.Sprintf("sale:%s:%s", receiptNumber, saleID),
-		}, now, tx)
+		}, now)
 		if err != nil {
 			_ = tx.Rollback()
 			return nil, weberror.NewErrorMessage(ctx, err, 500, "cannot make deduction")

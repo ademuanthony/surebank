@@ -2,6 +2,7 @@ package branch
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
@@ -47,7 +48,8 @@ func (repo *Repository) Find(ctx context.Context, req FindRequest) (Branches, er
 			if len(sortInfo) != 2 {
 				continue
 			}
-			sort = append(sort, primitive.E{Key: sortInfo[0], Value: sortInfo[1]})
+			s, _ := strconv.Atoi(sortInfo[1])
+			sort = append(sort, primitive.E{Key: sortInfo[0], Value: s})
 		}
 	}
 	findOptions.SetSort(sort)
@@ -199,7 +201,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 
 	cols[models.BranchColumns.UpdatedAt] = now
 
-	_, err = repo.mongoDb.Collection(dal.C.Branch).UpdateOne(ctx, bson.M{dal.BranchColumns.ID: req.ID}, cols)
+	_, err = repo.mongoDb.Collection(dal.C.Branch).UpdateOne(ctx, bson.M{dal.BranchColumns.ID: req.ID}, bson.M{"$set": cols})
 
 	return err
 }
@@ -236,7 +238,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 
 	cols := bson.M{dal.BranchColumns.ArchivedAt: now}
 
-	_, err = repo.mongoDb.Collection(dal.C.Branch).UpdateOne(ctx, bson.M{dal.BranchColumns.ID: req.ID}, cols)
+	_, err = repo.mongoDb.Collection(dal.C.Branch).UpdateOne(ctx, bson.M{dal.BranchColumns.ID: req.ID}, bson.M{"$set": cols})
 
 	return err
 }

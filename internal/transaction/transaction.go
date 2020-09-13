@@ -37,7 +37,7 @@ var (
 )
 
 func (repo *Repository) BuildQuery(claims auth.Claims, req FindRequest) primitive.M {
-	var queries primitive.M
+	var queries = primitive.M{}
 	if !req.IncludeArchived {
 		queries[dal.TransactionColumns.ArchivedAt] = bson.M{"$ne": nil}
 	}
@@ -93,7 +93,8 @@ func (repo *Repository) Find(ctx context.Context, claims auth.Claims, req FindRe
 			if len(sortInfo) != 2 {
 				continue
 			}
-			sort = append(sort, primitive.E{Key: sortInfo[0], Value: sortInfo[1]})
+			s, _ := strconv.Atoi(sortInfo[1])
+			sort = append(sort, primitive.E{Key: sortInfo[0], Value: s})
 		}
 	}
 	findOptions.SetSort(sort)
@@ -184,7 +185,7 @@ func (repo *Repository) DepositAmountByWhere(ctx context.Context, queries primit
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.DepositAmountByWhere")
 	defer span.Finish()
 
-	var result struct {
+	var result []struct {
 		Total float64
 	}
 
@@ -212,7 +213,13 @@ func (repo *Repository) DepositAmountByWhere(ctx context.Context, queries primit
 	}
 
 	err = cursor.All(ctx, &result)
-	return result.Total, err
+	if err != nil {
+		return 0, fmt.Errorf("TotalDepositAmount -> All, %s", err.Error())
+	}
+	if len(result) > 0 {
+		return result[0].Total, err
+	}
+	return 0, err
 }
 
 // AccountBalance gets the balance of the specified account from the database.
@@ -345,7 +352,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 
 	isFirstContribution, err := repo.CommissionRepo.StartingNewCircle(ctx, account.ID, effectiveDate)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("StartingNewCircle %s", err.Error())
 	}
 
 	if _, err := repo.mongoDb.Collection(dal.C.Transaction).InsertOne(ctx, m); err != nil {
@@ -361,7 +368,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 	}
 
 	if err = repo.SaveDailySummary(ctx, req.Amount, 0, 0, currentDate); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("SaveDailySummary %s", err.Error())
 	}
 
 	// send SMS notification
@@ -428,11 +435,14 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		}
 	}
 
-	if _, err := repo.mongoDb.Collection(dal.C.Account).UpdateOne(ctx, bson.M{dal.AccountColumns.ID: account.ID}, bson.M{
-		dal.AccountColumns.Balance:         accountBalance,
-		dal.AccountColumns.LastPaymentDate: lastDepositDate,
-	}); err != nil {
-		return nil, err
+	filter := bson.D{{Key: dal.AccountColumns.ID, Value: account.ID}}
+	update := bson.D{{Key: "$set", Value: bson.D{
+		{Key: dal.AccountColumns.Balance, Value: accountBalance},
+		{Key: dal.AccountColumns.LastPaymentDate, Value: lastDepositDate},
+	}}}
+
+	if _, err := repo.mongoDb.Collection(dal.C.Account).UpdateOne(ctx, filter, update); err != nil {
+		return nil, fmt.Errorf("UpdateOne-Account %s", err.Error())
 	}
 
 	return &m, nil
@@ -558,7 +568,7 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 
 	filter := bson.M{dal.AccountColumns.ID: tranx.AccountID}
 	update := bson.M{dal.AccountColumns.Balance: bson.M{"$inc": txAmount}}
-	_, err = repo.mongoDb.Collection(dal.C.Account).UpdateOne(ctx, filter, update)
+	_, err = repo.mongoDb.Collection(dal.C.Account).UpdateOne(ctx, filter, bson.M{"$set": update})
 
 	if err != nil {
 		return err
@@ -629,8 +639,8 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 		Narration:      req.Narration,
 		SalesRepID:     claims.Subject,
 		SalesRep:       salesRep.FirstName + " " + salesRep.LastName,
-		CreatedAt:      now,
-		UpdatedAt:      now,
+		CreatedAt:      now.Unix(),
+		UpdatedAt:      now.Unix(),
 	}
 
 	if _, err := repo.mongoDb.Collection(dal.C.Transaction).InsertOne(ctx, m); err != nil {
@@ -638,9 +648,9 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 	}
 
 	accountBalance -= req.Amount
-	if _, err := repo.mongoDb.Collection(dal.C.Account).UpdateOne(ctx, bson.M{dal.AccountColumns.ID: m.AccountID}, bson.M{
+	if _, err := repo.mongoDb.Collection(dal.C.Account).UpdateOne(ctx, bson.M{dal.AccountColumns.ID: m.AccountID}, bson.M{"$set": bson.M{
 		models.AccountColumns.Balance: bson.M{"$inc": accountBalance},
-	}); err != nil {
+	}}); err != nil {
 		return nil, err
 	}
 
@@ -666,17 +676,15 @@ func (repo *Repository) SaveDailySummary(ctx context.Context, income, expenditur
 
 	today := now.New(date).BeginningOfDay().Unix()
 	existingSummary, err := repo.FindDailySummary(ctx, today)
-	if err == nil {
-		existingSummary.BankDeposit += bankDeposit
-		existingSummary.Income += income
-		existingSummary.Expenditure += expenditure
-		cols := bson.M{
-			dal.DailySummaryColumns.BankDeposit: bson.M{"$inc": bankDeposit},
-			dal.DailySummaryColumns.Income:      bson.M{"$inc": income},
-			dal.DailySummaryColumns.Expenditure: bson.M{"$inc": expenditure},
-		}
+	if err == nil && existingSummary.Date > 0 {
+		filter := bson.D{{Key: dal.DailySummaryColumns.Date, Value: today}}
+		update := bson.D{{Key: "$set", Value: bson.D{
+			{Key: dal.DailySummaryColumns.BankDeposit, Value: primitive.E{Key: "$inc", Value: bankDeposit}},
+			{Key: dal.DailySummaryColumns.Income, Value: primitive.E{Key: "$inc", Value: income}},
+			{Key: dal.DailySummaryColumns.Expenditure, Value: primitive.E{Key: "$inc", Value: expenditure}},
+		}}}
 
-		_, err = collection.UpdateOne(ctx, bson.M{dal.DailySummaryColumns.Date: today}, cols)
+		_, err = collection.UpdateOne(ctx, filter, update)
 		return err
 	}
 

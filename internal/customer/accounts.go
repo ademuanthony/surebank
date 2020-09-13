@@ -38,7 +38,7 @@ func (repo *AccountRepository) FindDs(ctx context.Context, claims auth.Claims, r
 	defer span.Finish()
 
 	var queries = bson.M{
-		dal.AccountColumns.AccountType: models.AccountTypeDS,
+		dal.AccountColumns.Type: models.AccountTypeDS,
 		dal.AccountColumns.Balance:     bson.M{"$gt": 0},
 	}
 
@@ -94,7 +94,8 @@ func (repo *AccountRepository) find(ctx context.Context, claims auth.Claims, req
 			if len(sortInfo) != 2 {
 				continue
 			}
-			sort = append(sort, primitive.E{Key: sortInfo[0], Value: sortInfo[1]})
+			s, _ := strconv.Atoi(sortInfo[1])
+			sort = append(sort, primitive.E{Key: sortInfo[0], Value: s})
 		}
 	}
 	findOptions.SetSort(sort)
@@ -165,6 +166,50 @@ func (repo *AccountRepository) AccountsCount(ctx context.Context, claims auth.Cl
 
 	collection := repo.mongoDb.Collection(dal.C.Account)
 	return collection.CountDocuments(ctx, query)
+}
+
+func (repo *AccountRepository) GlobalBalance(ctx context.Context, accountType string) (float64, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.GlobalBalance")
+	defer span.Finish()
+
+	var result []struct {
+		Total float64
+	}
+
+	queries := bson.M{
+		dal.AccountColumns.Type: accountType,
+	}
+	pipeline := []bson.M{
+		{
+			"$match": queries,
+		},
+		{
+			"$group": bson.M{
+				"_id":   "",
+				"total": bson.M{"$sum": "$" + dal.AccountColumns.Balance},
+			},
+		},
+		{
+			"$project": bson.M{
+				"_id":   0,
+				"total": 1,
+			},
+		},
+	}
+
+	cursor, err := repo.mongoDb.Collection(dal.C.Account).Aggregate(ctx, pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("GlobalBalance -> Aggregate, %s", err.Error())
+	}
+
+	err = cursor.All(ctx, &result)
+	if err != nil {
+		return 0, fmt.Errorf("GlobalBalance -> All, %s", err.Error())
+	}
+	if len(result) > 0 {
+		return result[0].Total, err
+	}
+	return 0, err
 }
 
 // Create inserts a new account into the database.
@@ -294,7 +339,7 @@ func (repo *AccountRepository) Update(ctx context.Context, claims auth.Claims, r
 	}
 
 	if req.Type != nil {
-		cols[dal.AccountColumns.AccountType] = *req.Type
+		cols[dal.AccountColumns.Type] = *req.Type
 	}
 
 	if len(cols) == 0 {

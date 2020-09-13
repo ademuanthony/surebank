@@ -31,10 +31,11 @@ import (
 
 // Accounting represents the Accounting API method handler set.
 type Accounting struct {
-	Redis    *redis.Client
-	Renderer web.Renderer
-	DbConn   *sql.DB
-	UserRepos *user.Repository
+	Redis           *redis.Client
+	Renderer        web.Renderer
+	DbConn          *sql.DB
+	UserRepos       *user.Repository
+	TransactionRepo *transaction.Repository
 }
 
 // DailySummaries handles listing all the daily summaries.
@@ -139,7 +140,7 @@ func (h *Accounting) RepsSummaries(ctx context.Context, w http.ResponseWriter, r
 	if err != nil {
 		return err
 	}
-	
+
 	data := map[string]interface{}{}
 	var salesRepID, startDate, endDate string
 	// todo sales rep filtering
@@ -289,7 +290,7 @@ func (h *Accounting) RepsSummaries(ctx context.Context, w http.ResponseWriter, r
 	if err != nil {
 		return err
 	}
-	
+
 	data["datatable"] = dt.Response()
 	data["users"] = users
 
@@ -557,7 +558,7 @@ func (h *Accounting) CreateBankDeposit(ctx context.Context, w http.ResponseWrite
 		return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 	}
 
-	if err = transaction.SaveDailySummary(ctx, 0, 0, req.Amount, ctxValues.Now, tx); err != nil {
+	if err = h.TransactionRepo.SaveDailySummary(ctx, 0, 0, req.Amount, ctxValues.Now); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -703,7 +704,7 @@ func (h *Accounting) CreateExpenditure(ctx context.Context, w http.ResponseWrite
 		return web.RespondJsonError(ctx, w, weberror.NewError(ctx, err, http.StatusBadRequest))
 	}
 
-	if err = transaction.SaveDailySummary(ctx, 0, req.Amount, 0, ctxValues.Now, tx); err != nil {
+	if err = h.TransactionRepo.SaveDailySummary(ctx, 0, req.Amount, 0, ctxValues.Now); err != nil {
 		tx.Rollback()
 		return err
 	}

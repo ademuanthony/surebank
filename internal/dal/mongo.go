@@ -30,22 +30,22 @@ var C = struct {
 	Users           string
 }{
 	Account:         "account",
-	BankAccount:     "bank_account",
-	BankDeposit:     "bank_deposit",
+	BankAccount:     "bankaccount",
+	BankDeposit:     "bankdeposit",
 	Branch:          "branch",
 	Brand:           "brand",
 	Category:        "category",
 	Customer:        "customer",
-	DailySummary:    "daily_summary",
-	DSCommission:    "ds_commission",
+	DailySummary:    "dailysummary",
+	DSCommission:    "dscommission",
 	Expenditure:     "expenditure",
 	Inventory:       "inventory",
 	Payment:         "payment",
 	Product:         "product",
-	ProductCategory: "product_category",
-	RepsExpense:     "reps_expense",
+	ProductCategory: "productcategory",
+	RepsExpense:     "repsexpense",
 	Sale:            "sale",
-	SaleItem:        "sale_item",
+	SaleItem:        "saleitem",
 	Transaction:     "transaction",
 	Users:           "users",
 }
@@ -56,7 +56,7 @@ var (
 		BranchID        string
 		Number          string
 		CustomerID      string
-		AccountType     string
+		Type            string
 		Target          string
 		TargetInfo      string
 		SalesRepID      string
@@ -67,18 +67,18 @@ var (
 		LastPaymentDate string
 	}{
 		ID:              "id",
-		BranchID:        "branch_id",
+		BranchID:        "branchid",
 		Number:          "number",
-		CustomerID:      "customer_id",
-		AccountType:     "account_type",
+		CustomerID:      "customerid",
+		Type:            "type",
 		Target:          "target",
-		TargetInfo:      "target_info",
-		SalesRepID:      "sales_rep_id",
-		CreatedAt:       "created_at",
-		UpdatedAt:       "updated_at",
-		ArchivedAt:      "archived_at",
+		TargetInfo:      "targetinfo",
+		SalesRepID:      "salesrepid",
+		CreatedAt:       "createdat",
+		UpdatedAt:       "updatedat",
+		ArchivedAt:      "archivedat",
 		Balance:         "balance",
-		LastPaymentDate: "last_payment_date",
+		LastPaymentDate: "lastpaymentdate",
 	}
 
 	BranchColumns = struct {
@@ -90,9 +90,9 @@ var (
 	}{
 		ID:         "id",
 		Name:       "name",
-		CreatedAt:  "created_at",
-		UpdatedAt:  "updated_at",
-		ArchivedAt: "archived_at",
+		CreatedAt:  "createdat",
+		UpdatedAt:  "updatedat",
+		ArchivedAt: "archivedat",
 	}
 
 	CustomerColumns = struct {
@@ -109,15 +109,15 @@ var (
 		Accounts    string
 	}{
 		ID:          "id",
-		BranchID:    "branch_id",
+		BranchID:    "branchid",
 		Email:       "email",
 		Name:        "name",
-		PhoneNumber: "phone_number",
+		PhoneNumber: "phonenumber",
 		Address:     "address",
-		SalesRepID:  "sales_rep_id",
-		CreatedAt:   "created_at",
-		UpdatedAt:   "updated_at",
-		ArchivedAt:  "archived_at",
+		SalesRepID:  "salesrepid",
+		CreatedAt:   "createdat",
+		UpdatedAt:   "updatedat",
+		ArchivedAt:  "archivedat",
 		Accounts:    "accounts",
 	}
 
@@ -129,7 +129,7 @@ var (
 	}{
 		Income:      "income",
 		Expenditure: "expenditure",
-		BankDeposit: "bank_deposit",
+		BankDeposit: "bankdeposit",
 		Date:        "date",
 	}
 
@@ -142,11 +142,11 @@ var (
 		EffectiveDate string
 	}{
 		ID:            "id",
-		AccountID:     "account_id",
-		CustomerID:    "customer_id",
+		AccountID:     "accountid",
+		CustomerID:    "customerid",
 		Amount:        "amount",
 		Date:          "date",
-		EffectiveDate: "effective_date",
+		EffectiveDate: "effectivedate",
 	}
 
 	TransactionColumns = struct {
@@ -191,11 +191,11 @@ type FindInput struct {
 	SortFields     []string
 }
 
-var client *mongo.Client
+var Client *mongo.Client
 
 func Connect(ctx context.Context, server string) (err error) {
 	clientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s", server))
-	client, err = mongo.Connect(ctx, clientOptions)
+	Client, err = mongo.Connect(ctx, clientOptions)
 	return
 }
 
@@ -204,5 +204,5 @@ func NewDb(databaseName ...string) *mongo.Database {
 	if len(databaseName) > 0 {
 		dbName = databaseName[0]
 	}
-	return client.Database(dbName)
+	return Client.Database(dbName)
 }

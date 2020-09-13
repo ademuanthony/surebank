@@ -19,18 +19,17 @@ import (
 	"github.com/ikeikeikeike/go-sitemap-generator/v2/stm"
 	"github.com/pkg/errors"
 	"github.com/sethgrid/pester"
-	"github.com/volatiletech/null"
 )
 
 // Root represents the Root API method handler set.
 type Root struct {
-	ShopRepo *shop.Repository
-	CustomerRepo *customer.Repository
-	AccountRepo *customer.AccountRepository
+	ShopRepo        *shop.Repository
+	CustomerRepo    *customer.Repository
+	AccountRepo     *customer.AccountRepository
 	TransactionRepo *transaction.Repository
-	Renderer web.Renderer
-	Sitemap  *stm.Sitemap
-	WebRoute webroute.WebRoute
+	Renderer        web.Renderer
+	Sitemap         *stm.Sitemap
+	WebRoute        webroute.WebRoute
 }
 
 // Index determines if the user has authentication and loads the associated page.
@@ -57,7 +56,7 @@ func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *htt
 	if err != nil {
 		return weberror.WithMessage(ctx, err, "Cannot get accounts count")
 	}
- 
+
 	thisWeekDeposit, err := h.TransactionRepo.ThisWeekDepositAmount(ctx, claims)
 	if err != nil {
 		return weberror.WithMessage(ctx, err, "Cannot get total deposit for the week")
@@ -68,32 +67,25 @@ func (h *Root) indexDashboard(ctx context.Context, w http.ResponseWriter, r *htt
 		return weberror.WithMessage(ctx, err, "Cannot get total deposit for the day")
 	}
 
-	
-	statement := "select SUM(balance) total from account WHERE account_type = 'DS'"
-	var dsBalance null.Float64
-	rows := h.CustomerRepo.DbConn.QueryRow(statement)
-	err = rows.Scan(&dsBalance)
+	dsBalance, err := h.AccountRepo.GlobalBalance(ctx, "DS")
 	if err != nil {
 		return weberror.WithMessage(ctx, err, "Cannot get total DS balance")
 	}
 
-	statement = "select SUM(balance) total from account WHERE account_type = 'SB'"
-	var sbBalance null.Float64
-	rows = h.CustomerRepo.DbConn.QueryRow(statement)
-	err = rows.Scan(&sbBalance)
+	sbBalance, err := h.AccountRepo.GlobalBalance(ctx, "SB")
 	if err != nil {
 		return weberror.WithMessage(ctx, err, "Cannot get total DS balance")
 	}
 
-	data := map[string]interface{} {
-		"customerCount": customerCount,
-		"accountCount": accountCount,
-		"todayDeposit": todayDeposit,
+	data := map[string]interface{}{
+		"customerCount":   customerCount,
+		"accountCount":    accountCount,
+		"todayDeposit":    todayDeposit,
 		"thisWeekDeposit": thisWeekDeposit,
-		"dsBalance": dsBalance.Float64,
-		"sbBalance": sbBalance.Float64,
+		"dsBalance":       dsBalance,
+		"sbBalance":       sbBalance,
 	}
-	
+
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "root-dashboard.gohtml",
 		web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }
