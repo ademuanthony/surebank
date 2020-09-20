@@ -26,14 +26,16 @@ type Repository struct {
 	CommissionRepo *dscommission.Repository
 	notifySMS      notify.SMS
 	accNumMtx      sync.Mutex
+	creatDB        func() (*sqlx.DB, error)
 }
 
 // NewRepository creates a new Repository that defines dependencies for Transaction.
-func NewRepository(db *sqlx.DB, commissionRepo *dscommission.Repository, notifySMS notify.SMS) *Repository {
+func NewRepository(db *sqlx.DB, commissionRepo *dscommission.Repository, notifySMS notify.SMS, creatDB func() (*sqlx.DB, error)) *Repository {
 	return &Repository{
 		DbConn:         db,
 		CommissionRepo: commissionRepo,
 		notifySMS:      notifySMS,
+		creatDB:        creatDB,
 	}
 }
 

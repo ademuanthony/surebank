@@ -383,10 +383,7 @@ func main() {
 	}
 
 	var masterDb *sqlx.DB
-	openDbFunc := func() error {
-		if masterDb != nil {
-			masterDb.Close()
-		}
+	createDB := func() (*sqlx.DB, error) {
 		// =========================================================================
 		// Start Database
 		var dbUrl url.URL
@@ -419,10 +416,17 @@ func main() {
 		// name use RegisterWithServiceName.
 		sqltrace.Register(cfg.DB.Driver, &pq.Driver{}, sqltrace.WithServiceName(service))
 		var innerErr error
-		masterDb, innerErr = sqlxtrace.Open(cfg.DB.Driver, dbUrl.String())
-		return innerErr
+		db, innerErr := sqlxtrace.Open(cfg.DB.Driver, dbUrl.String())
+		return db, innerErr
 	}
 
+	openDbFunc := func() error {
+		if masterDb != nil {
+			masterDb.Close()
+		}
+		masterDb, err = createDB()
+		return err
+	}
 	if err = openDbFunc(); err != nil {
 		log.Fatalf("main : Register DB : %s : %+v", cfg.DB.Driver, err)
 	}
@@ -554,7 +558,7 @@ func main() {
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
 	commissionRepo := dscommission.NewRepository(masterDb)
-	transactionRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS)
+	transactionRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS, createDB)
 	inventoryRepo := inventory.NewRepository(masterDb)
 	saleRepo := sale.NewRepository(masterDb, shopRepo, inventoryRepo, transactionRepo)
 	expendituresRepo := expenditure.NewRepository(masterDb)

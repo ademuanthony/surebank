@@ -274,7 +274,13 @@ func (repo *Repository) AccountBalanceTx(ctx context.Context, accountID string, 
 func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time) (*Transaction, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Deposit")
 	defer span.Finish()
-	dbTx, err := repo.DbConn.Begin()
+	//open a new db
+	db, err := repo.creatDB()
+	if err != nil {
+		return nil, weberror.NewErrorMessage(ctx, err, http.StatusBadRequest, "Cannot create DB connection")
+	}
+	defer db.Close()
+	dbTx, err := db.Begin()
 	if err != nil {
 		return nil, err
 	}
