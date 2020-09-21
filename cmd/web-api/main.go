@@ -393,12 +393,52 @@ func main() {
 	}
 	log.Println("main : Started : Initialize Database")
 
-	// Register informs the sqlxtrace package of the driver that we will be using in our program.
-	// It uses a default service name, in the below case "postgres.db". To use a custom service
-	// name use RegisterWithServiceName.
-	sqltrace.Register(cfg.DB.Driver, &pq.Driver{}, sqltrace.WithServiceName(service))
-	masterDb, err := sqlxtrace.Open(cfg.DB.Driver, dbUrl.String())
-	if err != nil {
+	var masterDb *sqlx.DB
+	createDB := func() (*sqlx.DB, error) {
+		// =========================================================================
+		// Start Database
+		var dbUrl url.URL
+		{
+			// Query parameters.
+			var q url.Values = make(map[string][]string)
+
+			// Handle SSL Mode
+			if cfg.DB.DisableTLS {
+				q.Set("sslmode", "disable")
+			} else {
+				q.Set("sslmode", "require")
+			}
+
+			q.Set("timezone", cfg.DB.Timezone)
+
+			// Construct url.
+			dbUrl = url.URL{
+				Scheme:   cfg.DB.Driver,
+				User:     url.UserPassword(cfg.DB.User, cfg.DB.Pass),
+				Host:     cfg.DB.Host,
+				Path:     cfg.DB.Database,
+				RawQuery: q.Encode(),
+			}
+		}
+		log.Println("main : Started : Initialize Database")
+
+		// Register informs the sqlxtrace package of the driver that we will be using in our program.
+		// It uses a default service name, in the below case "postgres.db". To use a custom service
+		// name use RegisterWithServiceName.
+		sqltrace.Register(cfg.DB.Driver, &pq.Driver{}, sqltrace.WithServiceName(service))
+		var innerErr error
+		db, innerErr := sqlxtrace.Open(cfg.DB.Driver, dbUrl.String())
+		return db, innerErr
+	}
+
+	openDbFunc := func() error {
+		if masterDb != nil {
+			masterDb.Close()
+		}
+		masterDb, err = createDB()
+		return err
+	}
+	if err = openDbFunc(); err != nil {
 		log.Fatalf("main : Register DB : %s : %+v", cfg.DB.Driver, err)
 	}
 	defer masterDb.Close()
@@ -477,7 +517,7 @@ func main() {
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
 	commissionRepo := dscommission.NewRepository(masterDb)
-	depositRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS)
+	depositRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS, createDB)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
