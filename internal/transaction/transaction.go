@@ -275,12 +275,7 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Deposit")
 	defer span.Finish()
 	//open a new db
-	db, err := repo.creatDB()
-	if err != nil {
-		return nil, weberror.NewErrorMessage(ctx, err, http.StatusBadRequest, "Cannot create DB connection")
-	}
-	defer db.Close()
-	dbTx, err := db.Begin()
+	dbTx, err := repo.DbConn.Begin()
 	if err != nil {
 		return nil, err
 	}
