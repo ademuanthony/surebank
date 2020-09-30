@@ -472,8 +472,7 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				statement := "SELECT sum(numbackends) as number FROM pg_stat_database;"
-				row := masterDb.QueryRow(statement)
+				row := masterDb.QueryRow("SELECT sum(numbackends) as number FROM pg_stat_database;")
 				var number int
 				err := row.Scan(&number)
 				if err != nil {log.Println(err)}
