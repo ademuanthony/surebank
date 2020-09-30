@@ -639,31 +639,31 @@ func (h *Reports) Withdrawals(ctx context.Context, w http.ResponseWriter, r *htt
 	var txWhere = []string{"tx_type = $1"}
 	var txArgs = []interface{}{transaction.TransactionType_Withdrawal}
 
+	date := time.Now()
 	if v := r.URL.Query().Get("start_date"); v != "" {
-		date, err := time.Parse("01/02/2006", v)
+		date, err = time.Parse("01/02/2006", v)
 		if err != nil {
 			return err
 		}
-		date = date.Truncate(time.Millisecond)
-		date = now.New(date).BeginningOfDay().Add(-1 * time.Hour)
-		txWhere = append(txWhere, fmt.Sprintf("created_at >= $%d", len(txArgs)+1))
-		txArgs = append(txArgs, date.UTC().Unix())
-		data["startDate"] = v
-		// 1581897600
-		// 1581897323
 	}
+	date = date.Truncate(time.Millisecond)
+	date = now.New(date).BeginningOfDay().Add(-1 * time.Hour)
+	txWhere = append(txWhere, fmt.Sprintf("created_at >= $%d", len(txArgs)+1))
+	txArgs = append(txArgs, date.UTC().Unix())
+	data["startDate"] = date.Format("01/02/2006")
 
+	date = time.Now()
 	if v := r.URL.Query().Get("end_date"); v != "" {
-		date, err := time.Parse("01/02/2006", v)
+		date, err = time.Parse("01/02/2006", v)
 		if err != nil {
 			return err
 		}
-		date = date.Truncate(time.Millisecond)
-		date = now.New(date).EndOfDay().Add(-1 * time.Hour)
-		txWhere = append(txWhere, fmt.Sprintf("created_at <= $%d", len(txArgs)+1))
-		txArgs = append(txArgs, date.Unix())
-		data["endDate"] = v
 	}
+	date = date.Truncate(time.Millisecond)
+	date = now.New(date).EndOfDay().Add(-1 * time.Hour)
+	txWhere = append(txWhere, fmt.Sprintf("created_at <= $%d", len(txArgs)+1))
+	txArgs = append(txArgs, date.Unix())
+	data["endDate"] = date.Format("01/02/2006")
 
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 
