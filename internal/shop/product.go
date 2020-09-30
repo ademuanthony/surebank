@@ -290,6 +290,22 @@ func (repo *Repository) ReadProductByID(ctx context.Context, _ auth.Claims, id s
 	return ProductFromModel(productModel), nil
 }
 
+func (repo *Repository) ReadProductByIDTx(ctx context.Context, _ auth.Claims, id string, tx *sql.Tx) (*Product, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "internal.shop.ReadProductByIDTx")
+	defer span.Finish()
+	queries := []QueryMod{
+		models.ProductWhere.ID.EQ(id),
+		Load(models.ProductRels.Brand),
+		Load(models.ProductRels.Category),
+	}
+	productModel, err := models.Products(queries...).One(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return ProductFromModel(productModel), nil
+}
+
 func (repo *Repository) CreateProduct(ctx context.Context, claims auth.Claims, req ProductCreateRequest, now time.Time) (*Product, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.shop.CreateProduct")
 	defer span.Finish()

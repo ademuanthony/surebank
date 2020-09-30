@@ -141,7 +141,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 	repo.mutex.Lock()
 	defer repo.mutex.Unlock()
 
-	salesRep, err := models.Users(models.UserWhere.ID.EQ(claims.Subject)).One(ctx, repo.DbConn)
+	salesRep, err := models.Users(models.UserWhere.ID.EQ(claims.Subject)).One(ctx, tx)
 	if err != nil {
 		_ = tx.Rollback()
 		return nil, weberror.NewErrorMessage(ctx, err, 400, "Something went wrong. Are you logged in?")
@@ -151,12 +151,12 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 	var itemSlice models.SaleItemSlice
 	var amount float64
 	for _, item := range req.Items {
-		prod, err := repo.ShopRepo.ReadProductByID(ctx, claims, item.ProductID)
+		prod, err := repo.ShopRepo.ReadProductByIDTx(ctx, claims, item.ProductID, tx)
 		if err != nil {
 			_ = tx.Rollback()
 			return nil, weberror.WithMessagef(ctx, err, "Invalid product ID, %s", item.ProductID)
 		}
-		bal, err := repo.InventoryRepo.Balance(ctx, claims, item.ProductID, salesRep.BranchID)
+		bal, err := repo.InventoryRepo.Balance(ctx, claims, item.ProductID, salesRep.BranchID, tx)
 		if err != nil {
 			_ = tx.Rollback()
 			return nil, weberror.WithMessagef(ctx, err, "Cannot get stock balance for product, %s", prod.Name)

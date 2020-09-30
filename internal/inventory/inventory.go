@@ -111,8 +111,8 @@ func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) 
 }
 
 // Balance gets the balance of the specified product from the database.
-func (repo *Repository) Balance(ctx context.Context, claim auth.Claims, productID string, branchID string) (balance int64, err error) {
-	lastTx, err := repo.lastTransaction(ctx, productID, branchID)
+func (repo *Repository) Balance(ctx context.Context, claim auth.Claims, productID string, branchID string, tx *sql.Tx) (balance int64, err error) {
+	lastTx, err := repo.lastTransaction(ctx, productID, branchID, tx)
 	if err != nil {
 		if err.Error() != sql.ErrNoRows.Error() {
 			return 0, err
@@ -161,7 +161,7 @@ func (repo *Repository) AddStock(ctx context.Context, claims auth.Claims, req Ad
 		return nil, err
 	}
 
-	lastTransaction, err := repo.lastTransaction(ctx, req.ProductID, salesRep.BranchID)
+	lastTransaction, err := repo.lastTransaction(ctx, req.ProductID, salesRep.BranchID, tx)
 	if err != nil {
 		if err.Error() != sql.ErrNoRows.Error() {
 			_ = tx.Rollback()
@@ -263,7 +263,7 @@ func (repo *Repository) MakeStockDeduction(ctx context.Context, claims auth.Clai
 	repo.mutex.Lock()
 	defer repo.mutex.Unlock()
 
-	lastTransaction, err := repo.lastTransaction(ctx, req.ProductID, salesRep.BranchID)
+	lastTransaction, err := repo.lastTransaction(ctx, req.ProductID, salesRep.BranchID, tx)
 	if err != nil {
 		if err.Error() != sql.ErrNoRows.Error() {
 			return nil, err
@@ -306,13 +306,13 @@ func (repo *Repository) MakeStockDeduction(ctx context.Context, claims auth.Clai
 }
 
 // lastTransaction returns the last transaction for the specified product
-func (repo *Repository) lastTransaction(ctx context.Context, productID string, branchID string) (*models.Inventory, error) {
+func (repo *Repository) lastTransaction(ctx context.Context, productID string, branchID string, tx *sql.Tx) (*models.Inventory, error) {
 	return models.Inventories(
 		models.InventoryWhere.ProductID.EQ(productID),
 		models.InventoryWhere.BranchID.EQ(branchID),
 		OrderBy(fmt.Sprintf("%s desc", models.InventoryColumns.CreatedAt)),
 		Limit(1),
-	).One(ctx, repo.DbConn)
+	).One(ctx, tx)
 }
 
 // accountBalanceAtTx returns the account balance as at the specified tx

@@ -632,7 +632,7 @@ func (repo *Repository) Update(ctx context.Context, claims auth.Claims, req Upda
 	}
 
 	if req.Amount != nil {
-		tranx, err := models.FindTransaction(ctx, repo.DbConn, req.ID)
+		tranx, err := models.FindTransaction(ctx, tx, req.ID)
 		if err != nil {
 			_ = tx.Rollback()
 			return err
