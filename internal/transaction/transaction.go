@@ -342,7 +342,9 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 }
 
 // create inserts a new transaction into the database.
-func (repo *Repository) create(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time, dbTx *sql.Tx) (*Transaction, error) {
+func (repo *Repository) create(ctx context.Context, claims auth.Claims, req CreateRequest, 
+	currentDate time.Time, dbTx *sql.Tx) (*Transaction, error) {
+
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Create")
 	defer span.Finish()
 	if claims.Audience == "" {
@@ -369,7 +371,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 
 	effectiveDate := now.New(currentDate).BeginningOfDay()
 	if account.AccountType == models.AccountTypeDS {
-		lastDeposit, err := repo.lastDeposit(ctx, account.ID)
+		lastDeposit, err := repo.lastDeposit(ctx, account.ID, dbTx)
 		if err == nil {
 			effectiveDate = now.New(time.Unix(lastDeposit.EffectiveDate, 0)).Time.Add(24 * time.Hour)
 		}
@@ -409,7 +411,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		EffectiveDate:  effectiveDate.Unix(),
 	}
 
-	isFirstContribution, err := repo.CommissionRepo.StartingNewCircle(ctx, account.ID, effectiveDate)
+	isFirstContribution, err := repo.CommissionRepo.StartingNewCircle(ctx, account.ID, effectiveDate, dbTx)
 	if err != nil {
 		return nil, err
 	}
@@ -495,7 +497,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 			Date:          currentDate.Unix(),
 			EffectiveDate: effectiveDate.Unix(),
 		}
-		if err := commission.Insert(ctx, repo.DbConn, boil.Infer()); err != nil {
+		if err := commission.Insert(ctx, dbTx, boil.Infer()); err != nil {
 			return nil, err
 		}
 	}
@@ -563,13 +565,13 @@ func (repo *Repository) receiptExists(ctx context.Context, receipt string) bool 
 	return exists
 }
 
-func (repo *Repository) lastDeposit(ctx context.Context, accountID string) (*models.Transaction, error) {
+func (repo *Repository) lastDeposit(ctx context.Context, accountID string, dbTx *sql.Tx) (*models.Transaction, error) {
 	return models.Transactions(
 		models.TransactionWhere.AccountID.EQ(accountID),
 		models.TransactionWhere.TXType.EQ(TransactionType_Deposit.String()),
 		OrderBy(fmt.Sprintf("%s desc", models.TransactionColumns.CreatedAt)),
 		Limit(1),
-	).One(ctx, repo.DbConn)
+	).One(ctx, dbTx)
 }
 
 // Update replaces an exiting transaction in the database.

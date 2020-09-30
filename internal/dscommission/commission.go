@@ -15,11 +15,11 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
-func (repo *Repository) StartingNewCircle(ctx context.Context, accountID string, effectiveDate time.Time) (bool, error) {
+func (repo *Repository) StartingNewCircle(ctx context.Context, accountID string, effectiveDate time.Time, dbTx *sql.Tx) (bool, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.commission.StartingNewCircle")
 	defer span.Finish()
 
-	lastCommission, err := repo.LattestCommission(ctx, accountID)
+	lastCommission, err := repo.LattestCommission(ctx, accountID, dbTx)
 	if err != nil {
 		if err.Error() == sql.ErrNoRows.Error() {
 			return true, nil
@@ -33,7 +33,7 @@ func (repo *Repository) StartingNewCircle(ctx context.Context, accountID string,
 	return r, nil
 }
 
-func (repo *Repository) LattestCommission(ctx context.Context, accountID string) (*DsCommission, error) {
+func (repo *Repository) LattestCommission(ctx context.Context, accountID string, dbTx *sql.Tx) (*DsCommission, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.commission.LattestCommission")
 	defer span.Finish()
 
@@ -41,7 +41,7 @@ func (repo *Repository) LattestCommission(ctx context.Context, accountID string)
 		models.DSCommissionWhere.AccountID.EQ(accountID),
 		OrderBy(fmt.Sprintf("%s desc", models.DSCommissionColumns.EffectiveDate)),
 		Limit(1),
-	).One(ctx, repo.DbConn)
+	).One(ctx, dbTx)
 
 	if err != nil {
 		return nil, err
