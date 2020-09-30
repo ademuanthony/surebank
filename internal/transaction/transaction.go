@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jinzhu/now"
@@ -273,9 +274,13 @@ func (repo *Repository) AccountBalanceTx(ctx context.Context, accountID string, 
 	return result.Float64, err
 }
 
+var depoLock sync.Mutex
 func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time) (*Transaction, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Deposit")
 	defer span.Finish()
+	depoLock.Lock()
+	defer depoLock.Unlock()
+	
 	//open a new db
 	dbTx, err := repo.DbConn.Begin()
 	if err != nil {
