@@ -357,12 +357,6 @@ func (h *Reports) Withdrawals(ctx context.Context, w http.ResponseWriter, r *htt
 		return nil
 	}
 
-	total, err = h.TransactionRepo.DepositAmountByWhere(ctx, strings.Join(txWhere, " and "), txArgs)
-	if err != nil {
-		return err
-	}
-
-	data["total"] = total
 	data["datatable"] = dt.Response()
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "report-withdrawals.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
