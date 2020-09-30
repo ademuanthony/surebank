@@ -319,6 +319,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext, reopenDBFunc func () error
 		Renderer:        appCtx.Renderer,
 		Redis:           appCtx.Redis,
 	}
+	app.Handle("GET", "/reports/withdrawals", reports.Withdrawals, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/reports/collections", reports.Transactions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/reports/ds/commissions", reports.DsCommissions, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/reports/ds", reports.Ds, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
