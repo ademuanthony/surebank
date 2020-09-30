@@ -466,7 +466,7 @@ func main() {
 		rank > 1
 	`
 
-	ticker := time.NewTicker(50000 * time.Minute)
+	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
 	go func() {
 		for {

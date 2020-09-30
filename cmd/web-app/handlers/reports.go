@@ -216,7 +216,6 @@ func (h *Reports) Transactions(ctx context.Context, w http.ResponseWriter, r *ht
 func (h *Reports) Withdrawals(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
 
 	var data = make(map[string]interface{})
-	var total float64
 
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
