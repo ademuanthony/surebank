@@ -466,7 +466,7 @@ func main() {
 		rank > 1
 	`
 
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(50000 * time.Minute)
 	defer ticker.Stop()
 	go func() {
 		for {
@@ -480,9 +480,9 @@ func main() {
 	}()
 
 	// Enable AWS to auto pause the DB when no activity.
-	masterDb.SetMaxOpenConns(60)
-	masterDb.SetMaxIdleConns(30)
-	masterDb.SetConnMaxLifetime(1 * time.Minute)
+	// masterDb.SetMaxOpenConns(60)
+	// masterDb.SetMaxIdleConns(30)
+	// masterDb.SetConnMaxLifetime(1 * time.Minute)
 
 	// =========================================================================
 	// Notify Email
