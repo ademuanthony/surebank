@@ -100,6 +100,7 @@ type Response struct {
 	Type           TransactionType   `json:"type,omitempty" example:"deposit"`
 	AccountNumber  string            `json:"account_number" example:"SB10003001" truss:"api-read"`
 	CustomerID     string            `json:"customer_id" truss:"api-read"`
+	Customer       string            `json:"customer"`
 	OpeningBalance float64           `json:"opening_balance" truss:"api-read"`
 	Amount         float64           `json:"amount" truss:"api-read"`
 	Narration      string            `json:"narration" truss:"api-read"`
@@ -263,6 +264,7 @@ type FindRequest struct {
 	Offset           *uint         `json:"offset" example:"20"`
 	IncludeArchived  bool          `json:"include-archived" example:"false"`
 	IncludeAccount   bool          `json:"include_account" example:"false"`
+	IncludeCustomer  bool          `json:"include_customer"`
 	IncludeAccountNo bool          `json:"include_account_no" example:"false"`
 	IncludeSalesRep  bool          `json:"include_sales_rep" example:"false"`
 }

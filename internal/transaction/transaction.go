@@ -171,6 +171,8 @@ func (repo *Repository) TxReport(ctx context.Context, claims auth.Claims, req Fi
 	return result, err
 }
 
+
+
 // ReadByID gets the specified transaction by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) (*Transaction, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.ReadByID")
