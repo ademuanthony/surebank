@@ -763,6 +763,20 @@ func (repo *Repository) Archive(ctx context.Context, claims auth.Claims, req Arc
 		return err
 	}
 
+	//update daily saving
+	dailySum, err := models.FindDailySummary(ctx, tx, tranx.CreatedAt)
+	if err != nil && err != sql.ErrNoRows {
+		_ = tx.Rollback()
+		return err
+	}
+	if dailySum != nil {
+		dailySum.Income += txAmount
+		if _, err = dailySum.Update(ctx, tx, boil.Infer()); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+
 	if err = tx.Commit(); err != nil {
 		return errors.Wrap(err, "commintin transaction")
 	}
