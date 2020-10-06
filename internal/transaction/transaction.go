@@ -293,8 +293,19 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 		return nil, weberror.NewErrorMessage(ctx, err, http.StatusBadRequest, "Invalid account number")
 	}
 
+
+	effectiveDate := now.New(currentDate).BeginningOfDay()
+	if account.AccountType == models.AccountTypeDS {
+		lastDeposit, err := repo.lastDeposit(ctx, account.ID, dbTx)
+		if err == nil {
+			effectiveDate = now.New(time.Unix(lastDeposit.EffectiveDate, 0)).Time.Add(24 * time.Hour)
+		}
+	}
+
+	effectiveDate = effectiveDate.UTC()
+
 	if account.AccountType != models.AccountTypeDS {
-		m, err := repo.create(ctx, claims, req, currentDate, dbTx)
+		m, err := repo.create(ctx, claims, req, currentDate, effectiveDate, dbTx)
 		if err != nil {
 			dbTx.Rollback()
 			return nil, err
@@ -302,6 +313,7 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 		if err := dbTx.Commit(); err != nil {
 			return nil, err
 		}
+		effectiveDate = effectiveDate.Add(24 * time.Hour)
 		return m, nil
 	}
 
@@ -350,7 +362,7 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 
 // create inserts a new transaction into the database.
 func (repo *Repository) create(ctx context.Context, claims auth.Claims, req CreateRequest, 
-	currentDate time.Time, dbTx *sql.Tx) (*Transaction, error) {
+	currentDate, effectiveDate time.Time, dbTx *sql.Tx) (*Transaction, error) {
 
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Create")
 	defer span.Finish()
@@ -375,16 +387,6 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 	if currentDate.IsZero() {
 		currentDate = time.Now()
 	}
-
-	effectiveDate := now.New(currentDate).BeginningOfDay()
-	if account.AccountType == models.AccountTypeDS {
-		lastDeposit, err := repo.lastDeposit(ctx, account.ID, dbTx)
-		if err == nil {
-			effectiveDate = now.New(time.Unix(lastDeposit.EffectiveDate, 0)).Time.Add(24 * time.Hour)
-		}
-	}
-
-	effectiveDate = effectiveDate.UTC()
 
 	// Always store the time as UTC.
 	currentDate = currentDate.UTC()
