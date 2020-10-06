@@ -313,7 +313,6 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 		if err := dbTx.Commit(); err != nil {
 			return nil, err
 		}
-		effectiveDate = effectiveDate.Add(24 * time.Hour)
 		return m, nil
 	}
 
@@ -335,13 +334,14 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 	amount, reqAmount := req.Amount, req.Amount
 	req.Amount = account.Target
 	for amount > 0 {
-		tx, err = repo.create(ctx, claims, req, currentDate, dbTx)
+		tx, err = repo.create(ctx, claims, req, currentDate, effectiveDate, dbTx)
 		if err != nil {
 			dbTx.Rollback()
 			return nil, err
 		}
 		amount -= account.Target
 		currentDate = currentDate.Add(4 * time.Second)
+		effectiveDate = effectiveDate.Add(24 * time.Hour)
 	}
 
 	if err = dbTx.Commit(); err != nil {

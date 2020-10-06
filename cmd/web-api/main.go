@@ -45,6 +45,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/securecookie"
+	"github.com/jmoiron/sqlx"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -122,7 +123,7 @@ func main() {
 			SMSProvider       string `default:"bulksmsnigeria" envconfig:"SMS_Provider"`
 			SMSAuthToken      string `default:"nHIts34gQLQeqN6o92PgFZTqWj01MCNNgPxn0Z5lqTfArc3mbE1SZkt3vil0" envconfig:"SMS_Auth_TOKEN"`
 			WebAppBaseUrl     string `default:"http://127.0.0.1:3000" envconfig:"WEB_APP_BASE_URL" example:"www.example.saasstartupkit.com"`
-		} 
+		}
 		Redis struct {
 			Host            string        `default:":6379" envconfig:"HOST"`
 			DB              int           `default:"1" envconfig:"DB"`
@@ -368,30 +369,6 @@ func main() {
 
 	// =========================================================================
 	// Start Database
-	var dbUrl url.URL
-	{
-		// Query parameters.
-		var q url.Values = make(map[string][]string)
-
-		// Handle SSL Mode
-		if cfg.DB.DisableTLS {
-			q.Set("sslmode", "disable")
-		} else {
-			q.Set("sslmode", "require")
-		}
-
-		q.Set("timezone", cfg.DB.Timezone)
-
-		// Construct url.
-		dbUrl = url.URL{
-			Scheme:   cfg.DB.Driver,
-			User:     url.UserPassword(cfg.DB.User, cfg.DB.Pass),
-			Host:     cfg.DB.Host,
-			Path:     cfg.DB.Database,
-			RawQuery: q.Encode(),
-		}
-	}
-	log.Println("main : Started : Initialize Database")
 
 	var masterDb *sqlx.DB
 	createDB := func() (*sqlx.DB, error) {
@@ -534,10 +511,10 @@ func main() {
 		ChecklistRepo:   chklstRepo,
 		CustomerRepo:    customerRepo,
 		AccountRepo:     accountRepo,
-		CommissionRepo: commissionRepo,
+		CommissionRepo:  commissionRepo,
 		DepositRepo:     depositRepo,
 		Authenticator:   authenticator,
-		NotifySMS:		 notifySMS,
+		NotifySMS:       notifySMS,
 	}
 
 	// =========================================================================

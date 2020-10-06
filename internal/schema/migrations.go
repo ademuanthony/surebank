@@ -1397,6 +1397,27 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+
+		// Add SF type to account_type
+		{
+			ID: "20201005-01",
+			Migrate: func(tx *sql.Tx) error {
+				statements := []string{
+					`ALTER TABLE account ALTER COLUMN account_type TYPE VARCHAR(28) USING account_type::text`,
+				}
+
+				for _, q1 := range statements {
+					if _, err := tx.Exec(q1); err != nil {
+						return errors.Wrapf(err, "Query failed %s", q1)
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
 		// TODO: store dates in unix
 	}
 }
