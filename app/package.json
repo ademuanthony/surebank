@@ -12,7 +12,7 @@
     "lint": "eslint --fix --ext .js, src"
   },
   "dependencies": {
-    "axios": "0.19.2",
+    "axios": "0.21.1",
     "bootstrap4-toggle": "^3.4.0",
     "dompurify": "~1.0.10",
     "lodash-es": "4.17.15",
