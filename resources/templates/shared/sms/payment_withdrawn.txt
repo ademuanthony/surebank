@@ -1,1 +1,5 @@
-Dear {{ .Name }}, your account has been debited with {{ .Amount }}. You new balance is {{ .Balance }}
+Debit
+Amt: {{ .Amount }} NGN
+Acc: {{ .AccountNumber }}
+Avail Bal: {{ .Balance }} NGN
+Cashier: {{ .Cashier }}

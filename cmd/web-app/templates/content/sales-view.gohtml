@@ -4,6 +4,20 @@
 {{end}}
 {{define "content"}}
 
+<style>
+    @media print {
+        * {
+            display: none;
+        }
+        #printableTable {
+            display: block;
+        }
+        p {
+            margin-bottom: 20px;
+        }
+    }
+</style>
+
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ .urlSalesIndex }}">Sales</a></li>
@@ -16,9 +30,9 @@
         <h1 class="h3 mb-0 text-gray-800">{{ .sale.ReceiptNumber }}</h1>
     </div>
 
-    <div class="card shadow mb-4">
+    <div id="printableTable"  class="card shadow mb-4">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-dark">Sale Details</h6>
+            <h6 class="m-0 font-weight-bold text-dark text-center">Surebank Sales Receipt</h6>
             <div class="dropdown no-arrow show">
                 <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                     <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
@@ -27,77 +41,89 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-6">
-                    <p>
-                        <small>Receipt Number</small><br/>
-                        <b>{{ .sale.ReceiptNumber }}</b>
-                    </p>
-                </div>
+                <table style="width: 100%; border: none;">
+                    <tr>
+                        <td style="width: 50%;">
+                            <p style="margin-bottom: 15px;">
+                                <small>Receipt Number</small><br/>
+                                <b>{{ .sale.ReceiptNumber }}</b>
+                            </p>
+                        </td>
+                        <td>
+                            <p>
+                                <small>Date</small><br/>
+                                <b>{{ .sale.CreatedAt.Local }}</b>
+                            </p>
+                        </td>
+                    </tr>
 
-                <div class="col-md-6">
-                    <p>
-                        <small>Date</small><br/>
-                        <b>{{ .sale.CreatedAt.Local }}</b>
-                    </p>
-                </div>
+                    <tr>
+                        <td>
+                            <p style="margin-bottom: 15px;">
+                                <small>Amount</small><br/>
+                                <b>{{ .sale.Amount }}</b>
+                            </p>
+                        </td>
+                        <td>
+                            <p>
+                                <small>Amount Tender</small><br/>
+                                <b>{{ .sale.AmountTender }}</b>
+                            </p>
+                        </td>
+                    </tr>
 
-                <div class="col-md-4">
-                    <p>
-                        <small>Amount</small><br/>
-                        <b>{{ .sale.Amount }}</b>
-                    </p>
-                </div>
+                    <tr>
+                        <td>
+                            <p style="margin-bottom: 15px;">
+                                <small>Balance</small><br/>
+                                <b>{{ .sale.Balance }}</b>
+                            </p>
+                        </td>
+                        <td>
+                            <p>
+                                <small>Customer Name</small><br/>
+                                <b>{{ .sale.CustomerName }}</b>
+                            </p>
+                        </td>
+                    </tr>
 
-                <div class="col-md-4">
-                    <p>
-                        <small>Amount Tender</small><br/>
-                        <b>{{ .sale.AmountTender }}</b>
-                    </p>
-                </div>
+                    <tr>
+                        <td>
+                            <p style="margin-bottom: 15px;">
+                                <small>Customer Phone Number</small><br/>
+                                <b>{{ .sale.PhoneNumber }}</b>
+                            </p>
+                        </td>
+                        <td>
+                            <p>
+                                <small>Sales Rep</small><br/>
+                                <b>{{ .sale.CreatedBy }}</b>
+                            </p>
+                        </td>
+                    </tr>
 
-                <div class="col-md-4">
-                    <p>
-                        <small>Balance</small><br/>
-                        <b>{{ .sale.Balance }}</b>
-                    </p>
-                </div>
+                    <tr>
+                        <td>
+                            <p style="margin-bottom: 35px;">
+                                <small>Branch</small><br/>
+                                <b>{{ .sale.Branch }}</b>
+                            </p>
+                        </td>
+                    </tr>
 
-                <div class="col-md-6">
-                    <p>
-                        <small>Customer Name</small><br/>
-                        <b>{{ .sale.CustomerName }}</b>
-                    </p>
-                </div>
-
-                <div class="col-md-6">
-                    <p>
-                        <small>Customer Phone Number</small><br/>
-                        <b>{{ .sale.PhoneNumber }}</b>
-                    </p>
-                </div>
-
-                <div class="col-md-6">
-                    <p>
-                        <small>Sales Rep</small><br/>
-                        <b>{{ .sale.CreatedBy }}</b>
-                    </p>
-                </div>
-
-                <div class="col-md-6">
-                    <p>
-                        <small>Branch</small><br/>
-                        <b>{{ .sale.Branch }}</b>
-                    </p>
-                </div>
+                </table>
+               
             </div>
 
+            <hr>
+
             <div class="row">
-                <table class="table">
+                <table style="width: 100%;" class="table">
                     <tr>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Unit Price</th>
-                        <th>Sub Total</th>
+                        <th style="width: 25%; text-align: left;">Product</th>
+                        <th style="width: 25%; text-align: left;">Quantity</th>
+                        <th style="width: 25%; text-align: left;">Unit Price</th>
+                        <th style="width: 25%; text-align: left;">Sub Total</th>
                     </tr>
                     <tbody>
                     {{ range $item := .sale.Items }}
@@ -116,5 +142,14 @@
 
 {{end}}
 {{define "js"}}
+<iframe name="print_frame" width="0" height="0" frameborder="0" src="about:blank"></iframe>
 
+<script type="text/javascript">
+    function printDiv() {
+        window.frames["print_frame"].document.body.innerHTML = document.getElementById("printableTable").innerHTML;
+        window.frames["print_frame"].window.focus();
+        window.frames["print_frame"].window.print();
+    }
+    printDiv()
+</script>
 {{end}}

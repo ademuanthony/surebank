@@ -172,8 +172,6 @@ func (repo *Repository) TxReport(ctx context.Context, claims auth.Claims, req Fi
 	return result, err
 }
 
-
-
 // ReadByID gets the specified transaction by ID from the database.
 func (repo *Repository) ReadByID(ctx context.Context, _ auth.Claims, id string) (*Transaction, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.ReadByID")
@@ -275,12 +273,13 @@ func (repo *Repository) AccountBalanceTx(ctx context.Context, accountID string, 
 }
 
 var depoLock sync.Mutex
+
 func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req CreateRequest, currentDate time.Time) (*Transaction, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Deposit")
 	defer span.Finish()
 	depoLock.Lock()
 	defer depoLock.Unlock()
-	
+
 	//open a new db
 	dbTx, err := repo.DbConn.Begin()
 	if err != nil {
@@ -292,7 +291,6 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 		dbTx.Rollback()
 		return nil, weberror.NewErrorMessage(ctx, err, http.StatusBadRequest, "Invalid account number")
 	}
-
 
 	effectiveDate := now.New(currentDate).BeginningOfDay()
 	if account.AccountType == models.AccountTypeDS {
@@ -347,12 +345,21 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 	if err = dbTx.Commit(); err != nil {
 		return nil, err
 	}
+
+	var salesRepName string
+	salesRep, err := models.FindUser(ctx, repo.DbConn, claims.Subject)
+	if err == nil {
+		salesRepName = salesRep.FirstName + " " + salesRep.LastName
+	}
+
 	if serr := repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/ds_received",
 		map[string]interface{}{
 			"Name":          account.R.Customer.Name,
 			"EffectiveDate": web.NewTimeResponse(ctx, tx.EffectiveDate).LocalDate,
 			"Amount":        reqAmount,
 			"Balance":       tx.OpeningBalance + tx.Amount,
+			"AccountNumber": account.Number,
+			"Cashier":       salesRepName,
 		}); err != nil {
 		// TODO: log critical error. Send message to monitoring account
 		fmt.Println(serr)
@@ -361,7 +368,7 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 }
 
 // create inserts a new transaction into the database.
-func (repo *Repository) create(ctx context.Context, claims auth.Claims, req CreateRequest, 
+func (repo *Repository) create(ctx context.Context, claims auth.Claims, req CreateRequest,
 	currentDate, effectiveDate time.Time, dbTx *sql.Tx) (*Transaction, error) {
 
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.transaction.Create")
@@ -449,13 +456,21 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 	}
 
 	// send SMS notification
+	var salesRepName string
+	salesRep, err := models.FindUser(ctx, repo.DbConn, claims.Subject)
+	if err == nil {
+		salesRepName = salesRep.FirstName + " " + salesRep.LastName
+	}
+
 	if req.Type == TransactionType_Deposit {
 		if account.AccountType == models.AccountTypeSB {
 			if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_received",
 				map[string]interface{}{
-					"Name":    account.R.Customer.Name,
-					"Amount":  req.Amount,
-					"Balance": accountBalance,
+					"Name":          account.R.Customer.Name,
+					"Amount":        req.Amount,
+					"Balance":       accountBalance,
+					"AccountNumber": account.Number,
+					"Cashier":       salesRepName,
 				}); err != nil {
 				// TODO: log critical error. Send message to monitoring account
 				fmt.Println(err)
@@ -464,9 +479,11 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 	} else {
 		if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_withdrawn",
 			map[string]interface{}{
-				"Name":    account.R.Customer.Name,
-				"Amount":  req.Amount,
-				"Balance": accountBalance,
+				"Name":          account.R.Customer.Name,
+				"Amount":        req.Amount,
+				"Balance":       accountBalance,
+				"AccountNumber": account.Number,
+				"Cashier":       salesRepName,
 			}); err != nil {
 			// TODO: log critical error. Send message to monitoring account
 			fmt.Println(err)
@@ -856,11 +873,19 @@ func (repo *Repository) MakeDeduction(ctx context.Context, claims auth.Claims, r
 		return nil, err
 	}
 
+	var salesRepName string
+	salesRep, err := models.FindUser(ctx, repo.DbConn, claims.Subject)
+	if err == nil {
+		salesRepName = salesRep.FirstName + " " + salesRep.LastName
+	}
+
 	if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_withdrawn",
 		map[string]interface{}{
-			"Name":    account.R.Customer.Name,
-			"Amount":  req.Amount,
-			"Balance": accountBalance,
+			"Name":          account.R.Customer.Name,
+			"Amount":        req.Amount,
+			"Balance":       accountBalance,
+			"AccountNumber": account.Number,
+			"Cashier":       salesRepName,
 		}); err != nil {
 		// TODO: log critical error. Send message to monitoring account
 		fmt.Println(err)
