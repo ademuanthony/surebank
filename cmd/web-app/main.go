@@ -84,6 +84,7 @@ var service = "WEB_APP"
 
 func main() {
 
+	fmt.Println("reload prompt")
 	// =========================================================================
 	// Logging
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)

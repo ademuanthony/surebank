@@ -1,3 +1,4 @@
+SURE-BANK
 Debit
 Amt: {{ .Amount }} NGN
 Acc: {{ .AccountNumber }}

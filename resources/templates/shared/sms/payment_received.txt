@@ -1,3 +1,4 @@
+SURE-BANK
 Credit
 Amt: {{ .Amount }} NGN
 Acc: {{ .AccountNumber }}
