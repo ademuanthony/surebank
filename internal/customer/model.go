@@ -211,4 +211,5 @@ type FindRequest struct {
 	Offset           *uint         `json:"offset" example:"20"`
 	IncludeArchived  bool          `json:"include-archived" example:"false"`
 	IncludeAccountNo bool          `json:"include-account-no" example:"false"`
+	IncludeBranch    bool          `json:"include-branch" example:"false"`
 }

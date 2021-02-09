@@ -33,7 +33,6 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	var queries = []QueryMod{
 		Load(models.CustomerRels.SalesRep),
-		Load(models.CustomerRels.Branch),
 	}
 
 	if req.Where != "" {
@@ -42,6 +41,10 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	if !req.IncludeArchived {
 		queries = append(queries, And("archived_at is null"))
+	}
+
+	if req.IncludeBranch {
+		queries = append(queries, Load(models.CustomerRels.Branch))
 	}
 
 	if req.IncludeAccountNo {

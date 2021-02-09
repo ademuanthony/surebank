@@ -104,7 +104,6 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 		{Field: "created_at", Title: "Start Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Email"},
 		{Field: "phone_number", Title: "Phone Number", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Phone Number"},
 		{Field: "sales_rep", Title: "Manager", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Manager"},
-		{Field: "branch", Title: "Branch", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Branch"},
 	}
 
 	mapFunc := func(q *customer.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
@@ -126,9 +125,6 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 			case "sales_rep":
 				v.Value = q.SalesRep
 				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), v.Value)
-			case "branch":
-				v.Value = q.Branch
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlBranchesView(q.BranchID), v.Value)
 			default:
 				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
 			}
