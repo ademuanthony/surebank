@@ -138,6 +138,8 @@ func main() {
 			SMSProvider       string `default:"bulksmsnigeria" envconfig:"SMS_Provider"`
 			// TODO: remove default value
 			SMSAuthToken  string `default:"nHIts34gQLQeqN6o92PgFZTqWj01MCNNgPxn0Z5lqTfArc3mbE1SZkt3vil0" envconfig:"SMS_Auth_TOKEN"`
+			SMSUsername   string `default:"surebank" envconfig:"SMS_Auth_User"`
+			SMSPassword   string `default:"surebank123" envconfig:"SMS_Auth_Pass"`
 			WebApiBaseUrl string `default:"http://127.0.0.1:3001" envconfig:"WEB_API_BASE_URL"  example:"http://api.example.saasstartupkit.com"`
 		}
 		Redis struct {
@@ -476,8 +478,10 @@ func main() {
 				row := masterDb.QueryRow("SELECT sum(numbackends) as number FROM pg_stat_database;")
 				var number int
 				err := row.Scan(&number)
-				if err != nil {log.Println(err)}
-				
+				if err != nil {
+					log.Println(err)
+				}
+
 				if number < 2 {
 					return
 				}
@@ -523,7 +527,10 @@ func main() {
 	var notifySMS notify.SMS
 	if cfg.Project.SMSProvider == "bulksmsnigeria" {
 		// send SMS with bulksmsnigeria.com API
-		notifySMS, err = notify.NewBulkSmsNigeria(cfg.Project.SMSAuthToken, cfg.Project.SMSSender,
+		// notifySMS, err = notify.NewBulkSmsNigeria(cfg.Project.SMSAuthToken, cfg.Project.SMSSender,
+		// 	cfg.Project.SharedTemplateDir, http.Client{})
+
+		notifySMS, err = notify.NewSwiftBulkSMS(cfg.Project.SMSUsername, cfg.Project.SMSPassword, cfg.Project.SMSSender,
 			cfg.Project.SharedTemplateDir, http.Client{})
 		if err != nil {
 			log.Fatalf("main : Notify SMS : %+v", err)
