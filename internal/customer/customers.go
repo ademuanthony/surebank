@@ -78,8 +78,6 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	if req.Limit != nil {
 		queries = append(queries, Limit(int(*req.Limit)))
-	} else {
-		queries = append(queries, Limit(4000))
 	}
 
 	if req.Offset != nil {
