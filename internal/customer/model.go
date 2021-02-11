@@ -205,6 +205,7 @@ type DeleteRequest struct {
 // archived checklist will be excluded from response.
 type FindRequest struct {
 	Where            string        `json:"where" example:"name = ? and status = ?"`
+	Keyword          string        `json:"Keyword" example:"tony"`
 	Args             []interface{} `json:"args" swaggertype:"array,string" example:"Moon Launch,active"`
 	Order            []string      `json:"order" example:"created_at desc"`
 	Limit            *uint         `json:"limit" example:"10"`

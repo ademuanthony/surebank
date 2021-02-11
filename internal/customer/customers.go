@@ -3,6 +3,7 @@ package customer
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/pborman/uuid"
@@ -35,6 +36,19 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 		Load(models.CustomerRels.SalesRep),
 	}
 
+	if req.Keyword != "" {
+		statement := fmt.Sprintf("(%s = %%$%d%% or %s = %%$%d%% or %s = %%$%d%%)",
+			models.CustomerColumns.Name, len(req.Args)+1,
+			models.CustomerColumns.PhoneNumber, len(req.Args)+2,
+			models.CustomerColumns.Email, len(req.Args)+3)
+		req.Args = append(req.Args, req.Keyword, req.Keyword, req.Keyword)
+		if len(req.Where) > 0 {
+			req.Where = " AND " + statement
+		} else {
+			req.Where = statement
+		}
+	}
+
 	if req.Where != "" {
 		queries = append(queries, Where(req.Where, req.Args...))
 	}
@@ -64,8 +78,6 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 
 	if req.Limit != nil {
 		queries = append(queries, Limit(int(*req.Limit)))
-	} else {
-		queries = append(queries, Limit(3000))
 	}
 
 	if req.Offset != nil {

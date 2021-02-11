@@ -166,9 +166,11 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return err
 	}
 
-	if dt.HasCache() {
-		return nil
-	}
+	dt.DisableCache()
+
+	// if dt.HasCache() {
+	// 	return nil
+	// }
 
 	if ok, err := dt.Render(); ok {
 		if err != nil {

@@ -275,6 +275,7 @@ func ParseQueryValues(vals url.Values) (Request, error) {
 	return req, nil
 }
 
+// TODO: move all fetch, pagination, sorting, searching to db
 func New(ctx context.Context, w http.ResponseWriter, r *http.Request, redisClient *redis.Client, fields []DisplayField, loadFunc func(ctx context.Context, sorting string, fields []DisplayField) (resp [][]ColumnValue, err error)) (dt *Datatable, err error) {
 	dt = &Datatable{
 		ctx:      ctx,
