@@ -42,7 +42,7 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 			models.CustomerColumns.Name, req.Keyword,
 			models.CustomerColumns.PhoneNumber, req.Keyword,
 			models.CustomerColumns.Email, req.Keyword)
-		req.Args = append(req.Args, req.Keyword, req.Keyword, req.Keyword)
+		// req.Args = append(req.Args, req.Keyword, req.Keyword, req.Keyword)
 		spew.Dump(statement)
 		if len(req.Where) > 0 {
 			req.Where = " AND " + statement
