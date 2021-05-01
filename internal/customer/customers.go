@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -37,11 +38,12 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	}
 
 	if req.Keyword != "" {
-		statement := fmt.Sprintf("(%s LIKE %%$1%% or %s LIKE %%$2%% or %s LIKE %%$3%%)",
-			models.CustomerColumns.Name,
-			models.CustomerColumns.PhoneNumber, 
-			models.CustomerColumns.Email, )
+		statement := fmt.Sprintf("(%s LIKE '%%%s%%' or %s LIKE '%%%s%%'or %s LIKE '%%%s%%')",
+			models.CustomerColumns.Name, req.Keyword,
+			models.CustomerColumns.PhoneNumber, req.Keyword,
+			models.CustomerColumns.Email, req.Keyword)
 		req.Args = append(req.Args, req.Keyword, req.Keyword, req.Keyword)
+		spew.Dump(statement)
 		if len(req.Where) > 0 {
 			req.Where = " AND " + statement
 		} else {
