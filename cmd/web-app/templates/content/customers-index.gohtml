@@ -19,13 +19,13 @@
         <div class="col">
             <div class="card">
                 <div class="header">
-                    <form class="form-inline">
+                    <form class="form-inline m-3">
                         <div class="form-group mb-2">
                           <label for="term" class="sr-only">Customer</label>
-                          <input name="term" id="term" type="text" class="form-control-plaintext"
+                          <input name="term" id="term" type="text" class="form-control"
                            placeholder="Search Term" value="{{ .term }}">
                         </div>
-                        <button type="submit" class="btn btn-primary mb-2">Find Customer</button>
+                        <button type="submit" class="btn btn-primary">Find Customer</button>
                       </form>
                 </div>
 
@@ -50,10 +50,10 @@
 
                 <div class="card-footer">
                     {{ if .canGoBack }}
-                    <a class="btn" href="{{ .previousPageUrl }}">Previous Page</a>
+                    <a class="btn btn-primary m-1" href="{{ .previousPageUrl }}">Previous Page</a>
                     {{ end }}
                     {{ if .canGoForward }}
-                    <a class="btn" href="{{ .nextPageUrl }}">Next Page</a>
+                    <a class="btn btn-primary m-1" href="{{ .nextPageUrl }}">Next Page</a>
                     {{ end }}
                 </div>
             </div>

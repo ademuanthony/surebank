@@ -117,6 +117,10 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 		Offset:  &offset,
 		Limit:   &limit,
 	})
+	
+	if err != nil {
+		return err
+	}
 
 	pageCount := result.TotalCount / 20
 	if pageCount*20 < result.TotalCount {
