@@ -37,10 +37,10 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	}
 
 	if req.Keyword != "" {
-		statement := fmt.Sprintf("(%s = %%$%d%% or %s = %%$%d%% or %s = %%$%d%%)",
-			models.CustomerColumns.Name, len(req.Args)+1,
-			models.CustomerColumns.PhoneNumber, len(req.Args)+2,
-			models.CustomerColumns.Email, len(req.Args)+3)
+		statement := fmt.Sprintf("(%s LIKE %%$1%% or %s LIKE %%$2%% or %s LIKE %%$3%%)",
+			models.CustomerColumns.Name,
+			models.CustomerColumns.PhoneNumber, 
+			models.CustomerColumns.Email, )
 		req.Args = append(req.Args, req.Keyword, req.Keyword, req.Keyword)
 		if len(req.Where) > 0 {
 			req.Where = " AND " + statement
