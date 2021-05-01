@@ -17,26 +17,50 @@
 
     <div class="row">
         <div class="col">
-            <form method="post">
-                <div class="card shadow">
-                    <div class="table-responsive dataTable_card">
-                        {{ template "partials/datatable/html" . }}
-                    </div>
+            <div class="card">
+                <div class="header">
+                    <form class="form-inline">
+                        <div class="form-group mb-2">
+                          <label for="term" class="sr-only">Customer</label>
+                          <input name="term" id="term" type="text" class="form-control-plaintext"
+                           placeholder="Search Term" value="{{ .term }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary mb-2">Find Customer</button>
+                      </form>
                 </div>
-            </form>
+
+                <div class="card-body">
+                    <table class="table-bordered table">
+                        <tr>
+                            <th>Name</th>
+                            <th>Start Date</th>
+                            <th>Phone Number</th>
+                            <th>Manager</th>
+                        </tr>
+                        {{ range $customer := $.data.Customers }}
+                            <tr>
+                                <td><a href="/customers/{{$customer.ID}}">{{ $customer.Name }}</a></td>
+                                <td>{{ $customer.CreatedAt.LocalDate }}</td>
+                                <td>{{ $customer.PhoneNumber }}</td>
+                                <td><a href="/users/{{ $customer.SalesRepID }}">{{ $customer.SalesRep }}</a></td>
+                            </tr>
+                        {{ end }}
+                    </table>
+                </div>
+
+                <div class="card-footer">
+                    {{ if .canGoBack }}
+                    <a class="btn" href="{{ .previousPageUrl }}">Previous Page</a>
+                    {{ end }}
+                    {{ if .canGoForward }}
+                    <a class="btn" href="{{ .nextPageUrl }}">Next Page</a>
+                    {{ end }}
+                </div>
+            </div>
         </div>
     </div>
 {{end}}
 {{define "style"}}
-    {{ template "partials/datatable/style" . }}
 {{ end }}
 {{define "js"}}
-    {{ template "partials/datatable/js" . }}
-
-    <script>
-        $(document).ready(function(){
-            //$("#dataTable_filter").hide();
-        });
-    </script>
-
 {{end}}

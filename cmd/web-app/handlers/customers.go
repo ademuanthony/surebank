@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -93,94 +94,43 @@ func urlCustomersTransactionsView(customerID, accountID, tranxID string) string 
 // Index handles listing all the customers.
 func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Request, _ map[string]string) error {
 
+	if err := r.ParseForm(); err != nil {
+		return err
+	}
 	claims, err := auth.ClaimsFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	fields := []datatable.DisplayField{
-		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
-		{Field: "name", Title: "Name", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
-		{Field: "created_at", Title: "Start Date", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Email"},
-		{Field: "phone_number", Title: "Phone Number", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Phone Number"},
-		{Field: "sales_rep", Title: "Manager", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Manager"},
+	var term = r.FormValue("term")
+	var pageString = r.FormValue("page")
+	page, _ := strconv.ParseInt(pageString, 10, 64)
+	if page <= 0 {
+		page = 1
 	}
 
-	mapFunc := func(q *customer.Response, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
-		for i := 0; i < len(cols); i++ {
-			col := cols[i]
-			var v datatable.ColumnValue
-			switch col.Field {
-			case "id":
-				v.Value = fmt.Sprintf("%s", q.ID)
-			case "name":
-				v.Value = q.Name
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlCustomersView(q.ID), v.Value)
-			case "created_at":
-				v.Value = q.CreatedAt.LocalDate
-				v.Formatted = v.Value
-			case "phone_number":
-				v.Value = q.PhoneNumber
-				v.Formatted = q.PhoneNumber
-			case "sales_rep":
-				v.Value = q.SalesRep
-				v.Formatted = fmt.Sprintf("<a href='%s'>%s</a>", urlUsersView(q.SalesRepID), v.Value)
-			default:
-				return resp, errors.Errorf("Failed to map value for %s.", col.Field)
-			}
-			resp = append(resp, v)
-		}
+	limit := uint(20)
+	offset := uint((page - 1) * 20)
 
-		return resp, nil
-	}
+	result, err := h.CustomerRepo.Find(ctx, claims, customer.FindRequest{
+		Keyword: term,
+		Offset:  &offset,
+		Limit:   &limit,
+	})
 
-	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
-
-		var order []string
-		if len(sorting) > 0 {
-			order = strings.Split(sorting, ",")
-		}
-
-		res, err := h.CustomerRepo.Find(ctx, claims, customer.FindRequest{
-			Order: order,
-			// IncludeAccountNo: true,
-		})
-		if err != nil {
-			return resp, err
-		}
-
-		for _, a := range res.Customers {
-			l, err := mapFunc(a, fields)
-			if err != nil {
-				return resp, errors.Wrapf(err, "Failed to map brand for display.")
-			}
-
-			resp = append(resp, l)
-		}
-
-		return resp, nil
-	}
-
-	dt, err := datatable.New(ctx, w, r, h.Redis, fields, loadFunc)
-	if err != nil {
-		return err
-	}
-
-	dt.DisableCache()
-
-	// if dt.HasCache() {
-	// 	return nil
-	// }
-
-	if ok, err := dt.Render(); ok {
-		if err != nil {
-			return err
-		}
-		return nil
+	pageCount := result.TotalCount / 20
+	if pageCount*20 < result.TotalCount {
+		pageCount += 1
 	}
 
 	data := map[string]interface{}{
-		"datatable":          dt.Response(),
+		"data":               result,
+		"canGoBack":          page > 1,
+		"canGoForward":       page < pageCount,
+		"previousPageUrl":    fmt.Sprintf("?page=%d&term=%s", page-1, term),
+		"nextPageUrl":        fmt.Sprintf("?page=%d&term=%s", page+1, term),
+		"term":               term,
+		"currentPage":        page,
 		"urlCustomersCreate": urlCustomersCreate(),
 		"urlCustomersIndex":  urlCustomersIndex(),
 	}
@@ -1369,7 +1319,7 @@ func (h *Customers) AccountName(ctx context.Context, w http.ResponseWriter, r *h
 }
 
 func (h *Customers) DBStat(ctx context.Context, w http.ResponseWriter, r *http.Request, params map[string]string) error {
-	
+
 	number, err := h.AccountRepo.DbConnCount(ctx)
 	if err != nil {
 		return err
