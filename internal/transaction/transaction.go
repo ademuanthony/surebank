@@ -447,6 +447,19 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 	if _, err := models.Accounts(models.AccountWhere.ID.EQ(account.ID)).UpdateAll(ctx, dbTx, models.M{
 		models.AccountColumns.Balance:         accountBalance,
 		models.AccountColumns.LastPaymentDate: lastDepositDate,
+		models.AccountColumns.SalesRepID:      claims.Subject,
+	}); err != nil {
+		return nil, err
+	}
+
+	if _, err := models.Accounts(models.AccountWhere.CustomerID.EQ(account.CustomerID)).UpdateAll(ctx, dbTx, models.M{
+		models.AccountColumns.SalesRepID: claims.Subject,
+	}); err != nil {
+		return nil, err
+	}
+
+	if _, err := models.Customers(models.CustomerWhere.ID.EQ(account.CustomerID)).UpdateAll(ctx, dbTx, models.M{
+		models.CustomerColumns.SalesRepID: claims.Subject,
 	}); err != nil {
 		return nil, err
 	}

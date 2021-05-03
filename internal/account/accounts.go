@@ -97,6 +97,29 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 	}, nil
 }
 
+// // List gets account info tallored for showing on the customer page
+// func (repo *Repository) List(ctx context.Context, req AccountListRequest) (*PagedList, error) {
+// 	var queries []QueryMod
+// 	queries = append(
+// 		queries,
+// 		qm.Load(models.AccountRels.Customer),
+// 		qm.Load(models.AccountRels.SalesRep),
+// 	)
+// 	if req.ManagerID != "" {
+// 		queries = append(queries, models.AccountWhere.SalesRepID.EQ(req.ManagerID))
+// 		qm.And()
+// 	}
+
+// 	if req.Term != "" {
+// 		queries = append(queries,
+// 			qm.InnerJoin("customer c on c.id = account.customer_id"),
+// 			qm.Or("c.phone_number LIKE ?", "%" + req.Term + "%"),
+// 			qm.Or("c.name LIKE ?", "%" + req.Term + "%"),
+// 			qm.Or("account.number LIKE ?", "%" + req.Term + "%"),
+// 		)
+// 	}
+// }
+
 // FindDs gets all the accounts from the database that are of DS type and have > 0 balance.
 func (repo *Repository) FindDs(ctx context.Context, _ auth.Claims, req FindRequest) (*PagedResponseList, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "internal.account.FindDs")

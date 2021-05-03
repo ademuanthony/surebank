@@ -8,10 +8,11 @@ import (
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/user"
-	
-	"github.com/jmoiron/sqlx"
+
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // Repository defines the required dependencies for Account.
@@ -89,7 +90,7 @@ func FromModel(rec *models.Account) *Account {
 // Response represents a customer account that is returned for display.
 type Response struct {
 	ID              string             `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86" truss:"api-read"`
-	CustomerID      string             `json:"id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86" truss:"api-read"`
+	CustomerID      string             `json:"customer_id" example:"985f1746-1d9f-459f-a2d9-fc53ece5ae86" truss:"api-read"`
 	Customer        *customer.Response `json:"customer,omitempty" truss:"api-read"`
 	Number          string             `json:"number" example:"Rocket Launch" truss:"api-read"`
 	Type            string             `json:"type" truss:"api-read"`
@@ -100,10 +101,33 @@ type Response struct {
 	BranchID        string             `json:"branch_id" truss:"api-read"`
 	SalesRep        string             `json:"sales_rep,omitempty" truss:"api-read"`
 	Branch          string             `json:"branch,omitempty" truss:"api-read"`
-	LastPaymentDate web.TimeResponse   `json:"created_at"`            // CreatedAt contains multiple format options for display.
+	LastPaymentDate web.TimeResponse   `json:"last_payment_date"`     // CreatedAt contains multiple format options for display.
 	CreatedAt       web.TimeResponse   `json:"created_at"`            // CreatedAt contains multiple format options for display.
 	UpdatedAt       web.TimeResponse   `json:"updated_at"`            // UpdatedAt contains multiple format options for display.
 	ArchivedAt      *web.TimeResponse  `json:"archived_at,omitempty"` // ArchivedAt contains multiple format options for display.
+}
+
+type AccountList struct {
+	ID           string           `json:"id"`
+	CustomerID   string           `json:"customer_id"`
+	CustomerName string           `json:"customer_name"`
+	PhoneNummber string           `json:"phone_number"`
+	StartDate    web.TimeResponse `json:"start_date"`
+	ManagerID    string           `json:"manager_id"`
+	ManagerName  string           `json:"manager_name"`
+}
+
+type PagedList struct {
+	Items      []AccountList
+	TotalCount int64
+}
+
+type AccountListRequest struct {
+	Term         string
+	ManagerID    string
+
+	Offset *uint
+	Limit  *uint
 }
 
 // Response transforms Account to the Response that is used for display.
