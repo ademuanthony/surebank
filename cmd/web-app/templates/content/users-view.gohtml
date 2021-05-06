@@ -21,6 +21,7 @@
             <div>
                 <a href="{{ .urlUsersCreate }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm mr-2"><i class="fas fa-user-plus fa-sm text-white-50 mr-1"></i>Create User</a>
                 <a href="{{ .urlUsersInvite }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-restroom fa-sm text-white-50 mr-1"></i>Invite Users</a>
+
             </div>
         {{ end }}
     </div>
@@ -36,6 +37,7 @@
                 {{ if HasRole $._Ctx "admin" }}
                 <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink" x-placement="bottom-end" style="position: absolute; transform: translate3d(-156px, 19px, 0px); top: 0px; left: 0px; will-change: transform;">
                     <div class="dropdown-header">Actions</div>
+                    <a class="dropdown-item" href="{{.urlCustomers}}">View Customers</a>
 
                     <a href="{{ .urlUsersUpdate }}" class="dropdown-item">Update Details</a>
                     {{ $ctxUser := ContextUser $._Ctx }}
