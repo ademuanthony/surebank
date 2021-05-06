@@ -395,6 +395,7 @@ func (h *Users) View(ctx context.Context, w http.ResponseWriter, r *http.Request
 	data["urlUsersView"] = urlUsersView(userID)
 	data["urlUsersUpdate"] = urlUsersUpdate(userID)
 	data["urlUserVirtualLogin"] = urlUserVirtualLogin(userID)
+	data["urlCustomers"] = fmt.Sprintf("%s?sales_rep_id=%s", urlCustomersIndex(), userID)
 
 	return h.Renderer.Render(ctx, w, r, TmplLayoutBase, "users-view.gohtml", web.MIMETextHTMLCharsetUTF8, http.StatusOK, data)
 }

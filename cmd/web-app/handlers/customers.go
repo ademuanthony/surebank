@@ -113,6 +113,7 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 	offset := uint((page - 1) * 20)
 
 	result, err := h.CustomerRepo.Find(ctx, claims, customer.FindRequest{
+		ManagerID: r.FormValue("sales_rep_id"),
 		Keyword: term,
 		Offset:  &offset,
 		Limit:   &limit,
@@ -131,8 +132,8 @@ func (h *Customers) Index(ctx context.Context, w http.ResponseWriter, r *http.Re
 		"data":               result,
 		"canGoBack":          page > 1,
 		"canGoForward":       page < pageCount,
-		"previousPageUrl":    fmt.Sprintf("?page=%d&term=%s", page-1, term),
-		"nextPageUrl":        fmt.Sprintf("?page=%d&term=%s", page+1, term),
+		"previousPageUrl":    fmt.Sprintf("?page=%d&term=%s&sales_rep_id=%s", page-1, term, r.FormValue("sales_rep_id")),
+		"nextPageUrl":        fmt.Sprintf("?page=%d&term=%s&sales_rep_id=%s", page+1, term, r.FormValue("sales_rep_id")),
 		"term":               term,
 		"currentPage":        page,
 		"urlCustomersCreate": urlCustomersCreate(),

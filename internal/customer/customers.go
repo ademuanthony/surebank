@@ -37,13 +37,21 @@ func (repo *Repository) Find(ctx context.Context, _ auth.Claims, req FindRequest
 		Load(models.CustomerRels.SalesRep),
 	}
 
+	if req.ManagerID != "" {
+		statement := fmt.Sprintf("sales_rep_id = '%s'", req.ManagerID)
+		if len(req.Where) > 0 {
+			req.Where = " AND " + statement
+		} else {
+			req.Where = statement
+		}
+	}
+
 	if req.Keyword != "" {
 		statement := fmt.Sprintf("(%s LIKE '%%%s%%' or %s LIKE '%%%s%%'or %s LIKE '%%%s%%')",
 			models.CustomerColumns.Name, req.Keyword,
 			models.CustomerColumns.PhoneNumber, req.Keyword,
 			models.CustomerColumns.Email, req.Keyword)
 		// req.Args = append(req.Args, req.Keyword, req.Keyword, req.Keyword)
-		spew.Dump(statement)
 		if len(req.Where) > 0 {
 			req.Where = " AND " + statement
 		} else {
