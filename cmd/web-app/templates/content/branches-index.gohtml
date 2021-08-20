@@ -12,7 +12,7 @@
 
     <h1 class="h3 mb-0 text-gray-800">Branches</h1>
     {{ if HasRole $._Ctx "admin" }}
-    <a href="{{ .urlBranchesCreate }}" data-toggle="modal" data-target="#crreateModal"
+    <a href="{{ .urlBranchesCreate }}"
         class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
         <i class="fas fa-folder-plus fa-sm text-white-50 mr-1"></i>Create Branch</a>
     {{ end }}
@@ -34,7 +34,7 @@
 <div class="modal fade" id="crreateModal" tabindex="-1" role="dialog" aria-labelledby="crreateModalLabel"
     aria-hidden="true">
     <div class="modal-dialog" role="document">
-        <form>
+        <form >
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="crreateModalLabel">Create Branch</h5>
