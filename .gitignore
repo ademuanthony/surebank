@@ -5,6 +5,7 @@
 .DS_Store
 tmp
 .devops.json
+postgres-data/
 mongodb-data
 cmd/web-api/web-api
 cmd/web-app/web-app
