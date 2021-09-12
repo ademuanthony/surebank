@@ -9,7 +9,7 @@ networks:
 
 services:
   postgres: #docker exec -it dd5f2eb6ee17 psql -U postgres -W postgres shared
-    image: postgres:11-alpine
+    image: postgres:13
     expose:
       - "5433"
     ports:

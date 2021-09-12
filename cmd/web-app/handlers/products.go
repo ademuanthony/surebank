@@ -74,6 +74,7 @@ func productDatatable(ctx context.Context, shopRepo *shop.Repository, redisClien
 		{Field: "id", Title: "ID", Visible: false, Searchable: true, Orderable: true, Filterable: false},
 		{Field: "name", Title: "Product", Visible: true, Searchable: true, Orderable: true, Filterable: true, FilterPlaceholder: "filter Name"},
 		{Field: "sku", Title: "SKU", Visible: true, Searchable: true, Orderable: false, Filterable: true, FilterPlaceholder: "filter SKU"},
+		{Field: "cost_price", Title: "Cost Price", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Cost Price"},
 		{Field: "price", Title: "Price", Visible: true, Searchable: false, Orderable: true, Filterable: true, FilterPlaceholder: "filter Price"},
 	}
 
@@ -91,6 +92,10 @@ func productDatatable(ctx context.Context, shopRepo *shop.Repository, redisClien
 			case "sku":
 				v.Value = q.Sku
 				v.Formatted = q.Sku
+			case "cost_price":
+				v.Value = fmt.Sprintf("%f", q.Price)
+				p := message.NewPrinter(language.English)
+				v.Formatted = p.Sprintf("%.2f", q.CostPrice)
 			case "price":
 				v.Value = fmt.Sprintf("%f", q.Price)
 				p := message.NewPrinter(language.English)

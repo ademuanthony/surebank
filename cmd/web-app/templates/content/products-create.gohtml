@@ -46,10 +46,18 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="inputPrice">Cost Price</label>
+                            <input type="text" id="inputCostPrice"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Cost Price" }}"
+                                   placeholder="enter cost price" name="CostPrice" value="{{ .form.CostPrice }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "Cost Price" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                        <div class="form-group">
                             <label for="inputPrice">Price</label>
                             <input type="text" id="inputPrice"
                                    class="form-control {{ ValidationFieldClass $.validationErrors "Price" }}"
-                                   placeholder="enter name" name="Price" value="{{ .form.Price }}" required>
+                                   placeholder="enter price" name="Price" value="{{ .form.Price }}" required>
                             {{template "invalid-feedback" dict "fieldName" "Price" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
                         </div>
 

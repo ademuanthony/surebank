@@ -30,6 +30,7 @@ type Product struct {
 	Sku          string      `json:"sku"`
 	Barcode      string      `json:"barcode"`
 	Price        float64     `json:"price"`
+	CostPrice    float64     `json:"cost_price"`
 	StockBalance int         `json:"stock_balance"`
 	ReorderLevel int         `json:"reorder_level"`
 	Image        string      `json:"image"`
@@ -45,14 +46,16 @@ type Product struct {
 
 func (m Product) ToModel() models.Product {
 	return models.Product{
-		ID:           m.ID,
-		BrandID:      null.StringFrom(m.BrandID),
-		CategoryID:   m.CategoryID,
-		Name:         m.Name,
-		Description:  m.Description,
-		Sku:          m.Sku,
-		Barcode:      m.Barcode,
-		Price:        m.Price,
+		ID:          m.ID,
+		BrandID:     null.StringFrom(m.BrandID),
+		CategoryID:  m.CategoryID,
+		Name:        m.Name,
+		Description: m.Description,
+		Sku:         m.Sku,
+		Barcode:     m.Barcode,
+		Price:       m.Price,
+		CostPrice:   m.CostPrice,
+
 		ReorderLevel: m.ReorderLevel,
 		Image:        null.StringFrom(m.Image),
 		CreatedAt:    m.CreatedAt,
@@ -74,6 +77,7 @@ func ProductFromModel(product *models.Product) *Product {
 		Sku:          product.Sku,
 		Barcode:      product.Barcode,
 		Price:        product.Price,
+		CostPrice:    product.CostPrice,
 		StockBalance: product.StockBalance,
 		ReorderLevel: product.ReorderLevel,
 		Image:        product.Image.String,
@@ -109,6 +113,7 @@ type ProductResponse struct {
 	Sku          string  `json:"sku"`
 	Barcode      string  `json:"barcode"`
 	Price        float64 `json:"price"`
+	CostPrice    float64 `json:"cost_price"`
 	StockBalance int     `json:"stock_balance"`
 	ReorderLevel int     `json:"reorder_level"`
 	Image        string  `json:"image"`
@@ -136,6 +141,7 @@ func (m *Product) Response(ctx context.Context) *ProductResponse {
 		Sku:          m.Sku,
 		Barcode:      m.Barcode,
 		Price:        m.Price,
+		CostPrice:    m.CostPrice,
 		StockBalance: m.StockBalance,
 		ReorderLevel: m.ReorderLevel,
 		Image:        m.Image,
@@ -172,6 +178,7 @@ type ProductCreateRequest struct {
 	Sku          string   `json:"sku" validate:"required,unique"`
 	Barcode      string   `json:"barcode" validate:"required,unique"`
 	Price        float64  `json:"price" validate:"required"`
+	CostPrice    float64  `json:"cost_price" validate:"required"`
 	ReorderLevel int      `json:"reorder_level"`
 	Image        string   `json:"image"`
 	Categories   []string `json:"categories"`
@@ -196,6 +203,7 @@ type ProductUpdateRequest struct {
 	Sku          *string  `json:"sku"`
 	Barcode      *string  `json:"barcode"`
 	Price        *float64 `json:"price"`
+	CostPrice    *float64 `json:"cost_price"`
 	ReorderLevel *int     `json:"reorder_level"`
 	Image        *string  `json:"image"`
 	Categories   []string `json:"categories"`
@@ -360,6 +368,7 @@ func (repo *Repository) CreateProduct(ctx context.Context, claims auth.Claims, r
 		Sku:          req.Sku,
 		Barcode:      req.Barcode,
 		Price:        req.Price,
+		CostPrice:    req.CostPrice,
 		ReorderLevel: req.ReorderLevel,
 		Image:        req.Image,
 		CreatedAt:    now,
@@ -460,6 +469,10 @@ func (repo *Repository) UpdateProduct(ctx context.Context, claims auth.Claims, r
 		cols[models.ProductColumns.Price] = *req.Price
 	}
 
+	if req.CostPrice != nil {
+		cols[models.ProductColumns.CostPrice] = *req.CostPrice
+	}
+
 	if req.ReorderLevel != nil {
 		cols[models.ProductColumns.ReorderLevel] = *req.ReorderLevel
 	}
@@ -488,7 +501,7 @@ func (repo *Repository) UpdateProduct(ctx context.Context, claims auth.Claims, r
 
 	_, err = models.Products(models.ProductWhere.ID.EQ(req.ID)).UpdateAll(ctx, repo.DbConn, cols)
 
-	return nil
+	return err
 }
 
 func (repo *Repository) AddProductToCategory(ctx context.Context, claims auth.Claims, req AddProductToCategoryRequest, now time.Time) error {

@@ -32,6 +32,7 @@ type Product struct {
 	Sku          string      `boil:"sku" json:"sku" toml:"sku" yaml:"sku"`
 	Barcode      string      `boil:"barcode" json:"barcode" toml:"barcode" yaml:"barcode"`
 	Price        float64     `boil:"price" json:"price" toml:"price" yaml:"price"`
+	CostPrice    float64     `boil:"cost_price" json:"cost_price" toml:"cost_price" yaml:"cost_price"`
 	ReorderLevel int         `boil:"reorder_level" json:"reorder_level" toml:"reorder_level" yaml:"reorder_level"`
 	Image        null.String `boil:"image" json:"image,omitempty" toml:"image" yaml:"image,omitempty"`
 	CreatedAt    time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
@@ -55,6 +56,7 @@ var ProductColumns = struct {
 	Sku          string
 	Barcode      string
 	Price        string
+	CostPrice    string
 	ReorderLevel string
 	Image        string
 	CreatedAt    string
@@ -72,7 +74,7 @@ var ProductColumns = struct {
 	Description:  "description",
 	Sku:          "sku",
 	Barcode:      "barcode",
-	Price:        "price",
+	CostPrice:    "cost_price",
 	ReorderLevel: "reorder_level",
 	Image:        "image",
 	CreatedAt:    "created_at",
