@@ -24,5 +24,6 @@
 	    "expenditure",
 	    "daily_summary",
         "ds_commission",
-        "reps_expense"
+        "reps_expense",
+        "profit"
             ]
