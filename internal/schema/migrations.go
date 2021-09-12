@@ -1418,6 +1418,27 @@ func migrationList(ctx context.Context, db *sqlx.DB, log *log.Logger, isUnittest
 				return nil
 			},
 		},
+
+		// Add cost price to product
+		{
+			ID: "20210912-01",
+			Migrate: func(tx *sql.Tx) error {
+				statements := []string{
+					`ALTER TABLE product ADD COLUMN cost_price FLOAT8 NOT NULL DEFAULT 0`,
+				}
+
+				for _, q1 := range statements {
+					if _, err := tx.Exec(q1); err != nil {
+						return errors.Wrapf(err, "Query failed %s", q1)
+					}
+				}
+
+				return nil
+			},
+			Rollback: func(tx *sql.Tx) error {
+				return nil
+			},
+		},
 		// TODO: store dates in unix
 	}
 }
