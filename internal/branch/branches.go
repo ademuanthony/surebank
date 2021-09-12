@@ -10,8 +10,8 @@ import (
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/boil"
-	. "github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 

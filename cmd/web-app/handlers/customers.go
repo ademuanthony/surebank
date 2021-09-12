@@ -23,7 +23,7 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/jinzhu/now"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"

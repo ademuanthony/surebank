@@ -9,11 +9,12 @@ import (
 
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-	. "github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
+	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
@@ -132,7 +133,7 @@ func (repo *Repository) FindDs(ctx context.Context, _ auth.Claims, req FindReque
 	}
 
 	queries = append(queries,
-		models.AccountWhere.AccountType.EQ(models.AccountTypeDS),
+		models.AccountWhere.AccountType.EQ(customer.AccountTypeDS),
 		models.AccountWhere.Balance.GT(0),
 	)
 

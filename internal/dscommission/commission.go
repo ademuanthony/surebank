@@ -11,7 +11,7 @@ import (
 	"merryworld/surebank/internal/postgres/models"
 
 	"github.com/jinzhu/now"
-	. "github.com/volatiletech/sqlboiler/queries/qm"
+	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 

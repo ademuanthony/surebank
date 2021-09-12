@@ -14,7 +14,7 @@ import (
 	"merryworld/surebank/internal/postgres/models"
 
 	"github.com/gorilla/schema"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/go-redis/redis"
 )
 

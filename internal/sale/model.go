@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 
 	"merryworld/surebank/internal/branch"
 	"merryworld/surebank/internal/inventory"

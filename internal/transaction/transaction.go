@@ -15,12 +15,13 @@ import (
 	"github.com/jinzhu/now"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-	. "github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 
+	"merryworld/surebank/internal/customer"
 	"merryworld/surebank/internal/platform/auth"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/platform/web/webcontext"
@@ -293,7 +294,7 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 	}
 
 	effectiveDate := now.New(currentDate).BeginningOfDay()
-	if account.AccountType == models.AccountTypeDS {
+	if account.AccountType == customer.AccountTypeDS {
 		lastDeposit, err := repo.lastDeposit(ctx, account.ID, dbTx)
 		if err == nil {
 			effectiveDate = now.New(time.Unix(lastDeposit.EffectiveDate, 0)).Time.Add(24 * time.Hour)
@@ -302,7 +303,7 @@ func (repo *Repository) Deposit(ctx context.Context, claims auth.Claims, req Cre
 
 	effectiveDate = effectiveDate.UTC()
 
-	if account.AccountType != models.AccountTypeDS {
+	if account.AccountType != customer.AccountTypeDS {
 		m, err := repo.create(ctx, claims, req, currentDate, effectiveDate, dbTx)
 		if err != nil {
 			dbTx.Rollback()
@@ -476,7 +477,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 	}
 
 	if req.Type == TransactionType_Deposit {
-		if account.AccountType == models.AccountTypeSB {
+		if account.AccountType == customer.AccountTypeSB {
 			if err = repo.notifySMS.Send(ctx, account.R.Customer.PhoneNumber, "sms/payment_received",
 				map[string]interface{}{
 					"Name":          account.R.Customer.Name,
@@ -503,7 +504,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		}
 	}
 
-	if req.Type == TransactionType_Deposit && account.AccountType == models.AccountTypeDS && isFirstContribution {
+	if req.Type == TransactionType_Deposit && account.AccountType == customer.AccountTypeDS && isFirstContribution {
 		wm := models.Transaction{
 			ID:             uuid.NewRandom().String(),
 			AccountID:      account.ID,
