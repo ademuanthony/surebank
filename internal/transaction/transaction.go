@@ -27,6 +27,7 @@ import (
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
+	"merryworld/surebank/internal/profit"
 )
 
 var (
@@ -504,6 +505,7 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		}
 	}
 
+	// Deduct fee for the first contribution for DS customers
 	if req.Type == TransactionType_Deposit && account.AccountType == customer.AccountTypeDS && isFirstContribution {
 		wm := models.Transaction{
 			ID:             uuid.NewRandom().String(),
@@ -539,6 +541,16 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 		}
 		if err := commission.Insert(ctx, dbTx, boil.Infer()); err != nil {
 			return nil, err
+		}
+
+		// capture profit
+
+		profReq := profit.ProfitCreateRequest{
+			Amount:    req.Amount,
+			Narration: fmt.Sprintf("DS commission of %s", account.R.Customer.Name),
+		}
+		if _, err := repo.ProfitRepo.CreateProfitTx(ctx, dbTx, claims, profReq, time.Unix(m.CreatedAt, 0)); err != nil {
+			return nil, weberror.NewError(ctx, weberror.WithMessagef(ctx, err, "Cannot create profit",), 400)
 		}
 	}
 

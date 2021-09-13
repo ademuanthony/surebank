@@ -12,6 +12,7 @@ import (
 	"merryworld/surebank/internal/inventory"
 	"merryworld/surebank/internal/platform/web"
 	"merryworld/surebank/internal/postgres/models"
+	"merryworld/surebank/internal/profit"
 	"merryworld/surebank/internal/shop"
 	"merryworld/surebank/internal/transaction"
 	"merryworld/surebank/internal/user"
@@ -23,16 +24,19 @@ type Repository struct {
 	ShopRepo        *shop.Repository
 	InventoryRepo   *inventory.Repository
 	TransactionRepo *transaction.Repository
+	ProfitRepo      *profit.Repository
 	mutex           sync.Mutex
 }
 
 // NewRepository creates a new Repository that defines dependencies for Branch.
-func NewRepository(db *sqlx.DB, shopRepo *shop.Repository, inventoryRepo *inventory.Repository, transactionRepo *transaction.Repository) *Repository {
+func NewRepository(db *sqlx.DB, shopRepo *shop.Repository, inventoryRepo *inventory.Repository,
+	transactionRepo *transaction.Repository, profitRepo *profit.Repository) *Repository {
 	return &Repository{
 		DbConn:          db,
 		ShopRepo:        shopRepo,
 		InventoryRepo:   inventoryRepo,
 		TransactionRepo: transactionRepo,
+		ProfitRepo:      profitRepo,
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"merryworld/surebank/internal/profit"
 	"merryworld/surebank/internal/transaction"
 	"strconv"
 	"time"
@@ -185,6 +186,21 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 			UnitPrice:     prod.Price,
 			UnitCostPrice: prod.Price,
 		})
+
+		// TODO: save profit from this sale
+		customerName := req.CustomerName
+		if customerName == "" {
+			customerName = "customer"
+		}
+		profReq := profit.ProfitCreateRequest {
+			Amount: float64(item.Quantity) * (prod.CostPrice - prod.Price),
+			Narration: fmt.Sprintf("Sale of %s to %s", prod.Name, customerName),
+		}
+		if _, err := repo.ProfitRepo.CreateProfitTx(ctx, tx, claims, profReq, now); err != nil {
+			_ = tx.Rollback()
+			return nil, weberror.NewError(ctx, weberror.WithMessagef(ctx, err, "Cannot create profit for %s", prod.Name), 400)
+		}
+
 		amount += float64(item.Quantity) * prod.Price
 	}
 

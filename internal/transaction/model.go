@@ -6,6 +6,7 @@ import (
 	"errors"
 	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/platform/notify"
+	"merryworld/surebank/internal/profit"
 	"sync"
 	"time"
 
@@ -24,16 +25,18 @@ import (
 type Repository struct {
 	DbConn         *sqlx.DB
 	CommissionRepo *dscommission.Repository
+	ProfitRepo     *profit.Repository
 	notifySMS      notify.SMS
 	accNumMtx      sync.Mutex
 	creatDB        func() (*sqlx.DB, error)
 }
 
 // NewRepository creates a new Repository that defines dependencies for Transaction.
-func NewRepository(db *sqlx.DB, commissionRepo *dscommission.Repository, notifySMS notify.SMS, creatDB func() (*sqlx.DB, error)) *Repository {
+func NewRepository(db *sqlx.DB, commissionRepo *dscommission.Repository, profitRepo *profit.Repository, notifySMS notify.SMS, creatDB func() (*sqlx.DB, error)) *Repository {
 	return &Repository{
 		DbConn:         db,
 		CommissionRepo: commissionRepo,
+		ProfitRepo:     profitRepo,
 		notifySMS:      notifySMS,
 		creatDB:        creatDB,
 	}

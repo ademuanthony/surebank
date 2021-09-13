@@ -9,6 +9,7 @@ import (
 	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/expenditure"
 	"merryworld/surebank/internal/inventory"
+	"merryworld/surebank/internal/profit"
 	"merryworld/surebank/internal/sale"
 	"merryworld/surebank/internal/transaction"
 	"net/http"
@@ -62,6 +63,7 @@ type AppContext struct {
 	InviteRepo        *invite.Repository
 	ChecklistRepo     *checklist.Repository
 	GeoRepo           *geonames.Repository
+	ProfitRepo        *profit.Repository
 	ShopRepo          *shop.Repository
 	InventoryRepo     *inventory.Repository
 	BranchRepo        *branch.Repository
@@ -83,7 +85,7 @@ type AppContext struct {
 }
 
 // API returns a handler for a set of routes.
-func APP(shutdown chan os.Signal, appCtx *AppContext, reopenDBFunc func () error) http.Handler {
+func APP(shutdown chan os.Signal, appCtx *AppContext, reopenDBFunc func() error) http.Handler {
 
 	// Include the pre middlewares first.
 	middlewares := appCtx.PreAppMiddleware
@@ -119,7 +121,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext, reopenDBFunc func () error
 		DB: appCtx.MasterDB,
 
 		// WaitHandler defines the handler to render for the user to when the database is being resumed.
-		WaitHandler: serverless.Pending,
+		WaitHandler:  serverless.Pending,
 		ReopenDBFunc: reopenDBFunc,
 	})
 
@@ -241,6 +243,20 @@ func APP(shutdown chan os.Signal, appCtx *AppContext, reopenDBFunc func () error
 	app.Handle("GET", "/shop/products/create", prod.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/shop/products", prod.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 
+	// Products
+	prof := Profits{
+		ProfRepo: appCtx.ProfitRepo,
+		Redis:    appCtx.Redis,
+		Renderer: appCtx.Renderer,
+	}
+	app.Handle("POST", "/profits/:profit_id/update", prof.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/profits/:profit_id/update", prof.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("POST", "/profits/:profit_id", prof.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("GET", "/profits/:profit_id", prof.View, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+	app.Handle("POST", "/profits/create", prof.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/profits/create", prof.Create, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
+	app.Handle("GET", "/profits", prof.Index, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
+
 	// Stocks
 	stock := Stocks{
 		Repo:       appCtx.InventoryRepo,
@@ -273,7 +289,7 @@ func APP(shutdown chan os.Signal, appCtx *AppContext, reopenDBFunc func () error
 	app.Handle("GET", "/customers/:customer_id/update", custs.Update, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasRole(auth.RoleAdmin))
 	app.Handle("GET", "/customers/:customer_id/add-account", custs.AddAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/customers/:customer_id/add-account", custs.AddAccount, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
-	
+
 	app.Handle("GET", "/customers/:customer_id/accounts/:account_id/transactions/deposit", custs.Deposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("POST", "/customers/:customer_id/accounts/:account_id/transactions/deposit", custs.Deposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
 	app.Handle("GET", "/deposit", custs.DirectDeposit, mid.AuthenticateSessionRequired(appCtx.Authenticator), mid.HasAuth())
@@ -329,8 +345,8 @@ func APP(shutdown chan os.Signal, appCtx *AppContext, reopenDBFunc func () error
 	sales := Sales{
 		Repository: appCtx.SaleRepo,
 		ShopRepo:   appCtx.ShopRepo,
-		Redis:      appCtx.Redis, 
-		Renderer:   appCtx.Renderer, 
+		Redis:      appCtx.Redis,
+		Renderer:   appCtx.Renderer,
 	}
 	app.Handle("POST", "/api/v1/sales/sell", sales.Sell, mid.AuthenticateSessionRequired(appCtx.Authenticator))
 	app.Handle("GET", "/sales/:sale_id", sales.View, mid.AuthenticateSessionRequired(appCtx.Authenticator))

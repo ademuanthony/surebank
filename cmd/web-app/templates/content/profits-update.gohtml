@@ -1,0 +1,61 @@
+{{define "title"}}Update Profit - {{ .profit.Narration }}{{end}}
+{{define "style"}}
+
+{{end}}
+{{define "content"}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ .urlProfitsIndex}}">Profits</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Update</li>
+        </ol>
+    </nav>
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Update Profit</h1>
+    </div>
+
+    <form class="user" method="post" novalidate>
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-12">
+
+                        <h4 class="card-title">Profit Details</h4>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputName">Amount</label>
+                            <input type="text" id="inputAmount"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Amount" }}"
+                                   placeholder="enter amount" name="Amount" value="{{ .form.Amount }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "Amount" "validationDefaults" $.userValidationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputNarration">Narration</label>
+                            <input type="text" id="inputNarration"
+                                   class="form-control {{ ValidationFieldClass $.validationErrors "Narration" }}"
+                                   placeholder="enter Narration" name="Narration" value="{{ .form.Narration }}" required>
+                            {{template "invalid-feedback" dict "fieldName" "Narration" "validationDefaults" $.validationDefaults "validationErrors" $.validationErrors }}
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <input id="btnSubmit" type="submit" name="action" value="Save" class="btn btn-primary"/>
+            </div>
+        </div>
+    </form>
+{{end}}
+{{define "js"}}
+
+{{end}}

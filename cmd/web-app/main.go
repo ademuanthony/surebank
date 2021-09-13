@@ -11,6 +11,7 @@ import (
 	"merryworld/surebank/internal/dscommission"
 	"merryworld/surebank/internal/expenditure"
 	"merryworld/surebank/internal/inventory"
+	"merryworld/surebank/internal/profit"
 	"merryworld/surebank/internal/sale"
 	"net"
 	"net/http"
@@ -574,9 +575,10 @@ func main() {
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
 	commissionRepo := dscommission.NewRepository(masterDb)
-	transactionRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS, createDB)
+	profitRepo := profit.NewRepository(masterDb)
+	transactionRepo := transaction.NewRepository(masterDb, commissionRepo, profitRepo, notifySMS, createDB)
 	inventoryRepo := inventory.NewRepository(masterDb)
-	saleRepo := sale.NewRepository(masterDb, shopRepo, inventoryRepo, transactionRepo)
+	saleRepo := sale.NewRepository(masterDb, shopRepo, inventoryRepo, transactionRepo, profitRepo)
 	expendituresRepo := expenditure.NewRepository(masterDb)
 
 	appCtx := &handlers.AppContext{
@@ -603,6 +605,7 @@ func main() {
 		TransactionRepo:  transactionRepo,
 		Authenticator:    authenticator,
 		AwsSession:       awsSession,
+		ProfitRepo:       profitRepo,
 		ShopRepo:         shopRepo,
 		BranchRepo:       branchRepo,
 		InventoryRepo:    inventoryRepo,
