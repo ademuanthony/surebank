@@ -27,7 +27,6 @@ import (
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
-	"merryworld/surebank/internal/profit"
 )
 
 var (
