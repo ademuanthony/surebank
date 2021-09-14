@@ -193,7 +193,7 @@ func (repo *Repository) MakeSale(ctx context.Context, claims auth.Claims, req Ma
 			customerName = "customer"
 		}
 		profReq := profit.ProfitCreateRequest {
-			Amount: float64(item.Quantity) * (prod.CostPrice - prod.Price),
+			Amount: float64(item.Quantity) * (prod.Price - prod.CostPrice),
 			Narration: fmt.Sprintf("Sale of %s to %s", prod.Name, customerName),
 		}
 		if _, err := repo.ProfitRepo.CreateProfitTx(ctx, tx, claims, profReq, now); err != nil {
