@@ -27,7 +27,7 @@ type Products struct {
 	Renderer web.Renderer
 }
 
-func urlProductsIndex() string {
+func urlProductsIndex() string { 
 	return fmt.Sprintf("/shop/products")
 }
 
