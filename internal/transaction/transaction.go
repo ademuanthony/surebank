@@ -27,7 +27,6 @@ import (
 	"merryworld/surebank/internal/platform/web/webcontext"
 	"merryworld/surebank/internal/platform/web/weberror"
 	"merryworld/surebank/internal/postgres/models"
-	"merryworld/surebank/internal/profit"
 )
 
 var (
@@ -545,13 +544,13 @@ func (repo *Repository) create(ctx context.Context, claims auth.Claims, req Crea
 
 		// capture profit
 
-		profReq := profit.ProfitCreateRequest{
-			Amount:    req.Amount,
-			Narration: fmt.Sprintf("DS commission of %s", account.R.Customer.Name),
-		}
-		if _, err := repo.ProfitRepo.CreateProfitTx(ctx, dbTx, claims, profReq, time.Unix(m.CreatedAt, 0)); err != nil {
-			return nil, weberror.NewError(ctx, weberror.WithMessagef(ctx, err, "Cannot create profit"), 400)
-		}
+		// profReq := profit.ProfitCreateRequest{
+		// 	Amount:    req.Amount,
+		// 	Narration: fmt.Sprintf("DS commission of %s", account.R.Customer.Name),
+		// }
+		// if _, err := repo.ProfitRepo.CreateProfitTx(ctx, dbTx, claims, profReq, time.Unix(m.CreatedAt, 0)); err != nil {
+		// 	return nil, weberror.NewError(ctx, weberror.WithMessagef(ctx, err, "Cannot create profit"), 400)
+		// }
 	}
 
 	return &Transaction{
