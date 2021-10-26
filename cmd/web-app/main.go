@@ -528,11 +528,12 @@ func main() {
 	var notifySMS notify.SMS
 	if cfg.Project.SMSProvider == "bulksmsnigeria" {
 		// send SMS with bulksmsnigeria.com API
-		// notifySMS, err = notify.NewBulkSmsNigeria(cfg.Project.SMSAuthToken, cfg.Project.SMSSender,
+		notifySMS, err = notify.NewBulkSmsNigeria(cfg.Project.SMSAuthToken, cfg.Project.SMSSender,
+			cfg.Project.SharedTemplateDir, http.Client{})
+
+		// notifySMS, err = notify.NewSwiftBulkSMS(cfg.Project.SMSUsername, cfg.Project.SMSPassword, cfg.Project.SMSSender,
 		// 	cfg.Project.SharedTemplateDir, http.Client{})
 
-		notifySMS, err = notify.NewSwiftBulkSMS(cfg.Project.SMSUsername, cfg.Project.SMSPassword, cfg.Project.SMSSender,
-			cfg.Project.SharedTemplateDir, http.Client{})
 		if err != nil {
 			log.Fatalf("main : Notify SMS : %+v", err)
 		}
