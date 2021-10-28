@@ -55,7 +55,9 @@ func (b *BulkSmsNigeria) Send(ctx context.Context, phoneNumber, templateName str
 	params.Add("to", phoneNumber)
 	params.Add("body", body)
 
-	resp, err := b.client.Get("https://www.bulksmsnigeria.com/api/v1/sms/create?" + params.Encode())
+	url := "https://www.bulksmsnigeria.com/api/v1/sms/create?" + params.Encode()
+	fmt.Println(url)
+	resp, err := b.client.Get(url)
 	// https://swiftbulksms.com/sendsms.php?user=surebank&password=surebank123&mobile=08035146243&senderid=Sureb&message=HelloWorld&dnd=1
 
 	if err != nil {
