@@ -67,11 +67,11 @@ services:
       - WEB_APP_APP_BASE_URL=http://localhost:3000
       - WEB_APP_APP_DEBUG_HOST=:4000
       - WEB_APP_REDIS_HOST=redis:6379
-      - WEB_APP_DB_HOST=postgres:5432
-      - WEB_APP_DB_USER=postgres
-      - WEB_APP_DB_PASS=postgres
-      - WEB_APP_DB_DATABASE=shared
-      - WEB_APP_DB_DISABLE_TLS=true
+      # - WEB_APP_DB_HOST=postgres:5432
+      # - WEB_APP_DB_USER=postgres
+      # - WEB_APP_DB_PASS=postgres
+      # - WEB_APP_DB_DATABASE=shared
+      # - WEB_APP_DB_DISABLE_TLS=true
       - WEB_API_BASE_URL=http://localhost:3001
       - USE_NETWORK_ALIAS=1
       - DD_TRACE_AGENT_HOSTNAME=datadog
