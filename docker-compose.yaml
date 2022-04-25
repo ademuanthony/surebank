@@ -8,23 +8,23 @@ networks:
   main:
 
 services:
-  postgres: #docker exec -it dd5f2eb6ee17 psql -U postgres -W postgres shared
-    image: postgres:13
-    expose:
-      - "5433"
-    ports:
-      - "5433:5432"
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-    networks:
-      main:
-        aliases:
-          - postgres
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASS=postgres
-      - POSTGRES_DB=shared
-      - POSTGRES_HOST_AUTH_METHOD=trust
+  # postgres: #docker exec -it dd5f2eb6ee17 psql -U postgres -W postgres shared
+  #   image: postgres:13
+  #   expose:
+  #     - "5433"
+  #   ports:
+  #     - "5433:5432"
+  #   volumes:
+  #     - ./postgres-data:/var/lib/postgresql/data
+  #   networks:
+  #     main:
+  #       aliases:
+  #         - postgres
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASS=postgres
+  #     - POSTGRES_DB=shared
+  #     - POSTGRES_HOST_AUTH_METHOD=trust
 
   redis:
     image: redis:latest
@@ -57,7 +57,7 @@ services:
         aliases:
           - web-app
     depends_on:
-      - postgres
+      #- postgres
       - redis
       - web-api
     env_file:
@@ -98,7 +98,7 @@ services:
         aliases:
           - web-api
     depends_on:
-      - postgres
+      #- postgres
       - redis
     env_file:
       - configs/.env_docker_compose
