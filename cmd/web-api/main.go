@@ -29,6 +29,7 @@ import (
 	"merryworld/surebank/internal/platform/flag"
 	"merryworld/surebank/internal/platform/notify"
 	"merryworld/surebank/internal/platform/web/webcontext"
+	"merryworld/surebank/internal/profit"
 	"merryworld/surebank/internal/signup"
 	"merryworld/surebank/internal/tenant"
 	"merryworld/surebank/internal/tenant/account_preference"
@@ -500,7 +501,7 @@ func main() {
 	customerRepo := customer.NewRepository(masterDb)
 	accountRepo := account.NewRepository(masterDb)
 	commissionRepo := dscommission.NewRepository(masterDb)
-	depositRepo := transaction.NewRepository(masterDb, commissionRepo, notifySMS, createDB)
+	depositRepo := transaction.NewRepository(masterDb, commissionRepo, profit.NewRepository(masterDb), notifySMS, createDB)
 
 	appCtx := &handlers.AppContext{
 		Log:             log,
