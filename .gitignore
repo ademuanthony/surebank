@@ -13,3 +13,4 @@ cmd/web-api/web-api/.env
 cmd/web-app/web-app/.env
 app/node_modules/
 tools/schema/.env
+dump.rdb
