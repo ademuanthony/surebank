@@ -59,7 +59,7 @@ services:
     depends_on:
       - postgres
       - redis
-      - web-api
+      #- web-api
     env_file:
       - configs/.env_docker_compose
     environment:
