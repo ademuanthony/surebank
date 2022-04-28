@@ -28,6 +28,7 @@ require (
 	github.com/ikeikeikeike/go-sitemap-generator/v2 v2.0.2
 	github.com/jinzhu/now v1.1.1
 	github.com/jmoiron/sqlx v1.2.0
+	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.3.0

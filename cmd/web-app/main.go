@@ -59,6 +59,7 @@ import (
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -190,6 +191,10 @@ func main() {
 			CiPipelineId     string `envconfig:"CI_PIPELINE_ID"`
 			CiPipelineUrl    string `envconfig:"CI_PIPELINE_URL"`
 		}
+	}
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Load .env: %v", err)
 	}
 
 	// For additional details refer to https://github.com/kelseyhightower/envconfig
