@@ -372,6 +372,10 @@ func main() {
 		DialTimeout: cfg.Redis.DialTimeout,
 	})
 	defer redisClient.Close()
+	// go1.5 and above panic from nil context
+	if redisClient.Context() == nil {
+		redisClient = redisClient.WithContext(context.Background())
+	}
 
 	evictPolicyConfigKey := "maxmemory-policy"
 
@@ -386,7 +390,7 @@ func main() {
 		evictPolicy, err := redisClient.ConfigGet(evictPolicyConfigKey).Result()
 		if err != nil && !strings.Contains(err.Error(), "unknown command") {
 			log.Fatalf("main : redis : ConfigGet maxmemory-policy : %+v", err)
-		} else if evictPolicy != nil && len(evictPolicy) > 0 && evictPolicy[1] != "allkeys-lru" {
+		} else if len(evictPolicy) > 0 && evictPolicy[1] != "allkeys-lru" {
 			log.Printf("main : redis : ConfigGet maxmemory-policy : recommended to be set to allkeys-lru to avoid OOM")
 		}
 	}
@@ -649,7 +653,7 @@ func main() {
 	}
 
 	// Apply compression
-	appCtx.PreAppMiddleware = append(appCtx.PostAppMiddleware, mid.Compress())
+	// appCtx.PreAppMiddleware = append(appCtx.PostAppMiddleware, mid.Compress())
 
 	// Generate the new session store and append it to the global list of middlewares.
 

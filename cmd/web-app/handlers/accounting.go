@@ -52,7 +52,7 @@ func (h *Accounting) DailySummaries(ctx context.Context, w http.ResponseWriter,
 	mapFunc := func(q *models.DailySummary, cols []datatable.DisplayField) (resp []datatable.ColumnValue, err error) {
 		for i := 0; i < len(cols); i++ {
 			col := cols[i]
-			var v datatable.ColumnValue
+			var v datatable.ColumnValue 
 			switch col.Field {
 			case "date":
 				dt := web.NewTimeResponse(ctx, time.Unix(q.Date, 0))

@@ -397,10 +397,8 @@ func (r *TemplateRenderer) Render(ctx context.Context, w http.ResponseWriter, re
 	}
 
 	// Append request data map to render data last so any previous value can be overwritten.
-	if data != nil {
-		for k, v := range data {
-			renderData[k] = v
-		}
+	for k, v := range data {
+		renderData[k] = v
 	}
 
 	// If there is a session, check for flashes and ensure the session is saved.
@@ -429,7 +427,8 @@ func (r *TemplateRenderer) Render(ctx context.Context, w http.ResponseWriter, re
 	// 		return errors.WithStack(err)
 	// 	}
 	// }
-
+	
+	//var tpl bytes.Buffer
 	// Render template with data.
 	if err := t.Execute(w, renderData); err != nil {
 		type stackTracer interface {
@@ -439,6 +438,7 @@ func (r *TemplateRenderer) Render(ctx context.Context, w http.ResponseWriter, re
 		if st, ok := err.(stackTracer); !ok || st == nil || st.StackTrace() == nil {
 			err = errors.WithStack(err)
 		}
+		fmt.Println(err)
 
 		return err
 	}

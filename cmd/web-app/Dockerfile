@@ -3,7 +3,7 @@
 # This uses a multi-stage docker file. You can use target to build a specific stage.
 #   docker build -f cmd/web-app/Dockerfile  --build-arg name=web-app --target dev .
 
-FROM golang:1.16-alpine AS build_base_golang
+FROM golang:1.17-alpine3.14 AS build_base_golang
 
 LABEL maintainer="lee@geeksinthewoods.com"
 
