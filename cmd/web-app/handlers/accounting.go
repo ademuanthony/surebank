@@ -217,9 +217,10 @@ func (h *Accounting) RepsSummaries(ctx context.Context, w http.ResponseWriter, r
 	loadFunc := func(ctx context.Context, sorting string, fields []datatable.DisplayField) (resp [][]datatable.ColumnValue, err error) {
 
 		var userWhere string = "WHERE archived_at IS NULL"
-		if salesRepID != "" {
-			userWhere += fmt.Sprintf(" AND u.id = '%s'", salesRepID)
+		if salesRepID == "" {
+			return resp, nil
 		}
+		userWhere += fmt.Sprintf(" AND u.id = '%s'", salesRepID)
 		var incomeWhere, expenditureWhere string
 		if startDate != "" {
 			date, err := time.Parse("01/02/2006", startDate)
